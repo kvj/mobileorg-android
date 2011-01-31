@@ -1,17 +1,11 @@
 package com.matburt.mobileorg;
 
 import android.app.Activity;
-import android.os.Bundle;
-import android.util.Log;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.widget.TextView;
-import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import java.io.InputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
 
 public class SimpleTextDisplay extends Activity
 {
@@ -27,8 +21,15 @@ public class SimpleTextDisplay extends Activity
     }
 
     public void poplateDisplay() {
+    	SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         Intent txtIntent = getIntent();
         String srcText = txtIntent.getStringExtra("txtValue");
+        int fontSize = 20;
+        try {
+			fontSize = Integer.parseInt(appPrefs.getString("docFontSize", Integer.toString(fontSize)));
+		} catch (Exception e) {
+		}
+        this.orgDisplay.setTextSize(fontSize);
         this.orgDisplay.setText(srcText);
     }
 }
