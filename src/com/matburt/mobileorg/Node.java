@@ -3,9 +3,12 @@ package com.matburt.mobileorg;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Comparator;
+
+import android.util.Log;
 
 class EditNode {
     public String editType;
@@ -31,6 +34,7 @@ class Node {
     String priority = "";
     String nodeId = "";
     int nodeType;
+    int level = 0;
     String nodePayload = "";
     String nodeTitle = "";
     String altNodeTitle = null;
@@ -38,6 +42,7 @@ class Node {
     Date deadline = null;
     boolean encrypted = false;
     boolean parsed = false;
+    boolean expanded = false;
     Node parentNode = null;
 
     Node(String heading, int ntype) {
@@ -80,6 +85,7 @@ class Node {
     }
 
     void addChildNode(Node childNode) {
+    	childNode.level = level+1;
         this.subNodes.add(childNode);
     }
 
@@ -98,4 +104,17 @@ class Node {
     boolean hasProperty(String key) {
         return this.properties.containsKey(key);
     }
+    
+    int getSize() {
+    	//Log.i(MobileOrgApplication.LT, "getSize: "+nodeTitle+": "+subNodes+", "+expanded);
+    	if (subNodes == null || !expanded) {
+    		return 1;
+    	}
+    	int size = 1;
+    	for (Node n : subNodes) {
+			size += n.getSize();
+		}
+    	return size;
+    }
+
 }

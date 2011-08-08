@@ -17,6 +17,7 @@ public class MobileOrgApplication extends Application {
     public ArrayList<Integer> nodeSelection;
     public ArrayList<EditNode> edits;
     public static final String SYNCHRONIZER_PLUGIN_ACTION = "com.matburt.mobileorg.SYNCHRONIZE";
+    public static final String LT = "MobileOrg";
 
     public void pushSelection(int selectedNode)
     {

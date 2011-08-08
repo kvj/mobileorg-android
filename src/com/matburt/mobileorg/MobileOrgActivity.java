@@ -75,11 +75,33 @@ public class MobileOrgActivity extends ListActivity
             if (this.thisNode == null ||
                 this.thisNode.subNodes == null)
                 return 0;
-            return this.thisNode.subNodes.size();
+            //Log.i(MobileOrgApplication.LT, "Count: "+this.thisNode.getSize());
+            return this.thisNode.getSize()-1;
         }
 
-        public Object getItem(int position) {
-            return position;
+        Node getNode(Node parent, int position) {
+//        	Log.i(MobileOrgApplication.LT, "getNode: "+parent.nodeTitle+", "+parent.getSize()+" - "+position);
+        	for (int i = 0; i<parent.getSize()-1;) {
+        		Node node = parent.subNodes.get(i);
+//            	Log.i(MobileOrgApplication.LT, "getNode["+parent.level+"]: "+node.nodeTitle+", "+i+" - "+position+" - "+node.getSize());
+				if (i == position) {
+					Log.i(MobileOrgApplication.LT, "found node: "+node.nodeTitle+", "+i);
+					return node;
+				}
+				if (node.getSize()>1) {
+					Node result = getNode(node, position-i-1);
+					if (result != null) {
+						return result;
+					}
+				}
+				i+= node.getSize();
+			}
+        	return null;
+        }
+        
+        public Node getItem(int position) {
+        	Log.i(MobileOrgApplication.LT, "getItem: "+position);
+            return getNode(this.thisNode, position);
         }
 
         public long getItemId(int position) {
@@ -113,7 +135,7 @@ public class MobileOrgActivity extends ListActivity
             }
             return 0;
         }
-
+        
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
                 convertView = this.lInflator.inflate(R.layout.main, null);
@@ -123,12 +145,15 @@ public class MobileOrgActivity extends ListActivity
             TextView priorityView = (TextView)convertView.findViewById(R.id.priorityState);
             LinearLayout tagsLayout = (LinearLayout)convertView.findViewById(R.id.tagsLayout);
             TextView dateView = (TextView)convertView.findViewById(R.id.dateInfo);
+            Node node = getItem(position);
+            thisView.setPadding(20*(node.level-thisNode.level-1), 0, 0, 0);
+            todoView.setPadding(20*(node.level-thisNode.level-1), 0, 0, 0);
             ArrayList<EditNode> thisEdits = this.findEdits(
-                                              this.thisNode.subNodes.get(position).nodeId);
-            String todo = this.thisNode.subNodes.get(position).todo;
-            String priority = this.thisNode.subNodes.get(position).priority;
+                                              node.nodeId);
+            String todo = node.todo;
+            String priority = node.priority;
             String dateInfo = "";
-            thisView.setText(this.thisNode.subNodes.get(position).nodeName);
+            thisView.setText(node.nodeName);
 
             for (EditNode e : thisEdits) {
                 if (e.editType.equals("todo"))
@@ -140,23 +165,23 @@ public class MobileOrgActivity extends ListActivity
                 }
             }
 
-            if (this.thisNode.subNodes.get(position).altNodeTitle != null) {
-                thisView.setText(this.thisNode.subNodes.get(position).altNodeTitle);
+            if (node.altNodeTitle != null) {
+                thisView.setText(node.altNodeTitle);
             }
 
             SimpleDateFormat formatter = new SimpleDateFormat("<yyyy-MM-dd EEE>");
-            if (this.thisNode.subNodes.get(position).deadline != null) {
+            if (node.deadline != null) {
                 dateInfo += "DEADLINE: " + formatter.format(
-                                this.thisNode.subNodes.get(position).deadline) + " ";
+                                node.deadline) + " ";
             }
             
-            if (this.thisNode.subNodes.get(position).schedule != null) {
+            if (node.schedule != null) {
                 dateInfo += "SCHEDULED: " + formatter.format(
-                                this.thisNode.subNodes.get(position).schedule) + " ";
+                                node.schedule) + " ";
             }
 
             tagsLayout.removeAllViews();
-            for (String tag : this.thisNode.subNodes.get(position).tags) {
+            for (String tag : node.tags) {
 				TextView tagView = new TextView(this.context);
 				tagView.setText(tag);
                 tagView.setTextColor(Color.LTGRAY);
@@ -165,7 +190,7 @@ public class MobileOrgActivity extends ListActivity
 			}
 
             if (TextUtils.isEmpty(todo)) {
-            	todoView.setVisibility(View.GONE);
+            	todoView.setText(" ");
             }
             else {
             	todoView.setText(todo);
@@ -208,6 +233,7 @@ public class MobileOrgActivity extends ListActivity
     private MobileOrgDatabase appdb;
     private ReportableError syncError;
     public SharedPreferences appSettings;
+    OrgViewAdapter adapter = null;
     final Handler syncHandler = new Handler();
     final Runnable syncUpdateResults = new Runnable() {
         public void run() {
@@ -292,11 +318,12 @@ public class MobileOrgActivity extends ListActivity
 
         Intent nodeIntent = getIntent();
         ArrayList<Integer> ns = nodeIntent.getIntegerArrayListExtra("nodePath");
-        this.setListAdapter(new OrgViewAdapter(this,
-                                               appInst.rootNode,
-                                               appInst.nodeSelection,
-                                               appInst.edits,
-                                               this.appdb.getTodos()));
+        adapter = new OrgViewAdapter(this,
+                appInst.rootNode,
+                appInst.nodeSelection,
+                appInst.edits,
+                this.appdb.getTodos());
+        this.setListAdapter(adapter);
     }
 
     @Override
@@ -308,13 +335,13 @@ public class MobileOrgActivity extends ListActivity
         return true;
     }
 
-    protected void onLongListItemClick(View av, int pos, long id) {
+    protected void onLongListItemClick(View av, int position, long id) {
         Intent dispIntent = new Intent();
         MobileOrgApplication appInst = (MobileOrgApplication)this.getApplication();
         dispIntent.setClassName("com.matburt.mobileorg",
                                 "com.matburt.mobileorg.OrgContextMenu");
 
-        appInst.pushSelection(pos);
+        appInst.pushSelection(position);
         dispIntent.putIntegerArrayListExtra("nodePath", appInst.nodeSelection);
         startActivity(dispIntent);
     }
@@ -376,17 +403,19 @@ public class MobileOrgActivity extends ListActivity
             }
         }
         else {
-            expandSelection(appInst.nodeSelection);
+            expandSelection(thisNode, appInst.nodeSelection);
         }
     }
 
-    public void expandSelection(ArrayList<Integer> selection)
+    public void expandSelection(Node thisNode, ArrayList<Integer> selection)
     {
-        Intent dispIntent = new Intent();
-        dispIntent.setClassName("com.matburt.mobileorg",
-                                "com.matburt.mobileorg.MobileOrgActivity");
-        dispIntent.putIntegerArrayListExtra("nodePath", selection);
-        startActivityForResult(dispIntent, 1);        
+    	thisNode.expanded = !thisNode.expanded;
+    	this.setListAdapter(adapter);
+//        Intent dispIntent = new Intent();
+//        dispIntent.setClassName("com.matburt.mobileorg",
+//                                "com.matburt.mobileorg.MobileOrgActivity");
+//        dispIntent.putIntegerArrayListExtra("nodePath", selection);
+//        startActivityForResult(dispIntent, 1);        
     }
 
     @Override
@@ -421,7 +450,7 @@ public class MobileOrgActivity extends ListActivity
                                                   orgBasePath);
 
             ofp.parse(thisNode, new BufferedReader(new StringReader(decryptedData)));
-            expandSelection(appInst.nodeSelection);
+            expandSelection(thisNode, appInst.nodeSelection);
         }
         else {
             appInst.popSelection();

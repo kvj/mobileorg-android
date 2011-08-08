@@ -50,6 +50,7 @@ class OrgFileParser {
         this.storageMode = storageMode;
         this.orgPaths = orgpaths;
         this.orgDir = orgBasePath;
+        this.rootNode.expanded = true;
     }
     
     private Pattern prepareTitlePattern() {
