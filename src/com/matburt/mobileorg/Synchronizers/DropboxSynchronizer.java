@@ -1,30 +1,23 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.Synchronizers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.ArrayList;
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.dropbox.client.DropboxAPI;
 import com.dropbox.client.DropboxAPI.Config;
 import com.dropbox.client.DropboxAPI.FileDownload;
+import com.matburt.mobileorg.Error.ReportableError;
+import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.R;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class DropboxSynchronizer extends Synchronizer {
     private boolean hasToken = false;
@@ -32,7 +25,7 @@ public class DropboxSynchronizer extends Synchronizer {
     private DropboxAPI api = new DropboxAPI();
     private Config dbConfig;
 
-    DropboxSynchronizer(Context parentContext) {
+    public DropboxSynchronizer(Context parentContext) {
         this.rootContext = parentContext;
         this.r = this.rootContext.getResources();
         this.appdb = new MobileOrgDatabase((Context)parentContext);
@@ -83,7 +76,7 @@ public class DropboxSynchronizer extends Synchronizer {
 		if(!indexFilePath.startsWith("/")) {
 			indexFilePath = "/" + indexFilePath;
 		}
-        String masterStr = this.fetchOrgFile(indexFilePath);
+        String masterStr = this.fetchOrgFileString(indexFilePath);
         Log.i(LT, "Contents: " + masterStr);
         if (masterStr.equals("")) {
             throw new ReportableError(
@@ -97,7 +90,7 @@ public class DropboxSynchronizer extends Synchronizer {
         this.appdb.setPriorityList(priorityLists);
         String pathActual = this.getRootPath();
         //Get checksums file
-        masterStr = this.fetchOrgFile(pathActual + "checksums.dat");
+        masterStr = this.fetchOrgFileString(pathActual + "checksums.dat");
         HashMap<String, String> newChecksums = this.getChecksums(masterStr);
         HashMap<String, String> oldChecksums = this.appdb.getChecksums();
 
@@ -109,66 +102,11 @@ public class DropboxSynchronizer extends Synchronizer {
                 continue;
             Log.d(LT, "Fetching: " +
                   key + ": " + pathActual + masterList.get(key));
-            String fileContents = this.fetchOrgFile(pathActual +
-                                                    masterList.get(key));
-            String storageMode = this.appSettings.getString("storageMode", "");
-            BufferedWriter writer = new BufferedWriter(new StringWriter());
-
-            if (storageMode.equals("internal") || storageMode == null) {
-                FileOutputStream fs;
-                try {
-                    String normalized = masterList.get(key).replace("/", "_");
-                    fs = rootContext.openFileOutput(normalized, 0);
-                    writer = new BufferedWriter(new OutputStreamWriter(fs));
-                }
-                catch (java.io.FileNotFoundException e) {
-                	throw new ReportableError(
-                    		r.getString(R.string.error_file_not_found, key),
-                    		e);
-                }
-            }
-            else if (storageMode.equals("sdcard")) {
-
-                try {
-                    File root = Environment.getExternalStorageDirectory();
-                    File morgDir = new File(root, "mobileorg");
-                    morgDir.mkdir();
-                    if (morgDir.canWrite()){
-                        File orgFileCard = new File(morgDir, masterList.get(key));
-                        File orgDirCard = orgFileCard.getParentFile();
-                        orgDirCard.mkdirs();
-                        FileWriter orgFWriter = new FileWriter(orgFileCard);
-                        writer = new BufferedWriter(orgFWriter);
-                    }
-                    else {
-                        throw new ReportableError(
-                        		r.getString(R.string.error_file_permissions,
-                                            morgDir.getAbsolutePath()),
-                        		null);
-                    }
-                } catch (java.io.IOException e) {
-                    throw new ReportableError(
-                    		"IO Exception initializing writer on sdcard file",
-                    		e);
-                }
-            }
-            else {
-                throw new ReportableError(
-                		r.getString(R.string.error_local_storage_method_unknown, storageMode),
-                		null);
-            }
-
-            try {
-            	writer.write(fileContents);
-            	this.appdb.addOrUpdateFile(masterList.get(key), key, newChecksums.get(key));
-                writer.flush();
-                writer.close();
-            }
-            catch (java.io.IOException e) {
-                throw new ReportableError(
-                		r.getString(R.string.error_file_write, masterList.get(key)),
-                		e);
-            }
+            this.fetchAndSaveOrgFile(pathActual + masterList.get(key),
+                                     masterList.get(key));
+            this.appdb.addOrUpdateFile(masterList.get(key),
+                                       key,
+                                       newChecksums.get(key));
         }
     }
 
@@ -177,28 +115,29 @@ public class DropboxSynchronizer extends Synchronizer {
         return dbPath.substring(0, dbPath.lastIndexOf("/")+1);
     }
 
-    private String fetchOrgFile(String orgPath) throws ReportableError {
+    public BufferedReader fetchOrgFile(String orgPath) throws NotFoundException, ReportableError {
         Log.i(LT, "Downloading " + orgPath);
-        FileDownload fd = api.getFileStream("dropbox", orgPath, null);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(fd.is));
-        String fileContents = "";
-        String thisLine = "";
+        FileDownload fd;
         try {
-            while ((thisLine = reader.readLine()) != null) {
-                fileContents += thisLine + "\n";
-            }
+            fd = api.getFileStream("dropbox", orgPath, null);
         }
-        catch (java.io.IOException e) {
-        	throw new ReportableError(
-            		r.getString(R.string.error_file_read, orgPath),
-            		e);
+        catch (Exception e) {
+            throw new ReportableError(
+                                      r.getString(R.string.dropbox_fetch_error, orgPath, e.toString()),
+                                      null);
         }
-        return fileContents;
+        Log.i(LT, "Finished downloading");
+        if (fd == null || fd.is == null) {
+            throw new ReportableError(r.getString(R.string.dropbox_fetch_error, orgPath, "Error downloading file"),
+                                      null);
+        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(fd.is));
+        return reader;
     }
 
     private void appendDropboxFile(String file, String content) throws ReportableError {
         String pathActual = this.getRootPath();
-        String originalContent = this.fetchOrgFile(pathActual + file);
+        String originalContent = this.fetchOrgFileString(pathActual + file);
         String newContent = "";
         if (originalContent.indexOf("{\"error\":") == -1)
             newContent = originalContent + "\n" + content;
@@ -299,7 +238,7 @@ public class DropboxSynchronizer extends Synchronizer {
 	            return true;
 	        }
     	}
-    	showToast("Failed user authentication for stored login tokens.");
+    	showToast("Failed user authentication for stored login tokens.  Go to 'Configure Synchronizer Settings' and make sure you are logged in");
     	setLoggedIn(false);
     	return false;
     }

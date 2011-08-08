@@ -8,10 +8,10 @@
         android:entries="@array/fileSources"
         android:entryValues="@array/fileSourcesVals"
         android:defaultValue="webdav" />
-     <com.matburt.mobileorg.SynchronizerPreferences
+     <com.matburt.mobileorg.Settings.SynchronizerPreferences
                 android:key="syncPref"
                 android:defaultValue="32"
-                android:title="Custom Preference" /> 
+                android:title="Custom Preference" />
 	 <CheckBoxPreference
 		 android:key="doAutoSync"
 		 android:title="@string/title_do_auto_sync"
@@ -49,7 +49,7 @@
     <PreferenceScreen
         android:key="VersionDisp"
         android:title="Version"
-        android:summary="0.5.2">
+        android:summary="0.6.1">
     </PreferenceScreen>
   </PreferenceCategory>
 </PreferenceScreen>

@@ -1,30 +1,22 @@
 package com.matburt.mobileorg;
 
-import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.content.Context;
 import android.content.SharedPreferences;
-import android.net.Uri;
+import android.content.res.Resources;
+import android.os.Environment;
 import android.os.IBinder;
-import android.text.format.Time;
-import android.util.Log;
-import android.widget.RemoteViews;
-import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import android.widget.RemoteViews;
+import com.matburt.mobileorg.Parsing.Node;
+import com.matburt.mobileorg.Parsing.OrgFileParser;
+
 import java.io.File;
+import java.util.HashMap;
 
 public class MobileOrgWidget extends AppWidgetProvider {
     private static final String LT = "MobileOrgWidget";
@@ -71,19 +63,25 @@ public class MobileOrgWidget extends AppWidgetProvider {
                 orgBasePath = fIndexFile.getParent() + "/";
             }
             else {
-                orgBasePath = "/sdcard/mobileorg/";
+                orgBasePath = Environment.getExternalStorageDirectory().getAbsolutePath() +
+                              "/mobileorg/";
             }
 
-            OrgFileParser ofp = new OrgFileParser(allOrgList, storageMode,
+            OrgFileParser ofp = new OrgFileParser(allOrgList,
+                                                  storageMode, userSynchro,
                                                   this.appdb, orgBasePath);
             ofp.parse();
             Node agendaNode = ofp.rootNode.findChildNode("agendas.org");
-            Node todoNode = agendaNode.findChildNode("ToDo: ALL");
-            String widgetBuffer = "";
-            for (int idx = 0; idx < todoNode.subNodes.size(); idx++) {
-                widgetBuffer = widgetBuffer + todoNode.subNodes.get(idx).nodeName + "\n";
+            if (agendaNode != null) {
+                Node todoNode = agendaNode.findChildNode("ToDo: ALL");
+                if (todoNode != null) {
+                    String widgetBuffer = "";
+                    for (int idx = 0; idx < todoNode.subNodes.size(); idx++) {
+                        widgetBuffer = widgetBuffer + todoNode.subNodes.get(idx).nodeName + "\n";
+                    }
+                    updateViews.setTextViewText(R.id.message, widgetBuffer);
+                }
             }
-            updateViews.setTextViewText(R.id.message, widgetBuffer);
             return updateViews;
         }
 

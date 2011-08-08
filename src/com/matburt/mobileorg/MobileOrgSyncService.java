@@ -1,19 +1,24 @@
 package com.matburt.mobileorg;
 
 import android.app.Service;
-import java.util.TimerTask;
-import java.util.Timer;
-import android.content.Intent;
-import android.os.IBinder;
-import android.util.Log;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import java.util.Date;
-import java.util.HashMap;
-import java.io.File;
-import java.util.Collections;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Environment;
+import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import com.matburt.mobileorg.Error.ErrorReporter;
+import com.matburt.mobileorg.Error.ReportableError;
+import com.matburt.mobileorg.Parsing.Node;
+import com.matburt.mobileorg.Parsing.OrgFileParser;
+import com.matburt.mobileorg.Synchronizers.DropboxSynchronizer;
+import com.matburt.mobileorg.Synchronizers.SDCardSynchronizer;
+import com.matburt.mobileorg.Synchronizers.Synchronizer;
+import com.matburt.mobileorg.Synchronizers.WebDAVSynchronizer;
+
+import java.io.File;
+import java.util.*;
 
 public class MobileOrgSyncService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener{
 	private Timer timer = new Timer();
@@ -50,7 +55,7 @@ public class MobileOrgSyncService extends Service implements SharedPreferences.O
 	public void startTimer() {
 		if(!this.timerScheduled) {
 			boolean doAutoSync = this.appSettings.getBoolean("doAutoSync", false);
-			if(doAutoSync) {
+			if(doAutoSync) { //This may can be removed since we are checking this at a higher level
 				String intervalStr = this.appSettings.getString("autoSyncInterval", "1800000");
 				int interval = Integer.parseInt(intervalStr, 10);
 				
@@ -162,11 +167,13 @@ public class MobileOrgSyncService extends Service implements SharedPreferences.O
             orgBasePath = fIndexFile.getParent() + "/";
         }
         else {
-            orgBasePath = "/sdcard/mobileorg/";
+            orgBasePath = Environment.getExternalStorageDirectory().getAbsolutePath() +
+                          "/mobileorg/";
         }
 
         OrgFileParser ofp = new OrgFileParser(allOrgList,
                                               storageMode,
+                                              userSynchro,
                                               appdb,
                                               orgBasePath);
         try {

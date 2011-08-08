@@ -1,28 +1,20 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.Parsing;
 
-import java.util.Map;
+import android.content.ContentValues;
+import android.os.Environment;
+import android.util.Log;
+import com.matburt.mobileorg.MobileOrgDatabase;
+
+import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Stack;
-import java.util.EmptyStackException;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.io.FileInputStream;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import android.text.TextUtils;
-import android.util.Log;
-import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import java.util.regex.Pattern;
 
-class OrgFileParser {
+public class OrgFileParser {
 
 	class TitleComponents {
 		String title = "";
@@ -34,20 +26,24 @@ class OrgFileParser {
     HashMap<String, String> orgPaths;
     ArrayList<Node> nodeList = new ArrayList<Node>();
     String storageMode = null;
+    String userSynchro = null;
     Pattern titlePattern = null;
     FileInputStream fstream;
-    Node rootNode = new Node("", Node.HEADING);
+    public Node rootNode = new Node("");
     MobileOrgDatabase appdb;
 	ArrayList<HashMap<String, Integer>> todos = null;
     public static final String LT = "MobileOrg";
-    public String orgDir = "/sdcard/mobileorg/";
+    public String orgDir = Environment.getExternalStorageDirectory() +
+                           "/mobileorg/";
 
-    OrgFileParser(HashMap<String, String> orgpaths,
-                  String storageMode,
-                  MobileOrgDatabase appdb,
-                  String orgBasePath) {
+    public OrgFileParser(HashMap<String, String> orgpaths,
+                         String storageMode,
+                         String userSynchro,
+                         MobileOrgDatabase appdb,
+                         String orgBasePath) {
         this.appdb = appdb;
         this.storageMode = storageMode;
+        this.userSynchro = userSynchro;
         this.orgPaths = orgpaths;
         this.orgDir = orgBasePath;
         this.rootNode.expanded = true;
@@ -120,11 +116,9 @@ class OrgFileParser {
         return newTitle;
     }
 
-    public long createEntry(String heading, int nodeType,
-                            String content, long parentId) {
-        ContentValues recValues = new ContentValues(); 
+    public long createEntry(String heading, String content, long parentId) {
+        ContentValues recValues = new ContentValues();
         recValues.put("heading", heading);
-        recValues.put("type", nodeType);
         recValues.put("content", content);
         recValues.put("parentid", parentId);
         return this.appdb.appdb.insert("data", null, recValues);
@@ -151,33 +145,35 @@ class OrgFileParser {
 
     public void parse(Node fileNode, BufferedReader breader)
     {
+        Pattern editTitlePattern =
+            Pattern.compile("F\\((edit:.*?)\\) \\[\\[(.*?)\\]\\[(.*?)\\]\\]");
         try
         {
 			this.todos = appdb.getTodos();
-			
+
             String thisLine;
             Stack<Node> nodeStack = new Stack();
+            Stack<Integer> starStack = new Stack();
             Pattern propertiesLine = Pattern.compile("^\\s*:[A-Z]+:");
             if(breader == null)
             {
                 breader = this.getHandle(fileNode.nodeName);
             }
             nodeStack.push(fileNode);
-            int nodeDepth = 0;
+            starStack.push(0);
 
             while ((thisLine = breader.readLine()) != null) {
                 int numstars = 0;
-
-                if (thisLine.length() < 1)
+                Matcher editm = editTitlePattern.matcher(thisLine);
+                if (thisLine.length() < 1 || editm.find())
                     continue;
-
                 if (thisLine.charAt(0) == '#') {
                     if (thisLine.indexOf("#+TITLE:") != -1) {
                         fileNode.altNodeTitle = thisLine.substring(
-                                     thisLine.indexOf("#+TITLE: ") + 9);
+                             thisLine.indexOf("#+TITLE:") + 8).trim();
+
                     }
                 }
-
                 for (int idx = 0; idx < thisLine.length(); idx++) {
                     if (thisLine.charAt(idx) != '*') {
                         break;
@@ -193,13 +189,12 @@ class OrgFileParser {
                 if (numstars > 0) {
                     String title = thisLine.substring(numstars+1);
                     TitleComponents titleComp = parseTitle(this.stripTitle(title));
-                    Node newNode = new Node(titleComp.title,
-                                            Node.HEADING);
+                    Node newNode = new Node(titleComp.title);
                     newNode.setFullTitle(this.stripTitle(title));
                     newNode.todo = titleComp.todo;
                     newNode.priority = titleComp.priority;
-                    newNode.tags.addAll(titleComp.tags);
-                    if (numstars > nodeDepth) {
+                    newNode.setTags(titleComp.tags);
+                    if (numstars > starStack.peek()) {
                         try {
                             Node lastNode = nodeStack.peek();
                             newNode.setParentNode(lastNode);
@@ -209,19 +204,22 @@ class OrgFileParser {
                         } catch (EmptyStackException e) {
                         }
                         nodeStack.push(newNode);
-                        nodeDepth++;
+                        starStack.push(numstars);
                     }
-                    else if (numstars == nodeDepth) {
+                    else if (numstars == starStack.peek()) {
                         nodeStack.pop();
+                        starStack.pop();
                         nodeStack.peek().addChildNode(newNode);
                         newNode.setParentNode(nodeStack.peek());
                         newNode.nodeId = this.getNodePath(newNode);
                         newNode.addProperty("ID", newNode.nodeId);
                         nodeStack.push(newNode);
+                        starStack.push(numstars);
                     }
-                    else if (numstars < nodeDepth) {
-                        for (;numstars <= nodeDepth; nodeDepth--) {
+                    else if (numstars < starStack.peek()) {
+                        while (numstars <= starStack.peek()) {
                             nodeStack.pop();
+                            starStack.pop();
                         }
 
                         Node lastNode = nodeStack.peek();
@@ -230,7 +228,7 @@ class OrgFileParser {
                         newNode.addProperty("ID", newNode.nodeId);
                         lastNode.addChildNode(newNode);
                         nodeStack.push(newNode);
-                        nodeDepth++;
+                        starStack.push(numstars);
                     }
                 }
                 //content
@@ -280,10 +278,11 @@ class OrgFileParser {
                     lastNode.addPayload(thisLine);
                 }
             }
-            for (;nodeDepth > 0; nodeDepth--) {
+            while (starStack.peek() > 0) {
                 nodeStack.pop();
+                starStack.pop();
             }
-            fileNode.parsed = true;        
+            fileNode.parsed = true;
             breader.close();
         }
         catch (IOException e) {
@@ -304,9 +303,7 @@ class OrgFileParser {
                key.endsWith(".pgp") ||
                key.endsWith(".enc"))
             {
-                Node nnode = new Node(key,
-                                      Node.HEADING,
-                                      true);
+                Node nnode = new Node(key, true);
                 nnode.altNodeTitle = altName;
                 nnode.setParentNode(nodeStack.peek());
                 nnode.addProperty("ID", this.getNodePath(nnode));
@@ -314,9 +311,7 @@ class OrgFileParser {
                 continue;
             }
 
-            Node fileNode = new Node(key,
-                                     Node.HEADING,
-                                     false);
+            Node fileNode = new Node(key, false);
             fileNode.setParentNode(nodeStack.peek());
             fileNode.addProperty("ID", this.getNodePath(fileNode));
             fileNode.altNodeTitle = altName;
@@ -370,7 +365,7 @@ class OrgFileParser {
                         awaitingNewVal = false;
                         edits.add(thisNode);
                     }
-                    
+
                     if (awaitingOldVal) {
                         thisNode.oldVal += thisLine;
                     }
@@ -389,20 +384,24 @@ class OrgFileParser {
     public BufferedReader getHandle(String filename) {
         BufferedReader breader = null;
         try {
-            if (this.storageMode == null || this.storageMode.equals("internal")) {
-                String normalized = filename.replace("/", "_");
-                this.fstream = new FileInputStream("/data/data/com.matburt.mobileorg/files/" + 
-                                                   normalized);
-            }
-            else if (this.storageMode.equals("sdcard")) {
+            // If user is sync'ing from the SDCard, read directly from that
+            // location, regardless of storage mode.
+            if ("sdcard".equals(this.userSynchro)
+                    || "sdcard".equals(this.storageMode)) {
                 String dirActual = "";
                 if (filename.equals("mobileorg.org")) {
-                    dirActual = "/sdcard/mobileorg/";
+                    dirActual = Environment.getExternalStorageDirectory().getAbsolutePath() +
+                                "/mobileorg/";
                 }
                 else {
                     dirActual = this.orgDir;
                 }
                 this.fstream = new FileInputStream(dirActual + filename);
+            }
+            else if (this.storageMode == null || this.storageMode.equals("internal")) {
+                String normalized = filename.replace("/", "_");
+                this.fstream = new FileInputStream("/data/data/com.matburt.mobileorg/files/" +
+                                                   normalized);
             }
             else {
                 Log.e(LT, "[Parse] Unknown storage mechanism: " + this.storageMode);

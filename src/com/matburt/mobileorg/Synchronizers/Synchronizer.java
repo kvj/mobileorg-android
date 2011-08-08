@@ -1,20 +1,5 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.Synchronizers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -22,38 +7,115 @@ import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+import com.matburt.mobileorg.Error.ReportableError;
+import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.R;
 
-abstract class Synchronizer
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+abstract public class Synchronizer
 {
     public MobileOrgDatabase appdb = null;
     public SharedPreferences appSettings = null;
     public Context rootContext = null;
     public static final String LT = "MobileOrg";
     public Resources r;
+    final private int BUFFER_SIZE = 23 * 1024;
 
-    abstract void pull() throws NotFoundException, ReportableError;
-    abstract void push() throws NotFoundException, ReportableError;
-    abstract boolean checkReady();
+    public abstract void pull() throws NotFoundException, ReportableError;
+    public abstract void push() throws NotFoundException, ReportableError;
+    public abstract boolean checkReady();
 
-    void close() {
+    public void close() {
         if (this.appdb != null)
             this.appdb.close();
     }
 
-    BufferedWriter getWriteHandle(String localRelPath) {
+    public BufferedReader fetchOrgFile(String orgPath) throws NotFoundException, ReportableError{
+        return null;
+    }
+
+    public void fetchAndSaveOrgFile(String orgPath, String destPath) throws ReportableError {
+        BufferedReader reader = this.fetchOrgFile(orgPath);
+        BufferedWriter writer = this.getWriteHandle(destPath);
+
+        if (writer == null) {
+            throw new ReportableError(
+                    r.getString(R.string.error_file_write, destPath),
+                    null);
+        }
+
+
+        if (reader == null) {
+            throw new ReportableError(
+                    r.getString(R.string.error_file_read, orgPath),
+                    null);
+        }
+
+        char[] baf = new char[BUFFER_SIZE];
+        int actual = 0;
+        try {
+            while (actual != -1) {
+                writer.write(baf, 0, actual);
+                actual = reader.read(baf, 0, BUFFER_SIZE);
+            }
+            writer.close();
+        }
+        catch (java.io.IOException e) {
+            throw new ReportableError(
+                           r.getString(R.string.error_file_write,
+                                       orgPath),
+                           e);
+
+        }
+    }
+
+    public String fetchOrgFileString(String orgPath) throws ReportableError {
+        BufferedReader reader = this.fetchOrgFile(orgPath);
+        if (reader == null) {
+            return "";
+        }
+        String fileContents = "";
+        String thisLine = "";
+        try {
+            while ((thisLine = reader.readLine()) != null) {
+                fileContents += thisLine + "\n";
+            }
+        }
+        catch (java.io.IOException e) {
+               throw new ReportableError(
+                       r.getString(R.string.error_file_read, orgPath),
+                       e);
+        }
+        return fileContents;
+    }
+
+    BufferedWriter getWriteHandle(String localRelPath) throws ReportableError {
         String storageMode = this.appSettings.getString("storageMode", "");
         BufferedWriter writer = null;
         if (storageMode.equals("internal") || storageMode == null) {
             FileOutputStream fs;
             try {
-                fs = this.rootContext.openFileOutput(localRelPath, Context.MODE_APPEND);
+                String normalized = localRelPath.replace("/", "_");
+                fs = this.rootContext.openFileOutput(normalized, Context.MODE_PRIVATE);
                 writer = new BufferedWriter(new OutputStreamWriter(fs));
             }
             catch (java.io.FileNotFoundException e) {
                 Log.e(LT, "Caught FNFE trying to open file " + localRelPath);
+                throw new ReportableError(
+                        r.getString(R.string.error_file_not_found,
+                                    localRelPath),
+                        e);
             }
             catch (java.io.IOException e) {
                 Log.e(LT, "IO Exception initializing writer on file " + localRelPath);
+                throw new ReportableError(
+                        r.getString(R.string.error_file_not_found, localRelPath),
+                        e);
             }
         }
         else if (storageMode.equals("sdcard")) {
@@ -63,21 +125,29 @@ abstract class Synchronizer
                 morgDir.mkdir();
                 if (morgDir.canWrite()){
                     File orgFileCard = new File(morgDir, localRelPath);
-                    FileWriter orgFWriter = new FileWriter(orgFileCard, true);
+                    FileWriter orgFWriter = new FileWriter(orgFileCard, false);
                     writer = new BufferedWriter(orgFWriter);
                 }
                 else {
                     Log.e(LT, "Write permission denied on " + localRelPath);
-                    return null;
+                    throw new ReportableError(
+                            r.getString(R.string.error_file_permissions,
+                                        morgDir.getAbsolutePath()),
+                            null);
                 }
             } catch (java.io.IOException e) {
                 Log.e(LT, "IO Exception initializing writer on sdcard file: " + localRelPath);
-                return null;
+                throw new ReportableError(
+                        "IO Exception initializing writer on sdcard file",
+                        e);
             }
         }
         else {
             Log.e(LT, "Unknown storage mechanism " + storageMode);
-            return null;
+                throw new ReportableError(
+                		r.getString(R.string.error_local_storage_method_unknown,
+                                    storageMode),
+                		null);
         }
         return writer;
     }
@@ -137,7 +207,7 @@ abstract class Synchronizer
     }
 
     HashMap<String, String> getOrgFilesFromMaster(String master) {
-        Pattern getOrgFiles = Pattern.compile("\\[file:(.*?\\.(?:org|pgp|gpg|enc))\\]\\[(.*?)\\]\\]");
+        Pattern getOrgFiles = Pattern.compile("\\[file:(.*?)\\]\\[(.*?)\\]\\]");
         Matcher m = getOrgFiles.matcher(master);
         HashMap<String, String> allOrgFiles = new HashMap<String, String>();
         while (m.find()) {
@@ -164,6 +234,7 @@ abstract class Synchronizer
         Matcher m = getTodos.matcher(master);
         ArrayList<HashMap<String, Boolean>> todoList = new ArrayList<HashMap<String, Boolean>>();
         while (m.find()) {
+            String lastTodo = "";
             HashMap<String, Boolean> holding = new HashMap<String, Boolean>();
             Boolean isDone = false;
             for (int idx = 1; idx <= m.groupCount(); idx++) {
@@ -175,10 +246,14 @@ abstract class Synchronizer
                     }
                     String[] grouping = m.group(idx).split("\\s+");
                     for (int jdx = 0; jdx < grouping.length; jdx++) {
+                        lastTodo = grouping[jdx].trim();
                         holding.put(grouping[jdx].trim(),
                                     isDone);
                     }
                 }
+            }
+            if (!isDone) {
+                holding.put(lastTodo, true);
             }
             todoList.add(holding);
         }

@@ -1,58 +1,44 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.Synchronizers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.ArrayList;
-import java.lang.IllegalArgumentException;
-
+import android.content.Context;
+import android.content.res.Resources.NotFoundException;
+import android.preference.PreferenceManager;
+import android.util.Log;
+import com.matburt.mobileorg.Error.ReportableError;
+import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.R;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-
-import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.content.res.Resources.NotFoundException;
-import android.os.Environment;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import android.text.TextUtils;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.regex.Pattern;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 
 public class WebDAVSynchronizer extends Synchronizer
 {
     private boolean pushedStageFile = false;
 
-    WebDAVSynchronizer(Context parentContext) {
+    public WebDAVSynchronizer(Context parentContext) {
         this.rootContext = parentContext;
         this.r = this.rootContext.getResources();
         this.appdb = new MobileOrgDatabase((Context)parentContext);
@@ -63,46 +49,15 @@ public class WebDAVSynchronizer extends Synchronizer
     public void push() throws NotFoundException, ReportableError {
         String urlActual = this.getRootUrl() + "mobileorg.org";
         String storageMode = this.appSettings.getString("storageMode", "");
-        BufferedReader reader = null;
+        BufferedReader reader = this.getReadHandle("mobileorg.org");
         String fileContents = "";
         this.pushedStageFile = false;
-
-        if (storageMode.equals("internal") || storageMode == null) {
-            FileInputStream fs;
-            try {
-                fs = rootContext.openFileInput("mobileorg.org");
-                reader = new BufferedReader(new InputStreamReader(fs));
-            }
-            catch (java.io.FileNotFoundException e) {
-            	Log.i(LT, "Did not find mobileorg.org file, not pushing.");
-                return;
-            }
-        }
-        else if (storageMode.equals("sdcard")) {
-            try {
-                File root = Environment.getExternalStorageDirectory();
-                File morgDir = new File(root, "mobileorg");
-                File morgFile = new File(morgDir, "mobileorg.org");
-                if (!morgFile.exists()) {
-                    Log.i(LT, "Did not find mobileorg.org file, not pushing.");
-                    return;
-                }
-                FileReader orgFReader = new FileReader(morgFile);
-                reader = new BufferedReader(orgFReader);
-            }
-            catch (java.io.IOException e) {
-                throw new ReportableError(
-                		r.getString(R.string.error_file_read, "mobileorg.org"),
-                		e);
-            }
-        }
-        else {
-        	throw new ReportableError(
-        			r.getString(R.string.error_local_storage_method_unknown, storageMode),
-        			null);
-        }
-
         String thisLine = "";
+
+        if (reader == null) {
+            return;
+        }
+
         try {
             while ((thisLine = reader.readLine()) != null) {
                 fileContents += thisLine + "\n";
@@ -141,7 +96,7 @@ public class WebDAVSynchronizer extends Synchronizer
         }
 
         //Get the index org file
-        String masterStr = this.fetchOrgFile(url);
+        String masterStr = this.fetchOrgFileString(url);
         if (masterStr.equals("")) {
             throw new ReportableError(
             		r.getString(R.string.error_file_not_found, url),
@@ -155,7 +110,7 @@ public class WebDAVSynchronizer extends Synchronizer
         String urlActual = this.getRootUrl();
 
         //Get checksums file
-        masterStr = this.fetchOrgFile(urlActual + "checksums.dat");
+        masterStr = this.fetchOrgFileString(urlActual + "checksums.dat");
         HashMap<String, String> newChecksums = this.getChecksums(masterStr);
         HashMap<String, String> oldChecksums = this.appdb.getChecksums();
 
@@ -167,69 +122,15 @@ public class WebDAVSynchronizer extends Synchronizer
                 continue;
             Log.d(LT, "Fetching: " +
                   key + ": " + urlActual + masterList.get(key));
-            String fileContents = this.fetchOrgFile(urlActual +
-                                                    masterList.get(key));
-            String storageMode = this.appSettings.getString("storageMode", "");
-            BufferedWriter writer = new BufferedWriter(new StringWriter());
-
-            if (storageMode.equals("internal") || storageMode == null) {
-                FileOutputStream fs;
-                try {
-                    String normalized = masterList.get(key).replace("/", "_");
-                    fs = rootContext.openFileOutput(normalized, 0);
-                    writer = new BufferedWriter(new OutputStreamWriter(fs));
-                }
-                catch (java.io.FileNotFoundException e) {
-                	throw new ReportableError(
-                    		r.getString(R.string.error_file_not_found, key),
-                    		e);
-                }
-            }
-            else if (storageMode.equals("sdcard")) {
-
-                try {
-                    File root = Environment.getExternalStorageDirectory();
-                    File morgDir = new File(root, "mobileorg");
-                    morgDir.mkdir();
-                    if (morgDir.canWrite()){
-                        File orgFileCard = new File(morgDir, masterList.get(key));
-                        File orgDirCard = orgFileCard.getParentFile();
-                        orgDirCard.mkdirs();
-                        FileWriter orgFWriter = new FileWriter(orgFileCard);
-                        writer = new BufferedWriter(orgFWriter);
-                    }
-                    else {
-                        throw new ReportableError(
-                        		r.getString(R.string.error_file_permissions, morgDir.getAbsolutePath()),
-                        		null);
-                    }
-                } catch (java.io.IOException e) {
-                    throw new ReportableError(
-                    		"IO Exception initializing writer on sdcard file",
-                    		e);
-                }
-            }
-            else {
-                throw new ReportableError(
-                		r.getString(R.string.error_local_storage_method_unknown, storageMode),
-                		null);
-            }
-
-            try {
-            	writer.write(fileContents);
-            	this.appdb.addOrUpdateFile(masterList.get(key), key, newChecksums.get(key));
-                writer.flush();
-                writer.close();
-            }
-            catch (java.io.IOException e) {
-                throw new ReportableError(
-                		r.getString(R.string.error_file_write, masterList.get(key)),
-                		e);
-            }
+            this.fetchAndSaveOrgFile(urlActual + masterList.get(key),
+                                     masterList.get(key));
+            this.appdb.addOrUpdateFile(masterList.get(key),
+                                       key,
+                                       newChecksums.get(key));
         }
     }
 
-    private String fetchOrgFile(String orgUrl) throws NotFoundException, ReportableError {
+    public BufferedReader fetchOrgFile(String orgUrl) throws NotFoundException, ReportableError {
         DefaultHttpClient httpC = this.createConnection(
                                     this.appSettings.getString("webUser", ""),
                                     this.appSettings.getString("webPass", ""));
@@ -242,21 +143,10 @@ public class WebDAVSynchronizer extends Synchronizer
                     r.getString(R.string.error_invalid_url, orgUrl),
                     e);
         }
-
-        String masterStr = "";
-        try {
-            if (mainFile == null) {
-                Log.w(LT, "Stream is null");
-                return "";
-            }
-            masterStr = this.ReadInputStream(mainFile);
+        if (mainFile == null) {
+            return null;
         }
-        catch (IOException e) {
-            throw new ReportableError(
-            		r.getString(R.string.error_url_fetch, orgUrl),
-            		e);
-        }
-        return masterStr;
+        return new BufferedReader(new InputStreamReader(mainFile));
     }
 
     private String getRootUrl() throws NotFoundException, ReportableError {
@@ -314,6 +204,12 @@ public class WebDAVSynchronizer extends Synchronizer
         try {
             HttpResponse res = httpClient.execute(new HttpGet(url));
             StatusLine status = res.getStatusLine();
+            if (status.getStatusCode() == 401) {
+                throw new ReportableError(r.getString(R.string.error_url_fetch_detail,
+                                                      url,
+                                                      "Invalid username or password"),
+                                          null);
+            }
             if (status.getStatusCode() == 404) {
                 return null;
             }
@@ -369,11 +265,11 @@ public class WebDAVSynchronizer extends Synchronizer
         			e);
         }
     }
-    
+
     private void appendUrlFile(String url,
     							DefaultHttpClient httpClient,
     							String content) throws NotFoundException, ReportableError {
-    	String originalContent = this.fetchOrgFile(url);
+    	String originalContent = this.fetchOrgFileString(url);
     	String newContent = originalContent + '\n' + content;
     	this.putUrlFile(url, httpClient, newContent);
     }

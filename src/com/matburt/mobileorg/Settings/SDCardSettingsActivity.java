@@ -1,11 +1,10 @@
-package com.matburt.mobileorg;
-import android.app.Activity;
-import android.content.SharedPreferences;
+package com.matburt.mobileorg.Settings;
+
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.Preference.OnPreferenceClickListener;
-import android.widget.Toast;
+import android.preference.Preference;
+import android.util.Log;
+import com.matburt.mobileorg.R;
 
 public class SDCardSettingsActivity extends PreferenceActivity
 {

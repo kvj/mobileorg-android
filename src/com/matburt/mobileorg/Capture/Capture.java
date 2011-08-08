@@ -1,24 +1,21 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.Capture;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.widget.EditText;
-import android.widget.Button;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.preference.PreferenceManager;
-import android.content.Context;
+import android.widget.Button;
+import android.widget.EditText;
+import com.matburt.mobileorg.MobileOrgApplication;
+import com.matburt.mobileorg.R;
 
 public class Capture extends Activity implements OnClickListener
 {
     private EditText orgEditDisplay;
     private Button saveButton;
+    private Button advancedButton;
     private boolean editMode = false;
     private String id = null;
     private String editType = null;
@@ -34,8 +31,10 @@ public class Capture extends Activity implements OnClickListener
         setContentView(R.layout.simpleedittext);
         this.noteCreator = new CreateEditNote(this);
         this.saveButton = (Button)this.findViewById(R.id.captureSave);
+        this.advancedButton = (Button)this.findViewById(R.id.captureAdvanced);
         this.orgEditDisplay = (EditText)this.findViewById(R.id.orgEditTxt);
         this.saveButton.setOnClickListener(this);
+        this.advancedButton.setOnClickListener(this);
         this.populateDisplay();
     }
 
@@ -51,29 +50,36 @@ public class Capture extends Activity implements OnClickListener
         if (this.orgEditDisplay.getText().toString().length() > 0) {
             if (this.editType == null) {
                 this.noteCreator.writeNewNote(this.orgEditDisplay.getText().toString());
-            } else {
-                this.noteCreator.editNote(this.editType,
-                                          this.id,
-                                          this.nodeTitle,
-                                          this.srcText,
-                                          this.orgEditDisplay.getText().toString());
             }
         }
-
-        //triggers a refresh of the main display
-        this.appinst.rootNode = null;
+        Intent result = new Intent();
+        result.putExtra("text", this.orgEditDisplay.getText().toString());
+        this.setResult(RESULT_OK, result);
         this.finish();
         return true;
     }
 
     public void onClick(View v) {
-        if (!this.onSave()) {
-            Log.e(LT, "Failed to save file");
+        if (v == this.advancedButton) {
+            Log.i(LT, "Advanced");
+            Intent advancedIntent = new Intent(this, ViewNodeDetailsActivity.class);
+            advancedIntent.putExtra("actionMode", "create");
+            startActivity(advancedIntent);
+            this.finish();
+        }
+        else if (v == this.saveButton) {
+            if (!this.onSave()) {
+                Log.e(LT, "Failed to save file");
+            }
         }
     }
 
     public void populateDisplay() {
         Intent txtIntent = getIntent();
+        String actionMode =  txtIntent.getStringExtra("actionMode");
+        if (actionMode == null) {
+            this.advancedButton.setVisibility(View.GONE);
+        }
         this.srcText = txtIntent.getStringExtra("txtValue");
 		if((this.srcText == null || this.srcText.length() == 0) &&
 		   txtIntent != null) {
@@ -91,7 +97,7 @@ public class Capture extends Activity implements OnClickListener
 			}
 
 			if(text.startsWith("http")) {
-				this.srcText = "[["+text+"]["+subject+"]]";
+				this.srcText = "[["+text.trim()+"]["+subject.trim()+"]]";
 			} else {
 				this.srcText = subject + text;
 			}

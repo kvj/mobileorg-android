@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.matburt.mobileorg"
-      android:versionCode="52"
-      android:versionName="0.5.2">
-  <uses-sdk android:minSdkVersion="3"/>
+      android:versionCode="61"
+      android:versionName="0.6.1">
+  <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4"/>
+
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <application android:name=".MobileOrgApplication"
                android:label="MobileOrg"
-               android:icon="@drawable/icon">
+               android:icon="@drawable/icon" android:debuggable="true">
     <receiver android:name=".MobileOrgWidget"
               android:label="MobileOrg Tasks">
       <intent-filter>
@@ -36,22 +37,22 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-    <activity android:name="SettingsActivity"
+    <activity android:name=".Settings.SettingsActivity"
               android:label="MobileOrg Settings">
     </activity>
-    <activity android:name="DropboxAuthActivity"
+    <activity android:name=".Synchronizers.DropboxAuthActivity"
               android:label="Dropbox Authentication">
     </activity>
     <activity android:name="SimpleTextDisplay"
               android:label="Org View">
     </activity>
-    <activity android:name="EditDetailsActivity"
+    <activity android:name=".Capture.EditDetailsActivity"
               android:label="TODO State Selection">
     </activity>
     <activity android:name="OrgContextMenu"
               android:label="OrgMenu">
     </activity>
-    <activity android:name="Capture"
+    <activity android:name=".Capture.Capture"
               android:label="Org Capture"
               android:windowSoftInputMode="adjustResize"
               android:exported="true">
@@ -66,14 +67,15 @@
 		<data android:mimeType="text/*" />
 	  </intent-filter>
     </activity>
-    <activity android:name="WebDAVSettingsActivity"
+    <activity android:name=".Settings.WebDAVSettingsActivity"
               android:label="WebDAV Settings">
     </activity>
-    <activity android:name="SDCardSettingsActivity"
+    <activity android:name=".Settings.SDCardSettingsActivity"
               android:label="SDCard Settings">
     </activity>
-    <activity android:name="DropboxSettingsActivity"
+    <activity android:name=".Settings.DropboxSettingsActivity"
               android:label="Dropbox Settings">
     </activity>
-  </application>
+  <activity android:name=".Capture.ViewNodeDetailsActivity" android:windowSoftInputMode="adjustPan"></activity>
+</application>
 </manifest>

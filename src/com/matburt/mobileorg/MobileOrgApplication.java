@@ -1,24 +1,34 @@
 package com.matburt.mobileorg;
 
 import android.app.Application;
-import java.util.ArrayList;
-import java.util.List;
-import java.lang.String;
-import java.io.File;
-import android.util.Log;
-import android.os.Environment;
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageItemInfo;
 import android.content.pm.ResolveInfo;
+import android.os.Environment;
+import android.util.Log;
+import com.matburt.mobileorg.Parsing.EditNode;
+import com.matburt.mobileorg.Parsing.Node;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MobileOrgApplication extends Application {
     public Node rootNode = null;
     public ArrayList<Integer> nodeSelection;
     public ArrayList<EditNode> edits;
     public static final String SYNCHRONIZER_PLUGIN_ACTION = "com.matburt.mobileorg.SYNCHRONIZE";
-    public static final String LT = "MobileOrg";
+    protected Context mContext;
+	public static final String LT = "MobileOrg";
 
+    public void setSelection(ArrayList<Integer> selection) {
+        nodeSelection = selection;
+    }
+
+    public void setContext(Context context) {
+        mContext = context;
+    }
     public void pushSelection(int selectedNode)
     {
         if (nodeSelection == null) {
@@ -29,19 +39,59 @@ public class MobileOrgApplication extends Application {
 
     public void popSelection()
     {
-        if (nodeSelection.size() > 0)
+        if (this.nodeSelection != null && this.nodeSelection.size() > 0)
             this.nodeSelection.remove(nodeSelection.size()-1);
+    }
+    
+    public int lastIndex() {
+        if (this.nodeSelection != null && this.nodeSelection.size() > 0)
+            return this.nodeSelection.get(nodeSelection.size()-1);
+    	return 0;
     }
 
     public Node getSelectedNode()
     {
-        Node thisNode = rootNode;
-        if (nodeSelection != null) {
-            for (int idx = 0; idx < nodeSelection.size(); idx++) {
-                thisNode = thisNode.subNodes.get(nodeSelection.get(idx));
+    	return getNode(this.nodeSelection);
+    }
+
+    /**
+     * Convenience function for retrieving a node based on a path from the root node.
+     * @param path ArrayList of integers representing the indexes
+     * @return node
+     */
+    public Node getNode(ArrayList<Integer> path) {
+    	return getNode(path, path.size());
+    }
+    public Node getParent(ArrayList<Integer> path) {
+    	return getNode(path, path.size() - 1);
+	}
+    
+    public Node getNode(ArrayList<Integer> path, int count) {
+    	Node thisNode = rootNode;
+    	if (path != null) {
+    		for (int idx = 0; idx < count; idx++) {
+    			thisNode = thisNode.subNodes.get(path.get(idx));
+    		}
+    	}
+    	return thisNode;
+    }
+    
+    public ArrayList<EditNode> findEdits(String nodeId) {
+        ArrayList<EditNode> thisEdits = new ArrayList<EditNode>();
+        if (this.edits == null)
+            return thisEdits;
+        for (int idx = 0 ; idx < this.edits.size(); idx++)
+            {
+                String compareS = "";
+                if (nodeId.indexOf("olp:") == 0)
+                    compareS = "olp:" + this.edits.get(idx).nodeId;
+                else
+                    compareS = this.edits.get(idx).nodeId;
+                if (compareS.equals(nodeId)) {
+                    thisEdits.add(this.edits.get(idx));
+                }
             }
-        }
-        return thisNode;
+        return thisEdits;
     }
 
     static String getStorageFolder()
@@ -51,7 +101,7 @@ public class MobileOrgApplication extends Application {
         return morgDir.getAbsolutePath() + "/";
     }
 
-    static List<PackageItemInfo> discoverSynchronizerPlugins(Context context)
+    public static List<PackageItemInfo> discoverSynchronizerPlugins(Context context)
     {
         Intent discoverSynchro = new Intent(SYNCHRONIZER_PLUGIN_ACTION);
         List<ResolveInfo> packages = context.getPackageManager().queryIntentActivities(discoverSynchro,0);
@@ -66,4 +116,6 @@ public class MobileOrgApplication extends Application {
         }
         return out;
     }
+
+	
 }
