@@ -5,7 +5,4 @@ bin
 local.properties
 matburt-key.keystore
 dbprivate.xml
-.classpath
-.project
 eproject.cfg
-dropbox.xml
