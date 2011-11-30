@@ -7,9 +7,11 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
-import com.dropbox.client.DropboxAPI;
-import com.dropbox.client.DropboxAPI.Config;
-import com.dropbox.client.DropboxAPI.FileDownload;
+
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.DropboxInputStream;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.exception.DropboxException;
 import com.matburt.mobileorg.Error.ReportableError;
 import com.matburt.mobileorg.MobileOrgDatabase;
 import com.matburt.mobileorg.R;
@@ -22,16 +24,16 @@ import java.util.HashSet;
 public class DropboxSynchronizer extends Synchronizer {
     private boolean hasToken = false;
 
-    private DropboxAPI api = new DropboxAPI();
-    private Config dbConfig;
+    private AndroidAuthSession session = null;
+    private DropboxAPI<AndroidAuthSession> api = null;
 
     public DropboxSynchronizer(Context parentContext) {
+        session = DropboxAuthActivity.createSession(parentContext);
+        api = new DropboxAPI<AndroidAuthSession>(session);
         this.rootContext = parentContext;
-        this.r = this.rootContext.getResources();
         this.appdb = new MobileOrgDatabase((Context)parentContext);
         this.appSettings = PreferenceManager.getDefaultSharedPreferences(
                                       parentContext.getApplicationContext());
-        this.connect();
     }
 
     public void push() throws NotFoundException, ReportableError {
@@ -117,9 +119,9 @@ public class DropboxSynchronizer extends Synchronizer {
 
     public BufferedReader fetchOrgFile(String orgPath) throws NotFoundException, ReportableError {
         Log.i(LT, "Downloading " + orgPath);
-        FileDownload fd;
+        DropboxInputStream fd;
         try {
-            fd = api.getFileStream("dropbox", orgPath, null);
+            fd = api.getFileStream("dropbox", orgPath);
         }
         catch (Exception e) {
             throw new ReportableError(
@@ -127,11 +129,11 @@ public class DropboxSynchronizer extends Synchronizer {
                                       null);
         }
         Log.i(LT, "Finished downloading");
-        if (fd == null || fd.is == null) {
+        if (fd == null ) {
             throw new ReportableError(r.getString(R.string.dropbox_fetch_error, orgPath, "Error downloading file"),
                                       null);
         }
-        BufferedReader reader = new BufferedReader(new InputStreamReader(fd.is));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(fd));
         return reader;
     }
 
@@ -160,22 +162,13 @@ public class DropboxSynchronizer extends Synchronizer {
         }
 
         File uploadFile = this.getFile("mobileorg.org");
-        this.api.putFile("dropbox", pathActual, uploadFile);
+        try {
+			this.api.putFile(pathActual, new FileInputStream(uploadFile), uploadFile.length(), null, null);
+		} catch (Exception e) {
+			Log.e(LT, "Error uploading file:", e);
+			throw new ReportableError("There was an error uploading file", e);
+		}
         this.removeFile("mobileorg.org");
-        // NOTE: Will need to download and compare file since dropbox api sucks and won't
-        //       return the status code
-        // if (something) {
-        //     this.appdb.removeFile("mobileorg.org");
-        //     if (storageMode.equals("internal") || storageMode == null) {
-        //         this.rootContext.deleteFile("mobileorg.org");
-        //     }
-        //     else if (storageMode.equals("sdcard")) {
-        //         File root = Environment.getExternalStorageDirectory();
-        //         File morgDir = new File(root, "mobileorg");
-        //         File morgFile = new File(morgDir, "mobileorg.org");
-        //         morgFile.delete();
-        //     }
-        // }
     }
 
     public File getFile(String fileName) throws ReportableError {
@@ -202,63 +195,11 @@ public class DropboxSynchronizer extends Synchronizer {
         }
     }
 
-    public void connect() {
-        String[] keys = getKeys();
-        if (keys != null) {
-        	setLoggedIn(true);
-        	Log.i(LT, "Logged in to Dropbox already");
-        } else {
-        	setLoggedIn(false);
-        	Log.i(LT, "Not logged in to Dropbox");
-        }
-
-        if (!authenticate()) {
-            Log.e(LT,"Could not authenticate with Dropbox");
-        }
-    }
-
     public void showToast(String msg) {
         Toast error = Toast.makeText(this.rootContext, msg, Toast.LENGTH_LONG);
         error.show();
     }
 
-    /**
-     * This handles authentication if the user's token & secret
-     * are stored locally, so we don't have to store user-name & password
-     * and re-send every time.
-     */
-    protected boolean authenticate() {
-    	if (dbConfig == null) {
-    		dbConfig = getConfig();
-    	}
-    	String keys[] = getKeys();
-    	if (keys != null) {
-	        dbConfig = api.authenticateToken(keys[0], keys[1], dbConfig);
-	        if (dbConfig != null) {
-	            return true;
-	        }
-    	}
-    	showToast("Failed user authentication for stored login tokens.  Go to 'Configure Synchronizer Settings' and make sure you are logged in");
-    	setLoggedIn(false);
-    	return false;
-    }
-    
-    protected Config getConfig() {
-    	if (dbConfig == null) {
-	    	dbConfig = api.getConfig(null, false);
-	    	dbConfig.consumerKey=r.getString(R.string.dropbox_consumer_key, "invalid");
-	    	dbConfig.consumerSecret=r.getString(R.string.dropbox_consumer_secret, "invalid");
-	    	dbConfig.server="api.dropbox.com";
-	    	dbConfig.contentServer="api-content.dropbox.com";
-	    	dbConfig.port=80;
-    	}
-    	return dbConfig;
-    }
-    
-    public void setConfig(Config conf) {
-    	dbConfig = conf;
-    }
-    
     /**
      * Shows keeping the access keys returned from Trusted Authenticator in a local
      * store, rather than storing user name & password, and re-authenticating each

@@ -1,81 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.matburt.mobileorg"
-      android:versionCode="62"
-      android:versionName="0.6.2">
-  <uses-sdk android:minSdkVersion="3" android:targetSdkVersion="4"/>
+    package="com.matburt.mobileorg"
+    android:versionCode="62"
+    android:versionName="0.6.2" >
 
-  <uses-permission android:name="android.permission.INTERNET"/>
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-  <application android:name=".MobileOrgApplication"
-               android:label="MobileOrg"
-               android:icon="@drawable/icon" android:debuggable="true">
-    <receiver android:name=".MobileOrgWidget"
-              android:label="MobileOrg Tasks">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider"
-                 android:resource="@xml/widget_mobileorg" />
-    </receiver>
-    <service android:name=".MobileOrgWidget$MobileOrgWidgetService" />
-	<service android:name="MobileOrgSyncService">
-	  <intent-filter>
-		<action android:name="com.matburt.mobileorg.SYNC_SERVICE" />
-	  </intent-filter>
-	</service>
-	<receiver android:name="MobileOrgStartupIntentReceiver">
-	  <intent-filter>
-		<action android:name="android.intent.action.BOOT_COMPLETED" />
-		<category android:name="android.intent.category.HOME" />
-	  </intent-filter>
-	</receiver>
-    <activity android:name="MobileOrgActivity"
-              android:label="MobileOrg">
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
-    <activity android:name=".Settings.SettingsActivity"
-              android:label="MobileOrg Settings">
-    </activity>
-    <activity android:name=".Synchronizers.DropboxAuthActivity"
-              android:label="Dropbox Authentication">
-    </activity>
-    <activity android:name="SimpleTextDisplay"
-              android:label="Org View">
-    </activity>
-    <activity android:name=".Capture.EditDetailsActivity"
-              android:label="TODO State Selection">
-    </activity>
-    <activity android:name="OrgContextMenu"
-              android:label="OrgMenu">
-    </activity>
-    <activity android:name=".Capture.Capture"
-              android:label="Org Capture"
-              android:windowSoftInputMode="adjustResize"
-              android:exported="true">
-      <intent-filter>
-        <action android:name="com.matburt.mobileorg.CAPTURE"/>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.DEFAULT" />
-      </intent-filter>
-	  <intent-filter>
-		<action android:name="android.intent.action.SEND" />
-		<category android:name="android.intent.category.DEFAULT" />
-		<data android:mimeType="text/*" />
-	  </intent-filter>
-    </activity>
-    <activity android:name=".Settings.WebDAVSettingsActivity"
-              android:label="WebDAV Settings">
-    </activity>
-    <activity android:name=".Settings.SDCardSettingsActivity"
-              android:label="SDCard Settings">
-    </activity>
-    <activity android:name=".Settings.DropboxSettingsActivity"
-              android:label="Dropbox Settings">
-    </activity>
-  <activity android:name=".Capture.ViewNodeDetailsActivity" android:windowSoftInputMode="adjustPan"></activity>
-</application>
+    <uses-sdk
+        android:minSdkVersion="3"
+        android:targetSdkVersion="4" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:debuggable="true"
+        android:icon="@drawable/icon"
+        android:label="MobileOrg"
+        android:name=".MobileOrgApplication" >
+        <receiver
+            android:label="MobileOrg Tasks"
+            android:name=".MobileOrgWidget" >
+            <intent-filter >
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mobileorg" />
+        </receiver>
+
+        <service android:name=".MobileOrgWidget$MobileOrgWidgetService" />
+        <service android:name="MobileOrgSyncService" >
+            <intent-filter >
+                <action android:name="com.matburt.mobileorg.SYNC_SERVICE" />
+            </intent-filter>
+        </service>
+
+        <receiver android:name="MobileOrgStartupIntentReceiver" >
+            <intent-filter >
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+
+                <category android:name="android.intent.category.HOME" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:label="MobileOrg"
+            android:name="MobileOrgActivity" >
+            <intent-filter >
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:label="MobileOrg Settings"
+            android:name=".Settings.SettingsActivity" >
+        </activity>
+        <activity
+            android:label="Dropbox Authentication"
+            android:name=".Synchronizers.DropboxAuthActivity" >
+        </activity>
+        <activity
+            android:label="Org View"
+            android:name="SimpleTextDisplay" >
+        </activity>
+        <activity
+            android:label="TODO State Selection"
+            android:name=".Capture.EditDetailsActivity" >
+        </activity>
+        <activity
+            android:label="OrgMenu"
+            android:name="OrgContextMenu" >
+        </activity>
+        <activity
+            android:exported="true"
+            android:label="Org Capture"
+            android:name=".Capture.Capture"
+            android:windowSoftInputMode="adjustResize" >
+            <intent-filter >
+                <action android:name="com.matburt.mobileorg.CAPTURE" />
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter >
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/*" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:label="WebDAV Settings"
+            android:name=".Settings.WebDAVSettingsActivity" >
+        </activity>
+        <activity
+            android:label="SDCard Settings"
+            android:name=".Settings.SDCardSettingsActivity" >
+        </activity>
+        <activity
+            android:label="Dropbox Settings"
+            android:name=".Settings.DropboxSettingsActivity" >
+        </activity>
+        <activity
+            android:configChanges="orientation|keyboard"
+            android:launchMode="singleTask"
+            android:name="com.dropbox.client2.android.AuthActivity" >
+            <intent-filter >
+
+                <data android:scheme="db-ax8q7hg8dkrk83v" />
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".Capture.ViewNodeDetailsActivity"
+            android:windowSoftInputMode="adjustPan" >
+        </activity>
+    </application>
+
 </manifest>
