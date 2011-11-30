@@ -13,7 +13,7 @@
 
     <application
         android:debuggable="true"
-        android:icon="@drawable/icon"
+        android:icon="@drawable/logo_72"
         android:label="MobileOrg"
         android:name=".MobileOrgApplication" >
         <service android:name=".service.DataService" />
