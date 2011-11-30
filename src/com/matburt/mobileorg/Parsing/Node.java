@@ -24,7 +24,9 @@ public class Node implements Cloneable {
     public Date deadline = null;
     public boolean encrypted = false;
     public boolean parsed = false;
+    public boolean expanded = false;
     Node parentNode = null;
+	public int level = 0;
 
     public Node() {
         this("", false);
@@ -129,4 +131,8 @@ public class Node implements Cloneable {
         noteStr += this.nodePayload + "\n\n";
         return noteStr;
     }
+
+	public int getSize() {
+		return 1;
+	}
 }

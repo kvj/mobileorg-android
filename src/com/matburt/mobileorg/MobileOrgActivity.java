@@ -377,10 +377,10 @@ public class MobileOrgActivity extends ListActivity
         if (intentNodePath != null) {
             appInst.nodeSelection = copySelection(intentNodePath);
             nodeIntent.putIntegerArrayListExtra("nodePath", null);
-            Log.d("MobileOrg"+this,  "resume first="+first+" had nodePath="+nodeSelectionStr(appInst.nodeSelection));
+            Log.d("MobileOrg"+this,  "resume had nodePath="+nodeSelectionStr(appInst.nodeSelection));
         }
         else {
-            Log.d("MobileOrg"+this,  "resume first="+first+" restoring original selection"+nodeSelectionStr(this.origSelection));
+            Log.d("MobileOrg"+this,  "resume restoring original selection"+nodeSelectionStr(this.origSelection));
             appInst.nodeSelection = copySelection(this.origSelection);
         }
         Log.d("MobileOrg"+this,  "afteResume appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
