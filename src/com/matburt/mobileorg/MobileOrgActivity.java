@@ -74,7 +74,7 @@ public class MobileOrgActivity extends ListActivity
             this.context = context;
             this.allTodos = allTodos;
 
-            Log.d("MobileOrg"+this,  "startup path="+nodeSelectionStr(selection));
+            Log.d("MobileOrg"+this,  "startup path="+nodeSelectionStr(selection)); 
             if (selection != null) {
                 for (int idx = 0; idx < selection.size(); idx++) {
                     try {
@@ -263,8 +263,8 @@ public class MobileOrgActivity extends ListActivity
     public SharedPreferences appSettings;
     OrgViewAdapter adapter = null;
     final Handler syncHandler = new Handler();
-    private ArrayList<Integer> origSelection = null;
-    private boolean first = true;
+    private ArrayList<Integer> origSelection = null; 
+    private Node rootNode = null; 
 
     final Runnable syncUpdateResults = new Runnable() {
         public void run() {
@@ -403,22 +403,30 @@ public class MobileOrgActivity extends ListActivity
             newSetupDialog.cancel();
         }
 
-        if (first) {
+        // appInst.rootNode can only be different if
+        // a) Its our first time displaying something
+        // b) It was refreshed by sync and runParser
+        if (appInst.rootNode != rootNode) {
+        	this.rootNode = appInst.rootNode;
             this.setListAdapter(new OrgViewAdapter(this,
                                                    appInst.rootNode,
                                                    appInst.nodeSelection,
                                                    appInst.edits,
                                                    this.appdb.getTodos()));
             if (appInst.nodeSelection != null) {
-                this.origSelection = copySelection(appInst.nodeSelection);
-            }
+                this.origSelection = copySelection(appInst.nodeSelection); 
+            } 
             else {
-                this.origSelection = null;
+                this.origSelection = null; 
+            } 
+        } 
+        else {
+        	/* we came back, refresh */
+        	OrgViewAdapter adapter = (OrgViewAdapter)getListView().getAdapter();
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
             }
-            Log.d("MobileOrg"+this,  " first redisplay, origSelection="+nodeSelectionStr(this.origSelection));
-
-            getListView().setSelection( displayIndex );
-            first = false;
+        	this.getListView().invalidate();
         }
 	}
 
@@ -440,37 +448,37 @@ public class MobileOrgActivity extends ListActivity
         startActivity(dispIntent);
     }
 
-    static private ArrayList<Integer> copySelection(ArrayList<Integer> selection)
+    static private ArrayList<Integer> copySelection(ArrayList<Integer> selection) 
     {
         if (selection == null)
             return null;
         else
-            return new ArrayList(selection);
-    }
+            return new ArrayList(selection); 
+    } 
 
-    static private String nodeSelectionStr(ArrayList<Integer> nodes)
+    static private String nodeSelectionStr(ArrayList<Integer> nodes) 
     {
         if (nodes != null) {
             String tmp = "";
 
             for (Integer i : nodes) {
                 if (tmp.length() > 0)
-                    tmp += ",";
-                tmp += i;
-            }
-            return tmp;
-        }
-        return "null";
-    }
+                    tmp += ","; 
+                tmp += i; 
+            } 
+            return tmp; 
+        } 
+        return "null"; 
+    } 
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         MobileOrgApplication appInst = (MobileOrgApplication)this.getApplication();
 
-        Log.d("MobileOrg"+this,  "onListItemClick position="+position);
+        Log.d("MobileOrg"+this,  "onListItemClick position="+position); 
         appInst.pushSelection(position);
         Node thisNode = appInst.getSelectedNode();
-        Log.d("MobileOrg"+this, "appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
+        Log.d("MobileOrg"+this, "appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection)); 
 
         if(thisNode.encrypted && !thisNode.parsed)
         {
@@ -502,8 +510,8 @@ public class MobileOrgActivity extends ListActivity
         }
 
         if (thisNode.subNodes.size() < 1) {
-               displayIndex = appInst.lastIndex();
-            Log.d("MobileOrg"+this,  "no subnodes, popped selection, displayIndex="+displayIndex);
+        	displayIndex = appInst.lastIndex();
+            Log.d("MobileOrg"+this,  "no subnodes, popped selection, displayIndex="+displayIndex); 
             appInst.popSelection();
             if (thisNode.todo.equals("") &&
                 thisNode.priority.equals("")) {
@@ -518,9 +526,9 @@ public class MobileOrgActivity extends ListActivity
                 Intent dispIntent = new Intent(this, ViewNodeDetailsActivity.class);
 
                 dispIntent.putExtra("actionMode", "edit");
-                Log.d("MobileOrg"+this, "Before edit appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
+                Log.d("MobileOrg"+this, "Before edit appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection)); 
                 dispIntent.putIntegerArrayListExtra("nodePath", appInst.nodeSelection);
-                Log.d("MobileOrg"+this, "After push appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
+                Log.d("MobileOrg"+this, "After push appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection)); 
                 appInst.pushSelection(position);
                 startActivity(dispIntent);
             }
