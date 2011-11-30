@@ -16,24 +16,7 @@
         android:icon="@drawable/icon"
         android:label="MobileOrg"
         android:name=".MobileOrgApplication" >
-        <receiver
-            android:label="MobileOrg Tasks"
-            android:name=".MobileOrgWidget" >
-            <intent-filter >
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_mobileorg" />
-        </receiver>
-
-        <service android:name=".MobileOrgWidget$MobileOrgWidgetService" />
-        <service android:name="MobileOrgSyncService" >
-            <intent-filter >
-                <action android:name="com.matburt.mobileorg.SYNC_SERVICE" />
-            </intent-filter>
-        </service>
+        <service android:name=".service.DataService" />
 
         <receiver android:name="MobileOrgStartupIntentReceiver" >
             <intent-filter >

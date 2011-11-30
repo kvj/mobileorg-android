@@ -1,5 +1,7 @@
 package com.matburt.mobileorg.Capture;
 
+import org.kvj.bravo7.SuperActivity;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,8 +12,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import com.matburt.mobileorg.MobileOrgApplication;
 import com.matburt.mobileorg.R;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataService;
 
-public class Capture extends Activity implements OnClickListener
+public class Capture extends SuperActivity<DataController, DataService> implements OnClickListener
 {
     private EditText orgEditDisplay;
     private Button saveButton;
@@ -25,11 +29,14 @@ public class Capture extends Activity implements OnClickListener
     private MobileOrgApplication appinst;
     public static final String LT = "MobileOrg";
 
+    public Capture() {
+		super(DataService.class);
+	}
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.simpleedittext);
-        this.noteCreator = new CreateEditNote(this);
         this.saveButton = (Button)this.findViewById(R.id.captureSave);
         this.advancedButton = (Button)this.findViewById(R.id.captureAdvanced);
         this.orgEditDisplay = (EditText)this.findViewById(R.id.orgEditTxt);
@@ -37,13 +44,11 @@ public class Capture extends Activity implements OnClickListener
         this.advancedButton.setOnClickListener(this);
         this.populateDisplay();
     }
-
+    
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (this.noteCreator != null) {
-            this.noteCreator.close();
-        }
+    public void onController(DataController controller) {
+    	super.onController(controller);
+    	noteCreator = new CreateEditNote(this, controller);
     }
 
     public boolean onSave() {

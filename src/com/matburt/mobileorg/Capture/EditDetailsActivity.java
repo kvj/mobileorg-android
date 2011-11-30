@@ -11,18 +11,24 @@ import android.view.View.OnClickListener;
 import android.widget.*;
 import android.widget.TableRow.LayoutParams;
 import com.matburt.mobileorg.MobileOrgApplication;
-import com.matburt.mobileorg.MobileOrgDatabase;
 import com.matburt.mobileorg.Parsing.Node;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class EditDetailsActivity extends Activity implements OnClickListener
+import org.kvj.bravo7.SuperActivity;
+
+public class EditDetailsActivity extends SuperActivity<DataController, DataService> implements OnClickListener
 {
-    public static final String LT = "MobileOrg";
+    public EditDetailsActivity() {
+		super(DataService.class);
+	}
+
+	public static final String LT = "MobileOrg";
     private ScrollView scrollableLayout = null;
     private TableLayout mainLayout = null;
-    private MobileOrgDatabase appdb;
     private MobileOrgApplication appinst;
     private ArrayList<Integer> npath;
     private ArrayList<Button> buttonList = null;
@@ -31,14 +37,12 @@ public class EditDetailsActivity extends Activity implements OnClickListener
     private String editType;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onController(DataController controller) {
+    	super.onController(controller);
+    	noteEditor = new CreateEditNote(this, controller);
         Intent txtIntent = getIntent();
         this.npath = txtIntent.getIntegerArrayListExtra("nodePath");
         this.editType = txtIntent.getStringExtra("editType");
-
-        this.noteEditor = new CreateEditNote(this);
-        this.appdb = new MobileOrgDatabase((Context)this);
 
         if (this.editType.indexOf("todo") != -1) {
             this.editTodo();
@@ -47,9 +51,14 @@ public class EditDetailsActivity extends Activity implements OnClickListener
             this.editPriority();
         }
     }
-
+    
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+    
     private void editPriority() {
-        ArrayList<ArrayList<String>> allPriorities = this.appdb.getPriorities();
+        ArrayList<ArrayList<String>> allPriorities = controller.getPriorities();
         this.buttonList = new ArrayList<Button>();
         mainLayout = new TableLayout(this);
         mainLayout.setLayoutParams(
@@ -88,7 +97,7 @@ public class EditDetailsActivity extends Activity implements OnClickListener
     }
 
     private void editTodo() {
-        ArrayList<HashMap<String, Integer>> allTodos = this.appdb.getTodos();
+        ArrayList<HashMap<String, Integer>> allTodos = controller.getTodos();
         this.buttonList = new ArrayList<Button>();
         scrollableLayout = new ScrollView(this);
         mainLayout = new TableLayout(this);
@@ -133,18 +142,6 @@ public class EditDetailsActivity extends Activity implements OnClickListener
         scrollableLayout.addView(mainLayout);
         setContentView(scrollableLayout);
         this.populateInfo();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (this.noteEditor != null) {
-            this.noteEditor.close();
-        }
-
-        if (this.appdb != null) {
-            this.appdb.close();
-        }
     }
 
     public void saveEditPriority(String newPriority) {

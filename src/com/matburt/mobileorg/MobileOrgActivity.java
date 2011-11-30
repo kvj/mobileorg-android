@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import org.kvj.bravo7.ControllerConnector;
+
 import android.app.Activity;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -48,6 +50,8 @@ import com.matburt.mobileorg.Synchronizers.DropboxSynchronizer;
 import com.matburt.mobileorg.Synchronizers.SDCardSynchronizer;
 import com.matburt.mobileorg.Synchronizers.Synchronizer;
 import com.matburt.mobileorg.Synchronizers.WebDAVSynchronizer;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataService;
 
 public class MobileOrgActivity extends ListActivity
 {
@@ -255,7 +259,6 @@ public class MobileOrgActivity extends ListActivity
 
     private int displayIndex;
     private ProgressDialog syncDialog;
-    private MobileOrgDatabase appdb;
     private ReportableError syncError;
     private ListView lv;
     private Dialog newSetupDialog;
@@ -265,6 +268,15 @@ public class MobileOrgActivity extends ListActivity
     final Handler syncHandler = new Handler();
     private ArrayList<Integer> origSelection = null; 
     private Node rootNode = null; 
+    DataController controller = null;
+    ControllerConnector<DataController, DataService> conn = new ControllerConnector<DataController, DataService>(this, new ControllerConnector.ControllerReceiver<DataController>() {
+
+		@Override
+		public void onController(DataController c) {
+			controller = c;
+			populateDisplay();
+		}
+	});
 
     final Runnable syncUpdateResults = new Runnable() {
         public void run() {
@@ -277,7 +289,6 @@ public class MobileOrgActivity extends ListActivity
     {
         super.onCreate(savedInstanceState);
         lv = this.getListView();
-        this.appdb = new MobileOrgDatabase((Context)this);
         appSettings = PreferenceManager.getDefaultSharedPreferences(
                                        getBaseContext());
         lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener
@@ -306,13 +317,12 @@ public class MobileOrgActivity extends ListActivity
 
     @Override
     public void onDestroy() {
-        this.appdb.close();
         super.onDestroy();
     }
 
     public void runParser() {
         MobileOrgApplication appInst = (MobileOrgApplication)this.getApplication();
-        HashMap<String, String> allOrgList = this.appdb.getOrgFiles();
+        HashMap<String, String> allOrgList = controller.getOrgFiles();
         if (allOrgList.isEmpty()) {
             return;
         }
@@ -333,7 +343,7 @@ public class MobileOrgActivity extends ListActivity
         OrgFileParser ofp = new OrgFileParser(allOrgList,
                                               storageMode,
                                               userSynchro,
-                                              this.appdb,
+                                              controller,
                                               orgBasePath);
         try {
         	ofp.parse();
@@ -385,7 +395,9 @@ public class MobileOrgActivity extends ListActivity
         }
         Log.d("MobileOrg"+this,  "afteResume appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
 
-        populateDisplay();
+        if (null != controller) {
+        	populateDisplay();
+		}
     }
 
     public void populateDisplay() {
@@ -394,7 +406,7 @@ public class MobileOrgActivity extends ListActivity
             this.runParser();
         }
 
-        HashMap<String, String> allOrgList = this.appdb.getOrgFiles();
+        HashMap<String, String> allOrgList = controller.getOrgFiles();
         if (allOrgList.isEmpty()) {
             this.showNewUserWindow();
         }
@@ -412,7 +424,7 @@ public class MobileOrgActivity extends ListActivity
                                                    appInst.rootNode,
                                                    appInst.nodeSelection,
                                                    appInst.edits,
-                                                   this.appdb.getTodos()));
+                                                   controller.getTodos()));
             if (appInst.nodeSelection != null) {
                 this.origSelection = copySelection(appInst.nodeSelection); 
             } 
@@ -576,10 +588,10 @@ public class MobileOrgActivity extends ListActivity
                               "/mobileorg/";
             }
             String decryptedData = data.getStringExtra(Encryption.EXTRA_DECRYPTED_MESSAGE);
-            OrgFileParser ofp = new OrgFileParser(appdb.getOrgFiles(),
+            OrgFileParser ofp = new OrgFileParser(controller.getOrgFiles(),
                                                   getStorageLocation(),
                                                   userSynchro,
-                                                  appdb,
+                                                  controller,
                                                   orgBasePath);
 
             ofp.parse(thisNode, new BufferedReader(new StringReader(decryptedData)));
@@ -601,13 +613,13 @@ public class MobileOrgActivity extends ListActivity
         String userSynchro = this.appSettings.getString("syncSource","");
         final Synchronizer appSync;
         if (userSynchro.equals("webdav")) {
-            appSync = new WebDAVSynchronizer(this);
+            appSync = new WebDAVSynchronizer(this, controller);
         }
         else if (userSynchro.equals("sdcard")) {
-            appSync = new SDCardSynchronizer(this);
+            appSync = new SDCardSynchronizer(this, controller);
         }
         else if (userSynchro.equals("dropbox")) {
-            appSync = new DropboxSynchronizer(this);
+            appSync = new DropboxSynchronizer(this, controller);
         }
         else {
             this.onShowSettings();
@@ -632,9 +644,6 @@ public class MobileOrgActivity extends ListActivity
                 	catch(ReportableError e) {
                 		syncError = e;
                 	}
-                    finally {
-                        appSync.close();
-                    }
                     syncHandler.post(syncUpdateResults);
             }
         };
@@ -682,5 +691,17 @@ public class MobileOrgActivity extends ListActivity
 
     public String getStorageLocation() {
         return this.appSettings.getString("storageMode", "");
+    }
+    
+    @Override
+    protected void onStart() {
+    	super.onStart();
+    	conn.connectController(DataService.class);
+    }
+    
+    @Override
+    protected void onStop() {
+    	super.onStop();
+    	conn.disconnectController();
     }
 }

@@ -1,5 +1,7 @@
 package com.matburt.mobileorg;
 
+import com.matburt.mobileorg.service.DataService;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,8 +20,7 @@ public class MobileOrgStartupIntentReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
         if (this.shouldStartService(context)) {
-            Intent serviceIntent = new Intent();
-            serviceIntent.setAction("com.matburt.mobileorg.SYNC_SERVICE");
+            Intent serviceIntent = new Intent(context, DataService.class);
             context.startService(serviceIntent);
         }
 	}

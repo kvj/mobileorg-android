@@ -5,7 +5,7 @@ import android.content.res.Resources.NotFoundException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -38,10 +38,10 @@ public class WebDAVSynchronizer extends Synchronizer
 {
     private boolean pushedStageFile = false;
 
-    public WebDAVSynchronizer(Context parentContext) {
+    public WebDAVSynchronizer(Context parentContext, DataController controller) {
         this.rootContext = parentContext;
         this.r = this.rootContext.getResources();
-        this.appdb = new MobileOrgDatabase((Context)parentContext);
+        this.controller = controller;
         this.appSettings = PreferenceManager.getDefaultSharedPreferences(
                                    parentContext.getApplicationContext());
     }
@@ -105,14 +105,14 @@ public class WebDAVSynchronizer extends Synchronizer
         HashMap<String, String> masterList = this.getOrgFilesFromMaster(masterStr);
         ArrayList<HashMap<String, Boolean>> todoLists = this.getTodos(masterStr);
         ArrayList<ArrayList<String>> priorityLists = this.getPriorities(masterStr);
-        this.appdb.setTodoList(todoLists);
-        this.appdb.setPriorityList(priorityLists);
+        controller.setTodoList(todoLists);
+        controller.setPriorityList(priorityLists);
         String urlActual = this.getRootUrl();
 
         //Get checksums file
         masterStr = this.fetchOrgFileString(urlActual + "checksums.dat");
         HashMap<String, String> newChecksums = this.getChecksums(masterStr);
-        HashMap<String, String> oldChecksums = this.appdb.getChecksums();
+        HashMap<String, String> oldChecksums = controller.getChecksums();
 
         //Get other org files
         for (String key : masterList.keySet()) {
@@ -124,7 +124,7 @@ public class WebDAVSynchronizer extends Synchronizer
                   key + ": " + urlActual + masterList.get(key));
             this.fetchAndSaveOrgFile(urlActual + masterList.get(key),
                                      masterList.get(key));
-            this.appdb.addOrUpdateFile(masterList.get(key),
+            controller.addOrUpdateFile(masterList.get(key),
                                        key,
                                        newChecksums.get(key));
         }

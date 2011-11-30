@@ -3,7 +3,7 @@ package com.matburt.mobileorg.Parsing;
 import android.content.ContentValues;
 import android.os.Environment;
 import android.util.Log;
-import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.service.DataController;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -30,7 +30,7 @@ public class OrgFileParser {
     Pattern titlePattern = null;
     FileInputStream fstream;
     public Node rootNode = new Node("");
-    MobileOrgDatabase appdb;
+    DataController controller;
 	ArrayList<HashMap<String, Integer>> todos = null;
     public static final String LT = "MobileOrg";
     public String orgDir = Environment.getExternalStorageDirectory() +
@@ -39,9 +39,9 @@ public class OrgFileParser {
     public OrgFileParser(HashMap<String, String> orgpaths,
                          String storageMode,
                          String userSynchro,
-                         MobileOrgDatabase appdb,
+                         DataController controller,
                          String orgBasePath) {
-        this.appdb = appdb;
+    	this.controller = controller;
         this.storageMode = storageMode;
         this.userSynchro = userSynchro;
         this.orgPaths = orgpaths;
@@ -121,13 +121,13 @@ public class OrgFileParser {
         recValues.put("heading", heading);
         recValues.put("content", content);
         recValues.put("parentid", parentId);
-        return this.appdb.appdb.insert("data", null, recValues);
+        return controller.insert("data", recValues);
     }
 
     public void addContent(long nodeId, String content) {
         ContentValues recValues = new ContentValues();
         recValues.put("content", content + "\n");
-        this.appdb.appdb.update("data", recValues, "id = ?",
+        controller.update("data", recValues, "id = ?",
                                 new String[] {Long.toString(nodeId)});
     }
 
@@ -149,7 +149,7 @@ public class OrgFileParser {
             Pattern.compile("F\\((edit:.*?)\\) \\[\\[(.*?)\\]\\[(.*?)\\]\\]");
         try
         {
-			this.todos = appdb.getTodos();
+			this.todos = controller.getTodos();
 
             String thisLine;
             Stack<Node> nodeStack = new Stack();

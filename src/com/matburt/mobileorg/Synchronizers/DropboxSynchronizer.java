@@ -13,7 +13,7 @@ import com.dropbox.client2.DropboxAPI.DropboxInputStream;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 
 import java.io.*;
@@ -27,13 +27,14 @@ public class DropboxSynchronizer extends Synchronizer {
     private AndroidAuthSession session = null;
     private DropboxAPI<AndroidAuthSession> api = null;
 
-    public DropboxSynchronizer(Context parentContext) {
+    public DropboxSynchronizer(Context parentContext, DataController controller) {
         session = DropboxAuthActivity.createSession(parentContext);
         api = new DropboxAPI<AndroidAuthSession>(session);
         this.rootContext = parentContext;
-        this.appdb = new MobileOrgDatabase((Context)parentContext);
+        this.controller = controller;
         this.appSettings = PreferenceManager.getDefaultSharedPreferences(
                                       parentContext.getApplicationContext());
+        r = parentContext.getResources();
     }
 
     public void push() throws NotFoundException, ReportableError {
@@ -75,9 +76,9 @@ public class DropboxSynchronizer extends Synchronizer {
 
     public void pull() throws NotFoundException, ReportableError {
         String indexFilePath = this.appSettings.getString("dropboxPath", "");
-		if(!indexFilePath.startsWith("/")) {
-			indexFilePath = "/" + indexFilePath;
-		}
+//		if(!indexFilePath.startsWith("/")) {
+//			indexFilePath = "/" + indexFilePath;
+//		}
         String masterStr = this.fetchOrgFileString(indexFilePath);
         Log.i(LT, "Contents: " + masterStr);
         if (masterStr.equals("")) {
@@ -88,13 +89,13 @@ public class DropboxSynchronizer extends Synchronizer {
         HashMap<String, String> masterList = this.getOrgFilesFromMaster(masterStr);
         ArrayList<HashMap<String, Boolean>> todoLists = this.getTodos(masterStr);
         ArrayList<ArrayList<String>> priorityLists = this.getPriorities(masterStr);
-        this.appdb.setTodoList(todoLists);
-        this.appdb.setPriorityList(priorityLists);
+        controller.setTodoList(todoLists);
+        controller.setPriorityList(priorityLists);
         String pathActual = this.getRootPath();
         //Get checksums file
         masterStr = this.fetchOrgFileString(pathActual + "checksums.dat");
         HashMap<String, String> newChecksums = this.getChecksums(masterStr);
-        HashMap<String, String> oldChecksums = this.appdb.getChecksums();
+        HashMap<String, String> oldChecksums = controller.getChecksums();
 
         //Get other org files
         for (String key : masterList.keySet()) {
@@ -106,7 +107,7 @@ public class DropboxSynchronizer extends Synchronizer {
                   key + ": " + pathActual + masterList.get(key));
             this.fetchAndSaveOrgFile(pathActual + masterList.get(key),
                                      masterList.get(key));
-            this.appdb.addOrUpdateFile(masterList.get(key),
+            controller.addOrUpdateFile(masterList.get(key),
                                        key,
                                        newChecksums.get(key));
         }
@@ -121,7 +122,7 @@ public class DropboxSynchronizer extends Synchronizer {
         Log.i(LT, "Downloading " + orgPath);
         DropboxInputStream fd;
         try {
-            fd = api.getFileStream("dropbox", orgPath);
+            fd = api.getFileStream(orgPath, null);
         }
         catch (Exception e) {
             throw new ReportableError(

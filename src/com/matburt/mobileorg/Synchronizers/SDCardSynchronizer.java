@@ -6,7 +6,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 
 import java.io.*;
@@ -16,10 +16,10 @@ import java.util.HashSet;
 
 public class SDCardSynchronizer extends Synchronizer
 {
-    public SDCardSynchronizer(Context parentContext) {
+    public SDCardSynchronizer(Context parentContext, DataController controller) {
         this.rootContext = parentContext;
         this.r = this.rootContext.getResources();
-        this.appdb = new MobileOrgDatabase((Context)parentContext);
+        this.controller = controller;
         this.appSettings = PreferenceManager.getDefaultSharedPreferences(
                                    parentContext.getApplicationContext());
     }
@@ -138,8 +138,8 @@ public class SDCardSynchronizer extends Synchronizer
         HashMap<String, String> masterList = this.getOrgFilesFromMaster(filebuffer);
         ArrayList<HashMap<String, Boolean>> todoLists = this.getTodos(filebuffer);
         ArrayList<ArrayList<String>> priorityLists = this.getPriorities(filebuffer);
-        this.appdb.setTodoList(todoLists);
-        this.appdb.setPriorityList(priorityLists);
+        controller.setTodoList(todoLists);
+        controller.setPriorityList(priorityLists);
 
         try {
             filebuffer = this.readFile(chkPath);
@@ -150,14 +150,14 @@ public class SDCardSynchronizer extends Synchronizer
                     e);
         }
         HashMap<String, String> newChecksums = this.getChecksums(filebuffer);
-        HashMap<String, String> oldChecksums = this.appdb.getChecksums();
+        HashMap<String, String> oldChecksums = controller.getChecksums();
         for (String key : masterList.keySet()) { 
             if (oldChecksums.containsKey(key) &&
                 newChecksums.containsKey(key) &&
                 oldChecksums.get(key).equals(newChecksums.get(key)))
                 continue;
             Log.d(LT, "Fetching: " + key + ": " + basePath + "/" + masterList.get(key));
-            this.appdb.addOrUpdateFile(masterList.get(key), key, newChecksums.get(key));
+            controller.addOrUpdateFile(masterList.get(key), key, newChecksums.get(key));
         }
     }
 

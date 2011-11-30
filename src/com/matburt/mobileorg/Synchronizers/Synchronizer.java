@@ -8,7 +8,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.MobileOrgDatabase;
+import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 
 import java.io.*;
@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 abstract public class Synchronizer
 {
-    public MobileOrgDatabase appdb = null;
+    public DataController controller = null;
     public SharedPreferences appSettings = null;
     public Context rootContext = null;
     public static final String LT = "MobileOrg";
@@ -29,11 +29,6 @@ abstract public class Synchronizer
     public abstract void pull() throws NotFoundException, ReportableError;
     public abstract void push() throws NotFoundException, ReportableError;
     public abstract boolean checkReady();
-
-    public void close() {
-        if (this.appdb != null)
-            this.appdb.close();
-    }
 
     public BufferedReader fetchOrgFile(String orgPath) throws NotFoundException, ReportableError{
         return null;
@@ -193,7 +188,7 @@ abstract public class Synchronizer
     }
 
     void removeFile(String filePath) {
-            this.appdb.removeFile(filePath);
+    		controller.removeFile(filePath);
             String storageMode = this.appSettings.getString("storageMode", "");
             if (storageMode.equals("internal") || storageMode == null) {
                 this.rootContext.deleteFile(filePath);

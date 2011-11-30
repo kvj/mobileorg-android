@@ -1,121 +1,61 @@
-package com.matburt.mobileorg;
+package com.matburt.mobileorg.service;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDiskIOException;
-import android.database.DatabaseUtils;
-import android.os.Environment;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import com.matburt.mobileorg.Error.ErrorReporter;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class MobileOrgDatabase {
-    private Context appcontext;
-    private String lastStorageMode = "";
-    private Resources r;
-    public SQLiteDatabase appdb;
-    public SharedPreferences appSettings;
-    public static final String LT = "MobileOrg";
+import com.matburt.mobileorg.R;
+import com.matburt.mobileorg.Error.ErrorReporter;
 
-    public MobileOrgDatabase(Context appctxt) {
-        this.appcontext = appctxt;
-        this.appSettings = PreferenceManager.getDefaultSharedPreferences(appctxt);
-        this.r = appctxt.getResources();
-        this.initialize();
-    }
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDiskIOException;
+import android.util.Log;
 
-    public void initialize() {
-        String storageMode = this.appSettings.getString("storageMode", "");
-        if (storageMode.equals("internal") ||
-            storageMode.equals(""))
-            this.appdb = this.appcontext.openOrCreateDatabase("MobileOrg", 0, null);
-        else if (storageMode.equals("sdcard")) {
-            File sdcard = Environment.getExternalStorageDirectory();
-            File morgDir = new File(sdcard, "mobileorg");
-            if(!morgDir.exists()) {
-                morgDir.mkdir();
-            }
-            File morgFile = new File(morgDir, "mobileorg.db");
-            try {
-                this.appdb = SQLiteDatabase.openOrCreateDatabase(morgFile, null);
-            }
-            catch (Exception e) {
-                ErrorReporter.displayError(this.appcontext,
-                                           r.getString(R.string.error_opening_database));
-            }
-            Log.d(LT, "Setting database path to " + morgFile.getAbsolutePath());
-        }
-        else {
-            ErrorReporter.displayError(this.appcontext,
-                    r.getString(R.string.error_opening_database));
-            return;
-        }
-        this.wrapExecSQL("CREATE TABLE IF NOT EXISTS files"
-                           + " (file VARCHAR, name VARCHAR,"
-                           + " checksum VARCHAR)");
-        this.wrapExecSQL("CREATE TABLE IF NOT EXISTS todos"
-                           + " (tdgroup int, name VARCHAR,"
-                           + " isdone INT)");
-        this.wrapExecSQL("CREATE TABLE IF NOT EXISTS priorities"
-                           + " (tdgroup int, name VARCHAR,"
-                           + " isdone INT)");
-        this.lastStorageMode = storageMode;
-    }
+public class DataController {
 
-    public void close() {
-        this.appdb.close();
-    }
-
+	private static final String TAG = "DataController";
+	private MobileOrgDBHelper db = null;
+	
+	public DataController(Context context) {
+		db = new MobileOrgDBHelper(context, "MobileOrg");
+		if (!db.open()) {
+			Log.e(TAG, "Error opening DB");
+			db = null;
+		}
+	}
+	
     public void wrapExecSQL(String sqlText) {
+    	if (null == db) {
+			return;
+		}
         try {
-            this.appdb.execSQL(sqlText);
-        }
-        catch (SQLiteDiskIOException e) {
-            ErrorReporter.displayError(this.appcontext,
-                    r.getString(R.string.error_sqlio));
+            db.getDatabase().execSQL(sqlText);
         }
         catch (Exception e) {
-            ErrorReporter.displayError(this.appcontext,
-                                       r.getString(R.string.error_generic_database, e.toString()));
+        	Log.e(TAG, "SQL error:", e);
         }
     }
 
     public Cursor wrapRawQuery(String sqlText) {
         Cursor result = null;
+        if (null == db) {
+			return result;
+		}
         try {
-            result = this.appdb.rawQuery(sqlText, null);
-        }
-        catch (SQLiteDiskIOException e) {
-            ErrorReporter.displayError(this.appcontext,
-                    r.getString(R.string.error_sqlio));
-        }
-        catch (Exception e) {
-            ErrorReporter.displayError(this.appcontext,
-                                       r.getString(R.string.error_generic_database, e.toString()));
+            result = db.getDatabase().rawQuery(sqlText, null);
+        } catch (Exception e) {
+        	Log.e(TAG, "SQL error:", e);
         }
         return result;
     }
 
-
-    public void checkStorageMode() {
-        String storageMode = this.appSettings.getString("storageMode", "");
-        if (storageMode != this.lastStorageMode) {
-            this.close();
-            this.initialize();
-        }
-    }
-
     public HashMap<String, String> getOrgFiles() {
-        this.checkStorageMode();
         HashMap<String, String> allFiles = new HashMap<String, String>();
-        Cursor result = this.wrapRawQuery("SELECT file, name FROM files");
+    	if (null == db) {
+    		return allFiles;
+		}
+        Cursor result = wrapRawQuery("SELECT file, name FROM files");
         if (result != null) {
             if (result.getCount() > 0) {
                 result.moveToFirst();
@@ -130,7 +70,6 @@ public class MobileOrgDatabase {
     }
 
     public HashMap<String, String> getChecksums() {
-        this.checkStorageMode();
         HashMap<String, String> fchecks = new HashMap<String, String>();
         Cursor result = this.wrapRawQuery("SELECT file, checksum FROM files");
         if (result != null) {
@@ -147,29 +86,24 @@ public class MobileOrgDatabase {
     }
 
     public void removeFile(String filename) {
-        this.checkStorageMode();
         this.wrapExecSQL("DELETE FROM files " +
                            "WHERE file = '"+filename+"'");
-        Log.i(LT, "Finished deleting from files");
+        Log.i(TAG, "Finished deleting from files");
     }
 
     public void clearData() {
-        this.checkStorageMode();
         this.wrapExecSQL("DELETE FROM data");
     }
 
     public void clearTodos() {
-        this.checkStorageMode();
         this.wrapExecSQL("DELETE from todos");
     }
 
     public void clearPriorities() {
-        this.checkStorageMode();
         this.wrapExecSQL("DELETE from priorities");
     }
 
     public void addOrUpdateFile(String filename, String name, String checksum) {
-        this.checkStorageMode();
         Cursor result = this.wrapRawQuery("SELECT * FROM files " +
                                        "WHERE file = '"+filename+"'");
         if (result != null) {
@@ -261,4 +195,19 @@ public class MobileOrgDatabase {
             }
         }
     }
+
+	public long insert(String string, ContentValues recValues) {
+		if (null == db) {
+			return 0;
+		}
+		return db.getDatabase().insert(string, null, recValues);
+	}
+
+	public void update(String string, ContentValues recValues, String string2,
+			String[] strings) {
+		if (null == db) {
+			return;
+		}
+		db.getDatabase().update(string, recValues, string2, strings);
+	}
 }

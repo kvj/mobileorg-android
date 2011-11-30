@@ -1,14 +1,14 @@
 package com.matburt.mobileorg.Capture;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.*;
 import com.matburt.mobileorg.MobileOrgApplication;
-import com.matburt.mobileorg.MobileOrgDatabase;
 import com.matburt.mobileorg.Parsing.Node;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.SimpleTextDisplay;
 
@@ -16,7 +16,9 @@ import java.lang.Object;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ViewNodeDetailsActivity extends Activity implements OnClickListener {
+import org.kvj.bravo7.SuperActivity;
+
+public class ViewNodeDetailsActivity extends SuperActivity<DataController, DataService> implements OnClickListener {
 	protected ArrayList<Integer> mNodePath;
 	protected EditText mTitle;
 	protected TextView mBody;
@@ -26,11 +28,14 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
 	protected Button mViewAsDocument;
     protected Button mSaveNode;
 	protected Node mNode;
-	protected MobileOrgDatabase mOrgDb;
     protected String actionMode;
 
     private static int EDIT_BODY = 1;
 
+    public ViewNodeDetailsActivity() {
+    	super(DataService.class);
+	}
+    
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
@@ -45,8 +50,6 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
         this.mTags = (EditText) this.findViewById(R.id.tags);
         this.mViewAsDocument = (Button) this.findViewById(R.id.view_as_document);
         this.mSaveNode = (Button) this.findViewById(R.id.save_node);
-        this.mOrgDb = new MobileOrgDatabase(this);
-        this.populateDisplay();
 
         mViewAsDocument.setOnClickListener(this);
         mBody.setOnClickListener(this);
@@ -55,7 +58,6 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
 
     @Override
     public void onDestroy() {
-        this.mOrgDb.close();
         super.onDestroy();
     }
 
@@ -99,8 +101,8 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
         if (this.actionMode.equals("create")) {
             mNode = new Node();
         }
-        setSpinner(mTodoState, this.mOrgDb.getTodos(), mNode.todo);
-        setSpinner(mPriority, this.mOrgDb.getPriorities(),
+        setSpinner(mTodoState, controller.getTodos(), mNode.todo);
+        setSpinner(mPriority, controller.getPriorities(),
                    mNode.priority);
     }
 
@@ -129,7 +131,7 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
 	}
 
 	public void save() {
-		CreateEditNote creator = new CreateEditNote(this);
+		CreateEditNote creator = new CreateEditNote(this, controller);
 		String newTitle = mTitle.getText().toString();
         String newTodo = null;
         String newPriority = null;
@@ -171,7 +173,6 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
             mNode.nodePayload = mBody.getText().toString();;
             creator.writeNote(mNode.generateNoteEntry());
         }
-        creator.close();
 	}
 
     @Override
@@ -185,5 +186,11 @@ public class ViewNodeDetailsActivity extends Activity implements OnClickListener
             mBody.setText(newBody);
             populateDisplay();
         }
+    }
+    
+    @Override
+    public void onController(DataController controller) {
+    	super.onController(controller);
+        this.populateDisplay();
     }
 }

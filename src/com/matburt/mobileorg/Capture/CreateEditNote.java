@@ -7,8 +7,8 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import com.matburt.mobileorg.MobileOrgApplication;
-import com.matburt.mobileorg.MobileOrgDatabase;
 import com.matburt.mobileorg.Parsing.EditNode;
+import com.matburt.mobileorg.service.DataController;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -17,19 +17,15 @@ import java.util.Date;
 public class CreateEditNote
 {
     private SharedPreferences appSettings;
-    private MobileOrgDatabase appdb;
+    private DataController controller;
     private Activity appactivity;
     public static final String LT = "MobileOrg";
 
-    CreateEditNote(Activity parentActivity) {
+    CreateEditNote(Activity parentActivity, DataController controller) {
         this.appactivity = parentActivity;
         this.appSettings = PreferenceManager.getDefaultSharedPreferences(
                                     parentActivity.getBaseContext());
-        this.appdb = new MobileOrgDatabase((Context)parentActivity);
-    }
-
-    public void close() {
-        this.appdb.close();
+        this.controller = controller;
     }
 
     public void writeNewNote(String message) {
@@ -91,7 +87,7 @@ public class CreateEditNote
 
         try {
             writer.write(message);
-            this.appdb.addOrUpdateFile("mobileorg.org", "New Notes","");
+            controller.addOrUpdateFile("mobileorg.org", "New Notes","");
             writer.flush();
             writer.close();
         }
