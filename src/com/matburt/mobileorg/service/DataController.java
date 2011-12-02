@@ -2,9 +2,16 @@ package com.matburt.mobileorg.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+
+import org.kvj.bravo7.ApplicationContext;
 
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.Error.ErrorReporter;
+import com.matburt.mobileorg.Synchronizers.DropboxSynchronizer;
+import com.matburt.mobileorg.Synchronizers.SDCardSynchronizer;
+import com.matburt.mobileorg.Synchronizers.Synchronizer;
+import com.matburt.mobileorg.Synchronizers.WebDAVSynchronizer;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -16,8 +23,10 @@ public class DataController {
 
 	private static final String TAG = "DataController";
 	private MobileOrgDBHelper db = null;
+	ApplicationContext appContext = null;
 	
-	public DataController(Context context) {
+	public DataController(ApplicationContext appContext, Context context) {
+		this.appContext = appContext;
 		db = new MobileOrgDBHelper(context, "MobileOrg");
 		if (!db.open()) {
 			Log.e(TAG, "Error opening DB");
@@ -69,7 +78,7 @@ public class DataController {
         return allFiles;
     }
 
-    public HashMap<String, String> getChecksums() {
+    public Map<String, String> getChecksums() {
         HashMap<String, String> fchecks = new HashMap<String, String>();
         Cursor result = this.wrapRawQuery("SELECT file, checksum FROM files");
         if (result != null) {
@@ -209,5 +218,25 @@ public class DataController {
 			return;
 		}
 		db.getDatabase().update(string, recValues, string2, strings);
+	}
+	
+	public void refresh() {
+        String userSynchro = appContext.getStringPreference("syncSource","");
+        final Synchronizer appSync;
+        if (userSynchro.equals("webdav")) {
+            appSync = new WebDAVSynchronizer(appContext.getContext(), this);
+        }
+        else if (userSynchro.equals("sdcard")) {
+            appSync = new SDCardSynchronizer(appContext.getContext(), this);
+        }
+        else if (userSynchro.equals("dropbox")) {
+            appSync = new DropboxSynchronizer(appContext.getContext(), this);
+        }
+        else {
+            return;
+        }
+        OrgNGParser parser = new OrgNGParser(this, appSync);
+        String error = parser.parse(appContext.getStringPreference("dropboxPath", ""));
+        Log.i(TAG, "Parse result: "+error);
 	}
 }

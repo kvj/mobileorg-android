@@ -14,6 +14,7 @@ import com.matburt.mobileorg.R;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -213,7 +214,7 @@ abstract public class Synchronizer
         return allOrgFiles;
     }
 
-    HashMap<String, String> getChecksums(String master) {
+    public Map<String, String> getChecksums(String master) {
         HashMap<String, String> chksums = new HashMap<String, String>();
         for (String eachLine : master.split("[\\n\\r]+")) {
             if (TextUtils.isEmpty(eachLine))

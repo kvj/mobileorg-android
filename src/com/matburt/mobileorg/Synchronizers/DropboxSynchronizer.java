@@ -20,6 +20,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class DropboxSynchronizer extends Synchronizer {
     private boolean hasToken = false;
@@ -94,8 +95,8 @@ public class DropboxSynchronizer extends Synchronizer {
         String pathActual = this.getRootPath();
         //Get checksums file
         masterStr = this.fetchOrgFileString(pathActual + "checksums.dat");
-        HashMap<String, String> newChecksums = this.getChecksums(masterStr);
-        HashMap<String, String> oldChecksums = controller.getChecksums();
+        Map<String, String> newChecksums = this.getChecksums(masterStr);
+        Map<String, String> oldChecksums = controller.getChecksums();
 
         //Get other org files
         for (String key : masterList.keySet()) {

@@ -13,6 +13,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class SDCardSynchronizer extends Synchronizer
 {
@@ -149,8 +150,8 @@ public class SDCardSynchronizer extends Synchronizer
                     r.getString(R.string.error_file_not_found, chkPath),
                     e);
         }
-        HashMap<String, String> newChecksums = this.getChecksums(filebuffer);
-        HashMap<String, String> oldChecksums = controller.getChecksums();
+        Map<String, String> newChecksums = this.getChecksums(filebuffer);
+        Map<String, String> oldChecksums = controller.getChecksums();
         for (String key : masterList.keySet()) { 
             if (oldChecksums.containsKey(key) &&
                 newChecksums.containsKey(key) &&

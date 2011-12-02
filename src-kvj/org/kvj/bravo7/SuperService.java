@@ -44,7 +44,7 @@ public class SuperService<T> extends Service{
     	controller = ctx.getBean(controllerClass);
     	if (null == controller) {
 			try {
-				controller = controllerClass.getConstructor(Context.class).newInstance(this);
+				controller = controllerClass.getConstructor(ApplicationContext.class, Context.class).newInstance(ctx, this);
 				ctx.publishBean(controller);
 			} catch (Exception e) {
 				e.printStackTrace();

@@ -30,6 +30,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.regex.Pattern;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -111,8 +112,8 @@ public class WebDAVSynchronizer extends Synchronizer
 
         //Get checksums file
         masterStr = this.fetchOrgFileString(urlActual + "checksums.dat");
-        HashMap<String, String> newChecksums = this.getChecksums(masterStr);
-        HashMap<String, String> oldChecksums = controller.getChecksums();
+        Map<String, String> newChecksums = this.getChecksums(masterStr);
+        Map<String, String> oldChecksums = controller.getChecksums();
 
         //Get other org files
         for (String key : masterList.keySet()) {

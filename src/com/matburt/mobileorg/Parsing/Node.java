@@ -6,9 +6,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import android.util.Log;
+
 public class Node implements Cloneable {
 
-    public ArrayList<Node> subNodes = new ArrayList<Node>();
+    private static final String TAG = "Node";
+	public ArrayList<Node> subNodes = new ArrayList<Node>();
     public ArrayList<String> tags = new ArrayList<String>();
     HashMap<String, String> properties = new HashMap<String, String>();
 
@@ -81,6 +84,7 @@ public class Node implements Cloneable {
     }
 
     void addChildNode(Node childNode) {
+    	Log.i(TAG, "addChildNode: "+nodeTitle+", "+childNode.nodeTitle);
         this.subNodes.add(childNode);
     }
 
@@ -133,6 +137,6 @@ public class Node implements Cloneable {
     }
 
 	public int getSize() {
-		return 1;
+		return 1+(expanded? subNodes.size(): 0);
 	}
 }
