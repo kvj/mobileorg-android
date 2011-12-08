@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 public class MobileOrgDBHelper extends DBHelper{
 
 	public MobileOrgDBHelper(Context context, String path) {
-		super(context, path, 2);
+		super(context, path, 3);
 	}
 
 	@Override
@@ -31,6 +31,9 @@ public class MobileOrgDBHelper extends DBHelper{
 			db.execSQL("create table if not exists data (id integer primary key autoincrement, parent_id integer, " +
 					"indent integer default 0, editable integer default 0, note_id text, original_id text, " +
 					"type text, priority text, todo text, title text, raw text, tags text, level integer default 0, before text, after text)");
+			break;
+		case 3:
+			db.execSQL("alter table data add file_id integer");
 			break;
 		}
 	}

@@ -239,4 +239,95 @@ public class DataController {
         String error = parser.parse(appContext.getStringPreference("dropboxPath", ""));
         Log.i(TAG, "Parse result: "+error);
 	}
+	
+	public boolean cleanupDB() {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			db.getDatabase().delete("files", null, null);
+			db.getDatabase().delete("data", null, null);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+	
+	public Integer updateFile(String name, String checksum) {
+		if (null == db) {
+			return null;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("file", name);
+			values.put("checksum", checksum);
+			int result = (int) db.getDatabase().insert("files", null, values);
+			db.getDatabase().setTransactionSuccessful();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return null;
+	}
+	
+	public Integer addData(NoteNG note) {
+		if (null == db) {
+			return null;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("after", note.after);
+			values.put("before", note.before);
+			values.put("parent_id", note.parentID);
+			values.put("priority", note.priority);
+			values.put("raw", note.raw);
+			values.put("tags", note.tags);
+			values.put("title", note.title);
+			values.put("type", note.type);
+			values.put("editable", note.editable? 1: 0);
+			values.put("indent", note.indent);
+			values.put("level", note.level);
+			int result = (int) db.getDatabase().insert("data", null, values);
+			note.id = result;
+			db.getDatabase().setTransactionSuccessful();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return null;
+	}
+	
+	public boolean updateData(NoteNG note, String field, Object value) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			if (value instanceof String) {
+				values.put(field, (String) value);
+			} else if (value instanceof Number) {
+				values.put(field, (Integer) value);
+			}
+			db.getDatabase().update("data", values, "id=?", new String[] {note.id.toString()});
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
 }
