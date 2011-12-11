@@ -2,6 +2,7 @@ package com.matburt.mobileorg.service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.kvj.bravo7.ApplicationContext;
@@ -220,24 +221,23 @@ public class DataController {
 		db.getDatabase().update(string, recValues, string2, strings);
 	}
 	
-	public void refresh() {
+	public String refresh() {
         String userSynchro = appContext.getStringPreference("syncSource","");
         final Synchronizer appSync;
         if (userSynchro.equals("webdav")) {
-            appSync = new WebDAVSynchronizer(appContext.getContext(), this);
+            appSync = new WebDAVSynchronizer(appContext, this);
         }
         else if (userSynchro.equals("sdcard")) {
-            appSync = new SDCardSynchronizer(appContext.getContext(), this);
+            appSync = new SDCardSynchronizer(appContext, this);
         }
         else if (userSynchro.equals("dropbox")) {
-            appSync = new DropboxSynchronizer(appContext.getContext(), this);
+            appSync = new DropboxSynchronizer(appContext, this);
         }
         else {
-            return;
+            return "No configuration";
         }
         OrgNGParser parser = new OrgNGParser(this, appSync);
-        String error = parser.parse(appContext.getStringPreference("dropboxPath", ""));
-        Log.i(TAG, "Parse result: "+error);
+        return parser.parse(appContext.getStringPreference("dropboxPath", ""));
 	}
 	
 	public boolean cleanupDB() {
@@ -289,12 +289,12 @@ public class DataController {
 			values.put("before", note.before);
 			values.put("parent_id", note.parentID);
 			values.put("priority", note.priority);
+			values.put("todo", note.todo);
 			values.put("raw", note.raw);
 			values.put("tags", note.tags);
 			values.put("title", note.title);
 			values.put("type", note.type);
 			values.put("editable", note.editable? 1: 0);
-			values.put("indent", note.indent);
 			values.put("level", note.level);
 			int result = (int) db.getDatabase().insert("data", null, values);
 			note.id = result;
@@ -330,4 +330,85 @@ public class DataController {
 		}
 		return false;
 	}
+
+	private NoteNG cursorToNote(Cursor c) {
+		NoteNG note = new NoteNG();
+		note.id = c.getInt(0);
+//		note.indent = c.getInt(1);
+		note.editable = 1 == c.getInt(2);
+		note.noteID = c.getString(3);
+		note.originalID = c.getString(4);
+		note.type = c.getString(5);
+		note.priority = c.getString(6);
+		note.todo = c.getString(7);
+		note.title = c.getString(8);
+		note.tags = c.getString(9);
+		note.level = c.getInt(10);
+		note.before = c.getString(11);
+		note.after = c.getString(12);
+		return note;
+	}
+	
+	private static String[] dataFields = new String[] {
+		"id", "indent", "editable", "note_id", "original_id", 
+		"type", "priority", "todo", "title", "tags", "level", 
+		"before","after"};
+	
+	public List<NoteNG> getData(Integer parent) {
+		if (null == db) {
+			return new ArrayList<NoteNG>();
+		}
+		List<NoteNG> result = new ArrayList<NoteNG>();
+		try {
+			String whereStart = "parent_id is null";
+			List<String> whereArgs = new ArrayList<String>();
+			if (null != parent) {
+				whereStart = "parent_id=?";
+				whereArgs.add(parent.toString());
+			}
+			whereArgs.add(NoteNG.TYPE_DRAWER);
+			whereArgs.add(NoteNG.TYPE_PROPERTY);
+			Cursor c = db.getDatabase().query("data", 
+					dataFields, 
+					whereStart+" and type<>? and type<>?", 
+					whereArgs.toArray(new String[] {}),//parent == null? null: parent.toString() 
+					null, null, "id");
+			if (c.moveToFirst()) {
+				do {
+					NoteNG note = cursorToNote(c);
+					if (NoteNG.TYPE_TEXT.equals(note.type) 
+							&& null != note.title 
+							&& note.title.trim().isEmpty()) {
+						continue;
+					}
+					result.add(note);
+				} while (c.moveToNext());
+			}
+			c.close();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public NoteNG findNoteByNoteID(String noteID) {
+		try {
+			Cursor c = db.getDatabase().query("data", 
+					dataFields, 
+					"note_id=?", 
+					new String[] {noteID}, 
+					null, null, "id");
+			NoteNG note = null;
+			if (c.moveToFirst()) {
+				note = cursorToNote(c);
+			}
+			c.close();
+			return note;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 }

@@ -40,7 +40,7 @@ public class SuperService<T> extends Service{
 	@Override
 	public void onCreate() {
 		super.onCreate();
-    	ApplicationContext ctx = ApplicationContext.getInstance(this);
+    	ApplicationContext ctx = ApplicationContext.getInstance();
     	controller = ctx.getBean(controllerClass);
     	if (null == controller) {
 			try {

@@ -32,6 +32,7 @@ public class OrgNGParser {
 			"(<after>(.*)</after>)?"+
 			"$");
 	private static Pattern drawerPattern = Pattern.compile("^\\s*:([A-Z_-]+):\\s*(.*)\\s*$");
+	private static Pattern paramPattern = Pattern.compile("^\\s*([A-Z_-]+):\\s*(.*)\\s*$");
 	
 	//***: 1, 2: DONE, 3: [#A], 4: A, 5: title
 	private static Pattern controlPattern = Pattern.compile("^\\#\\+([A-Z]+)(\\:\\s(.*))?$");
@@ -47,32 +48,22 @@ public class OrgNGParser {
 		boolean onItem(NoteNG note);
 	}
 	
-	private void debugExp(Matcher m) {
-		for (int i = 1; i <= m.groupCount(); i++) {
-			Log.i(TAG, "Matcher "+i+", ["+m.group(i)+"]");
-		}
-	}
-	
+//	private void debugExp(Matcher m) {
+//		for (int i = 1; i <= m.groupCount(); i++) {
+//			Log.i(TAG, "Matcher "+i+", ["+m.group(i)+"]");
+//		}
+//	}
+//	
 	public String parseFile(String folder, String name, ItemListener listener, NoteNG _parent) {
 		try {
 			BufferedReader reader = synchronizer.fetchOrgFile(folder+name);
 			String line = null;
 			Marker marker = Marker.Unknown;
 			Stack<NoteNG> parents = new Stack<NoteNG>();
-			parents.push(_parent);
 			NoteNG parent = _parent;
 			StringBuilder drawerBuilder = new StringBuilder();
 			Map<String, String> drawerValues = new HashMap<String, String>();
 			while ((line = reader.readLine()) != null) {
-				if (marker == Marker.Unknown) {
-					Matcher m = controlPattern.matcher(line);
-					Log.i(TAG, "Control: "+m+", "+line);
-					if (m.find()) {
-						//1 TODO 3 TODO DONE
-						//debugExp(m);
-						continue;
-					}
-				}
 				if (marker == Marker.Drawer) {
 					drawerBuilder.append('\n');
 					drawerBuilder.append(line);
@@ -80,7 +71,7 @@ public class OrgNGParser {
 					if (m.find()) {
 						if ("END".equals(m.group(1).trim())) {
 							marker = Marker.Outline;
-							Log.i(TAG, "Drawer OK: "+drawerBuilder+", "+drawerValues);
+//							Log.i(TAG, "Drawer OK: "+drawerBuilder+", "+drawerValues);
 							NoteNG newNote = new NoteNG();
 							newNote.raw = drawerBuilder.toString();
 							newNote.type = NoteNG.TYPE_DRAWER;
@@ -88,6 +79,14 @@ public class OrgNGParser {
 							newNote.parentID = parent.id;
 							newNote.level = parent.level;
 							controller.addData(newNote);
+							String originalID = drawerValues.get("ORIGINAL_ID");
+							if (null != originalID) {
+								controller.updateData(parent, "original_id", originalID);
+							}
+							String noteID = drawerValues.get("ID");
+							if (null != noteID) {
+								controller.updateData(parent, "note_id", noteID);
+							}
 						} else {
 							if (null != m.group(2)) {
 								drawerValues.put(m.group(1).trim(), m.group(2).trim());
@@ -98,28 +97,49 @@ public class OrgNGParser {
 				}
 				Matcher m = outlinePattern.matcher(line);
 				if (m.find()) {
-					Log.i(TAG, "Outline: "+line);
+//					Log.i(TAG, "Outline: "+line);
 					marker = Marker.Outline;
 //					debugExp(m);
 					NoteNG note = new NoteNG();
+					note.type = NoteNG.TYPE_OUTLINE;
 					note.raw = line;
 					note.title = m.group(5);
+					note.priority = m.group(4);
+					note.todo = m.group(2);
+					if (null != note.todo) {
+						note.todo = note.todo.trim();
+					}
+					int level = m.group(1).trim().length();
+					note.level = level;
+					if (level<=parent.level) {
+						//Search for parent
+						while(!parents.isEmpty()) {
+							parent = parents.pop();
+							if (parent.level<level) {
+								break;
+							}
+						}
+					}
+					note.fileID = parent.fileID;
+					note.parentID = parent.id;
 					Matcher m2 = outlineTailPattern.matcher(note.title);
 					if (m2.find()) {
-						//debugExp(m2);
+//						debugExp(m2);
 						//before: 5, after: 7
 						StringBuffer buffer = new StringBuffer();
 						m2.appendReplacement(buffer, "");
 						note.title = buffer.toString().trim();
-						note.before = m2.group(1);
+						note.tags = m2.group(1);
 						note.before = m2.group(5);
 						note.after = m2.group(7);
 					}
 					controller.addData(note);
+					parents.push(parent);
+					parent = note;
 					if(!listener.onItem(note)) {
 						continue;
 					}
-					Log.i(TAG, "Note ["+note.title+"] ["+note.before+"] ["+note.after+"]");
+//					Log.i(TAG, "Note["+note.parentID+"] ["+note.title+"] ["+note.before+"] ["+note.after+"]");
 					continue;
 				}
 				m = drawerPattern.matcher(line);
@@ -128,10 +148,37 @@ public class OrgNGParser {
 					drawerBuilder = new StringBuilder();
 					drawerValues.clear();
 					drawerBuilder.append(line);
-					Log.i(TAG, "Start drawer: "+m.group(1));
+//					Log.i(TAG, "Start drawer: "+m.group(1));
 					continue;
 				}
-				Log.i(TAG, "Unknown line: "+line);
+				m = controlPattern.matcher(line);
+				if (m.find()) {
+//					Log.i(TAG, "Control: "+m+", "+line);
+					//1 TODO 3 TODO DONE
+					//debugExp(m);
+					continue;
+				}
+				m = paramPattern.matcher(line);
+				if (m.find()) {
+					NoteNG n = new NoteNG();
+					n.editable = false;
+					n.fileID = parent.fileID;
+					n.parentID = parent.id;
+					n.raw = line;
+					n.title = line.trim();
+					n.type = NoteNG.TYPE_PROPERTY;
+					controller.addData(n);
+					continue;
+				}
+//				Log.i(TAG, "Unknown line: "+line);
+				NoteNG n = new NoteNG();
+				n.editable = true;
+				n.fileID = parent.fileID;
+				n.parentID = parent.id;
+				n.raw = line;
+				n.title = line.trim();
+				n.type = NoteNG.TYPE_TEXT;
+				controller.addData(n);
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "Error parsing file:", e);
@@ -145,6 +192,7 @@ public class OrgNGParser {
 	
 	public String parse(String path) {
 		try {
+			Log.i(TAG, "Start sync");
 			if (!controller.cleanupDB()) {
 				return "DB error";
 			}
@@ -191,12 +239,17 @@ public class OrgNGParser {
 					if (!controller.updateData(note, "type", NoteNG.TYPE_FILE)) {
 						return false;
 					}
+					if (!controller.updateData(note, "title", note.title)) {
+						return false;
+					}
 					String fileName = m.group(4);
 					Integer fileID = controller.updateFile(fileName, sums.get(fileName));
 					if (null == fileID) {
 						return false;
 					}
-					note.fileID = fileID;
+					NoteNG n = new NoteNG();
+					n.id = note.id;
+					n.fileID = fileID;
 					final boolean isAgenda = "agendas.org".equals(fileName);
 					if (!isAgenda) {
 						note.editable = true;
@@ -210,15 +263,16 @@ public class OrgNGParser {
 							}
 							return true;
 						}
-					}, note);
+					}, n);
 					if (null != error) {
 						Log.e(TAG, "Error parsing: "+error);
 					}
 					return true;
 				}
 			}, root);
+			Log.i(TAG, "Stop sync");
 			return error;
-		} catch (ReportableError e) {
+		} catch (Throwable e) {
 			Log.e(TAG, "Error while downloading", e);
 			return e.getMessage();
 		}

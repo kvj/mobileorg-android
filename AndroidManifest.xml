@@ -15,7 +15,7 @@
         android:debuggable="true"
         android:icon="@drawable/logo_72"
         android:label="MobileOrg"
-        android:name=".MobileOrgApplication" >
+        android:name=".App" >
         <service android:name=".service.DataService" />
 
         <receiver android:name="MobileOrgStartupIntentReceiver" >
@@ -28,12 +28,17 @@
 
         <activity
             android:label="MobileOrg"
-            android:name="MobileOrgActivity" >
+            android:name=".ui.OutlineViewer" 
+            android:configChanges="orientation|keyboard"
+            >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+            <activity
+            android:label="MobileOrg"
+            android:name="MobileOrgActivity" >
         </activity>
         <activity
             android:label="MobileOrg Settings"
