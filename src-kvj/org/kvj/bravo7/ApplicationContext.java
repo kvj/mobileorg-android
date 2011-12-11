@@ -12,6 +12,7 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Application;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.appwidget.AppWidgetProviderInfo;
@@ -20,7 +21,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-public class ApplicationContext {
+public class ApplicationContext extends Application {
 	
 	public class LogEntry {
 		String entry;
@@ -43,15 +44,16 @@ public class ApplicationContext {
 	private static final String TAG = "ApplicationContext";
 	
 	private SharedPreferences preferences = null;
-	private Context context = null;
 	private Map<String, Object> registry = new HashMap<String, Object>();
 	private static final int MAX_LOG = 100;
 	private Queue<LogEntry> log = new LinkedList<ApplicationContext.LogEntry>();
 	
-	private ApplicationContext(Context ctx) {
-		Log.i(TAG, "Creating new instance...: "+ctx.getClass().getName());
-		context = ctx;
-		preferences = PreferenceManager.getDefaultSharedPreferences(ctx);
+	
+	
+	public ApplicationContext() {
+		super();
+//		preferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+		instance = this;
 	}
 	
 	private static ApplicationContext instance = null;
@@ -60,23 +62,19 @@ public class ApplicationContext {
 		return instance;
 	}
 	
-	public static ApplicationContext getInstance(Context ctx) {
-		if (instance == null) {
-			instance = new ApplicationContext(ctx);
-		}
-		return instance;
-	}
-	
 	public SharedPreferences getPreferences() {
+		if (null == preferences) {
+			preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		}
 		return preferences;
 	}
 	
 	public String getStringPreference(String name, String defaultValue) {
-		return preferences.getString(name, defaultValue);
+		return getPreferences().getString(name, defaultValue);
 	}
 	
 	public void setStringPreference(String name, String value) {
-		preferences.edit().putString(name, value).commit();
+		getPreferences().edit().putString(name, value).commit();
 	}
 	
 	public List<String> getStringArrayPreference(String name) {
@@ -122,10 +120,10 @@ public class ApplicationContext {
 	
 	public int getIntPreference(String name, int defaultID) {
 		try {
-			return Integer.parseInt(preferences.getString(name, context.getString(defaultID)));
+			return Integer.parseInt(getPreferences().getString(name, getString(defaultID)));
 		} catch (Exception e) {
 			try {
-				return Integer.parseInt(context.getString(defaultID));
+				return Integer.parseInt(getString(defaultID));
 			} catch (Exception e2) {
 			}
 		}
@@ -133,15 +131,10 @@ public class ApplicationContext {
 	}
 	
 	public void setIntPreference(String name, int value) {
-		preferences.edit().putString(name, Integer.toString(value)).commit();
+		getPreferences().edit().putString(name, Integer.toString(value)).commit();
 	}
 
-	
-	
-	public Context getContext() {
-		return context;
-	}
-	
+		
 	public void setWidgetConfig(int id, JSONObject config) {
 		JSONObject obj = new JSONObject();
 		try {
@@ -165,8 +158,8 @@ public class ApplicationContext {
 	
 	public Map<Integer, JSONObject> getWidgetConfigs(String provider) {
 		Map<Integer, JSONObject> result = new HashMap<Integer, JSONObject>();
-		Set<String> keys = preferences.getAll().keySet();
-		AppWidgetManager manager = AppWidgetManager.getInstance(getContext());
+		Set<String> keys = getPreferences().getAll().keySet();
+		AppWidgetManager manager = AppWidgetManager.getInstance(this);
 		for (String key : keys) {
 			if (key.startsWith("widget_")) {
 				try {
@@ -190,9 +183,9 @@ public class ApplicationContext {
 	}
 	
 	public void updateWidgets(int id) {
-		Set<String> keys = preferences.getAll().keySet();
+		Set<String> keys = getPreferences().getAll().keySet();
 		List<String> toRemove = new ArrayList<String>();
-		AppWidgetManager manager = AppWidgetManager.getInstance(getContext());
+		AppWidgetManager manager = AppWidgetManager.getInstance(this);
 		for (String key : keys) {
 			if (key.startsWith("widget_")) {
 				try {
@@ -211,7 +204,7 @@ public class ApplicationContext {
 					}
 					AppWidgetProvider provider = (AppWidgetProvider) getClass().getClassLoader().loadClass(info.provider.getClassName()).newInstance();
 //					Log.i(TAG, "updateWidgets calling update...");
-					provider.onUpdate(getContext(), manager, new int[] {widgetID});
+					provider.onUpdate(this, manager, new int[] {widgetID});
 				} catch (Exception e) {
 					Log.e(TAG, "updateWidgets error:", e);
 					toRemove.add(key);
@@ -219,7 +212,7 @@ public class ApplicationContext {
 			}
 		}
 		for (String key : toRemove) {
-			preferences.edit().remove(key).commit();
+			getPreferences().edit().remove(key).commit();
 		}
 	}
 	

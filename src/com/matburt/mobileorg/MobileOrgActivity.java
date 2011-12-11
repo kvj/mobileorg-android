@@ -375,23 +375,23 @@ public class MobileOrgActivity extends ListActivity
     public void onResume() {
         Log.d("MobileOrg"+this,  "onResume" );
         super.onResume();
-        Intent nodeIntent = getIntent();
-    	MobileOrgApplication appInst = (MobileOrgApplication) this.getApplication();
-        ArrayList<Integer> intentNodePath = nodeIntent.getIntegerArrayListExtra("nodePath");
-        if (intentNodePath != null) {
-            appInst.nodeSelection = copySelection(intentNodePath);
-            nodeIntent.putIntegerArrayListExtra("nodePath", null);
-            Log.d("MobileOrg"+this,  "resume had nodePath="+nodeSelectionStr(appInst.nodeSelection));
-        }
-        else {
-            Log.d("MobileOrg"+this,  "resume restoring original selection"+nodeSelectionStr(this.origSelection));
-            appInst.nodeSelection = copySelection(this.origSelection);
-        }
-        Log.d("MobileOrg"+this,  "afteResume appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
-
-        if (null != controller) {
-        	populateDisplay();
-		}
+//        Intent nodeIntent = getIntent();
+//    	MobileOrgApplication appInst = (MobileOrgApplication) this.getApplication();
+//        ArrayList<Integer> intentNodePath = nodeIntent.getIntegerArrayListExtra("nodePath");
+//        if (intentNodePath != null) {
+//            appInst.nodeSelection = copySelection(intentNodePath);
+//            nodeIntent.putIntegerArrayListExtra("nodePath", null);
+//            Log.d("MobileOrg"+this,  "resume had nodePath="+nodeSelectionStr(appInst.nodeSelection));
+//        }
+//        else {
+//            Log.d("MobileOrg"+this,  "resume restoring original selection"+nodeSelectionStr(this.origSelection));
+//            appInst.nodeSelection = copySelection(this.origSelection);
+//        }
+//        Log.d("MobileOrg"+this,  "afteResume appInst.nodeSelection="+nodeSelectionStr(appInst.nodeSelection));
+//
+//        if (null != controller) {
+//        	populateDisplay();
+//		}
     }
 
     public void populateDisplay() {

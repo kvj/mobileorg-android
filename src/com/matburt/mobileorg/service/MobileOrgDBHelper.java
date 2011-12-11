@@ -30,7 +30,8 @@ public class MobileOrgDBHelper extends DBHelper{
 			db.execSQL("create table if not exists files (id integer primary key autoincrement, file text, checksum text)");
 			db.execSQL("create table if not exists data (id integer primary key autoincrement, parent_id integer, " +
 					"indent integer default 0, editable integer default 0, note_id text, original_id text, " +
-					"type text, priority text, todo text, title text, raw text, tags text, level integer default 0, before text, after text)");
+					"type text, priority text, todo text, title text, raw text, tags text, " +
+					"level integer default 0, before text, after text)");
 			break;
 		case 3:
 			db.execSQL("alter table data add file_id integer");

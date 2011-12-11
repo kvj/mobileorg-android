@@ -27,4 +27,10 @@ public class NoteNG {
 	public String before = null;
 	public String after = null;
 	public Integer fileID = null;
+	
+	public boolean expanded = false;
+	
+	public boolean isExpandable() {
+		return TYPE_AGENDA.equals(type) || TYPE_FILE.equals(type) || TYPE_OUTLINE.equals(type);
+	}
 }
