@@ -19,9 +19,9 @@ public class MobileOrgStartupIntentReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-        if (this.shouldStartService(context)) {
+//        if (this.shouldStartService(context)) {
             Intent serviceIntent = new Intent(context, DataService.class);
             context.startService(serviceIntent);
         }
-	}
+//	}
 }

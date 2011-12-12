@@ -77,8 +77,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 					parent, false);
 		}
 		NoteNG note = getItem(position);
-		boolean isselected = selected == note.id;
-		boolean isclicked = clicked == note.id;
+//		boolean isselected = selected == note.id;
+//		boolean isclicked = clicked == note.id;
 		TextView title = (TextView) convertView
 				.findViewById(R.id.outline_viewer_item_text);
 //		Log.i(TAG, "getView: "+note.title+", "+isselected+
@@ -91,6 +91,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 //					? theme.c7White
 //					: theme.c0Black);
 		SpannableStringBuilder sb = new SpannableStringBuilder();
+		String indent = "";
 		if (note.indent > 0) {
 			// if (selected == note.id && note.isExpandable()) {
 			// sb.append(note.expanded? 'v': '>');
@@ -100,6 +101,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 			for (int i = 1; i < note.indent; i++) {
 				sb.append(' ');
 			}
+			indent = new String(sb.toString());
 		}
 		if (wide && null != note.before) {
 			addSpan(sb, note.before, new ForegroundColorSpan(theme.c3Yellow));
@@ -113,7 +115,20 @@ public class OutlineViewerAdapter implements ListAdapter {
 			addSpan(sb, "[#" + note.priority + "] ", new ForegroundColorSpan(
 					theme.c2Green));
 		}
-		if (NoteNG.TYPE_AGENDA.equals(note.type)) {
+		if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+			String[] lines = note.raw.split("\\n");
+			for (int i = 0; i < lines.length; i++) {
+				if (i == 0) {
+					addSpan(sb, note.before+' ', null);
+//					if (note.expanded == NoteNG.EXPAND_ONE) {
+//						break;
+//					}
+				} else {
+					addSpan(sb, '\n'+indent, null);
+				}
+				addSpan(sb, lines[i], null);
+			}
+		} else if (NoteNG.TYPE_AGENDA.equals(note.type)) {
 			addSpan(sb, note.title, new ForegroundColorSpan(
 					theme.ccLBlue));
 		} else {
@@ -186,8 +201,11 @@ public class OutlineViewerAdapter implements ListAdapter {
 			return;
 		}
 		selected = note.id;
-		if (!note.expanded) {
-			expandNote(note, position);
+		if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
+			expandNote(note, position, false);
+		} else if (note.expanded == NoteNG.EXPAND_ONE){
+			collapseNote(note, position);
+			expandNote(note, position, true);
 		} else {
 			collapseNote(note, position);
 		}
@@ -197,7 +215,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	private void collapseNote(NoteNG note, int position) {
-		note.expanded = false;
+		note.expanded = NoteNG.EXPAND_COLLAPSED;
 		int i = position + 1;
 		while (i < data.size()) {
 			if (data.get(i).indent <= note.indent) {
@@ -208,17 +226,23 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	private void expandNote(NoteNG note, int position) {
-		note.expanded = true;
+	private int expandNote(NoteNG note, int position, boolean expandAll) {
+		note.expanded = expandAll? NoteNG.EXPAND_MANY: NoteNG.EXPAND_ONE;
 		List<NoteNG> list = controller.getData(note.id);
 		if (null == list) {
-			return;
+			return 0;
 		}
+		int pos = 0;
 		for (int i = 0; i < list.size(); i++) {
 			NoteNG n = list.get(i);
 			n.indent = note.indent + 1;
-			data.add(position + i + 1, n);
+			pos++;
+			data.add(position + pos, n);
+			if (expandAll) {
+				pos += expandNote(n, position + pos, expandAll);
+			}
 		}
+		return pos;
 	}
 	
 	public String getIntent(int position) {

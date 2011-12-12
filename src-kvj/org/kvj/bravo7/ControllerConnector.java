@@ -10,7 +10,7 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 
-public class ControllerConnector<T extends Object, S extends SuperService<T>> implements ServiceConnection {
+public class ControllerConnector<A extends ApplicationContext, T extends Object, S extends SuperService<T, A>> implements ServiceConnection {
 	
 	private static final String TAG = "ControllerConnector";
 	private Activity activity = null;

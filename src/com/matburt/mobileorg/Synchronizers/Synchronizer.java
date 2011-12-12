@@ -273,4 +273,9 @@ abstract public class Synchronizer
         }
         return priorityList;
     }
+    
+    /* Use this to detect changes */
+    public String getFileHash(String name) throws ReportableError {
+    	return null;
+    }
 }

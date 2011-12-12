@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.*;
 import android.widget.TableRow.LayoutParams;
+
+import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.MobileOrgApplication;
 import com.matburt.mobileorg.Parsing.Node;
 import com.matburt.mobileorg.service.DataController;
@@ -20,7 +22,7 @@ import java.util.HashMap;
 
 import org.kvj.bravo7.SuperActivity;
 
-public class EditDetailsActivity extends SuperActivity<DataController, DataService> implements OnClickListener
+public class EditDetailsActivity extends SuperActivity<App, DataController, DataService> implements OnClickListener
 {
     public EditDetailsActivity() {
 		super(DataService.class);
