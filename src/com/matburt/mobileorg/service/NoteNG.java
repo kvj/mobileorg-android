@@ -11,6 +11,10 @@ public class NoteNG {
 	public static final String TYPE_SUBLIST = "sub";
 	public static final String TYPE_BLOCK = "block";
 	
+	public static final int EXPAND_COLLAPSED = 0;
+	public static final int EXPAND_ONE = 1;
+	public static final int EXPAND_MANY = 2;
+	
 	public Integer id = null;
 	public Integer parentID = null;
 	public int indent = 0;
@@ -28,9 +32,13 @@ public class NoteNG {
 	public String after = null;
 	public Integer fileID = null;
 	
-	public boolean expanded = false;
+	public int expanded = EXPAND_COLLAPSED;
 	
 	public boolean isExpandable() {
-		return TYPE_AGENDA.equals(type) || TYPE_FILE.equals(type) || TYPE_OUTLINE.equals(type);
+		return TYPE_AGENDA.equals(type) 
+			|| TYPE_FILE.equals(type) 
+			|| TYPE_OUTLINE.equals(type)
+			|| TYPE_SUBLIST.equals(type)
+			;
 	}
 }

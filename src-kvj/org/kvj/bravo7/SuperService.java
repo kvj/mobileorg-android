@@ -11,7 +11,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-public class SuperService<T> extends Service{
+public class SuperService<T, A extends ApplicationContext> extends Service{
 
 	protected T controller = null;
 	private Class<T> controllerClass = null;
@@ -40,7 +40,7 @@ public class SuperService<T> extends Service{
 	@Override
 	public void onCreate() {
 		super.onCreate();
-    	ApplicationContext ctx = ApplicationContext.getInstance();
+    	ApplicationContext ctx = A.getInstance();
     	controller = ctx.getBean(controllerClass);
     	if (null == controller) {
 			try {

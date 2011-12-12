@@ -237,7 +237,7 @@ public class DataController {
             return "No configuration";
         }
         OrgNGParser parser = new OrgNGParser(this, appSync);
-        return parser.parse(appContext.getStringPreference("dropboxPath", ""));
+        return parser.parse();
 	}
 	
 	public boolean cleanupDB() {
@@ -346,13 +346,14 @@ public class DataController {
 		note.level = c.getInt(10);
 		note.before = c.getString(11);
 		note.after = c.getString(12);
+		note.raw = c.getString(13);
 		return note;
 	}
 	
 	private static String[] dataFields = new String[] {
 		"id", "indent", "editable", "note_id", "original_id", 
 		"type", "priority", "todo", "title", "tags", "level", 
-		"before","after"};
+		"before","after", "raw"};
 	
 	public List<NoteNG> getData(Integer parent) {
 		if (null == db) {

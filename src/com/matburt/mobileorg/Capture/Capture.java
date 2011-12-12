@@ -10,12 +10,14 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.MobileOrgApplication;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 
-public class Capture extends SuperActivity<DataController, DataService> implements OnClickListener
+public class Capture extends SuperActivity<App, DataController, DataService> implements OnClickListener
 {
     private EditText orgEditDisplay;
     private Button saveButton;

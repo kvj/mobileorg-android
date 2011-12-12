@@ -1,17 +1,7 @@
 package com.matburt.mobileorg.ui;
 
-import java.util.ArrayList;
-
 import org.kvj.bravo7.SuperActivity;
 
-import com.matburt.mobileorg.MobileOrgActivity;
-import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.Settings.SettingsActivity;
-import com.matburt.mobileorg.service.DataController;
-import com.matburt.mobileorg.service.DataService;
-import com.matburt.mobileorg.service.NoteNG;
-
-import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -26,7 +16,14 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 
-public class OutlineViewer extends SuperActivity<DataController, DataService> {
+import com.matburt.mobileorg.App;
+import com.matburt.mobileorg.R;
+import com.matburt.mobileorg.Settings.SettingsActivity;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataService;
+import com.matburt.mobileorg.service.NoteNG;
+
+public class OutlineViewer extends SuperActivity<App, DataController, DataService> {
 
     private static final int OP_MENU_SETTINGS = 1;
     private static final int OP_MENU_SYNC = 2;
@@ -44,6 +41,8 @@ public class OutlineViewer extends SuperActivity<DataController, DataService> {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+        Intent serviceIntent = new Intent(this, DataService.class);
+        startService(serviceIntent);
 		setContentView(R.layout.outline_viewer);
 		listAdapter = new OutlineViewerAdapter();
 		list = (ListView) findViewById(R.id.outline_viewer_list);

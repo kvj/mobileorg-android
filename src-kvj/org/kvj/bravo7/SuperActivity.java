@@ -6,7 +6,7 @@ import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import android.app.Activity;
 import android.widget.Toast;
 
-public class SuperActivity<T, S extends SuperService<T>> extends Activity implements ControllerReceiver<T>{
+public class SuperActivity<A extends ApplicationContext, T, S extends SuperService<T, A>> extends Activity implements ControllerReceiver<T>{
 
 	Class<S> serviceClass = null;
 	
@@ -15,7 +15,7 @@ public class SuperActivity<T, S extends SuperService<T>> extends Activity implem
 	}
 	private static final String TAG = "SuperActivity";
 	protected T controller = null;
-	ControllerConnector<T, S> connector = new ControllerConnector<T, S>(this, this);
+	ControllerConnector<A, T, S> connector = new ControllerConnector<A, T, S>(this, this);
 	
 	public void onController(T controller) {
 		this.controller = controller;

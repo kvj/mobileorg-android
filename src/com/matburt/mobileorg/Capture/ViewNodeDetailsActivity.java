@@ -9,6 +9,7 @@ import com.matburt.mobileorg.MobileOrgApplication;
 import com.matburt.mobileorg.Parsing.Node;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
+import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.SimpleTextDisplay;
 
@@ -18,7 +19,7 @@ import java.util.HashMap;
 
 import org.kvj.bravo7.SuperActivity;
 
-public class ViewNodeDetailsActivity extends SuperActivity<DataController, DataService> implements OnClickListener {
+public class ViewNodeDetailsActivity extends SuperActivity<App, DataController, DataService> implements OnClickListener {
 	protected ArrayList<Integer> mNodePath;
 	protected EditText mTitle;
 	protected TextView mBody;

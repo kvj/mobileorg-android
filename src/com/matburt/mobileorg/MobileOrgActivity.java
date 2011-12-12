@@ -269,7 +269,7 @@ public class MobileOrgActivity extends ListActivity
     private ArrayList<Integer> origSelection = null; 
     private Node rootNode = null; 
     DataController controller = null;
-    ControllerConnector<DataController, DataService> conn = new ControllerConnector<DataController, DataService>(this, new ControllerConnector.ControllerReceiver<DataController>() {
+    ControllerConnector<App, DataController, DataService> conn = new ControllerConnector<App, DataController, DataService>(this, new ControllerConnector.ControllerReceiver<DataController>() {
 
 		@Override
 		public void onController(DataController c) {
