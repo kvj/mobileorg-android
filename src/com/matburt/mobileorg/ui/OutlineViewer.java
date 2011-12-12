@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
@@ -41,10 +42,11 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
         Intent serviceIntent = new Intent(this, DataService.class);
         startService(serviceIntent);
 		setContentView(R.layout.outline_viewer);
-		listAdapter = new OutlineViewerAdapter();
+		listAdapter = new OutlineViewerAdapter(this);
 		list = (ListView) findViewById(R.id.outline_viewer_list);
 		list.setAdapter(listAdapter);
 		list.setOnItemClickListener(new OnItemClickListener() {

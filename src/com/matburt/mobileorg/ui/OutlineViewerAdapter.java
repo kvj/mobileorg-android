@@ -9,6 +9,7 @@ import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.ui.theme.Default;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -28,8 +29,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 	Integer clicked = null;
 	Default theme = null;
 
-	public OutlineViewerAdapter() {
+	public OutlineViewerAdapter(Context context) {
 		theme = new Default();
+		wide = context.getResources().getConfiguration().orientation 
+				== Configuration.ORIENTATION_LANDSCAPE;
 	}
 
 	private static final String TAG = "OutlineView";
