@@ -44,7 +44,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		Log.i(TAG, "Activity create: "+savedInstanceState);
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
+//		requestWindowFeature(Window.FEATURE_NO_TITLE);
         Intent serviceIntent = new Intent(this, DataService.class);
         startService(serviceIntent);
 		setContentView(R.layout.outline_viewer);

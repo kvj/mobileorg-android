@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.R.color;
+import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -23,74 +24,11 @@ import com.matburt.mobileorg.service.DataController.TodoState;
 
 public class DataEditOptionsPanel extends Fragment {
 
-	class StringListAdapter implements SpinnerAdapter {
+	class StringListAdapter extends ArrayAdapter<String> {
 
-		List<String> data = null;
-		
 		public StringListAdapter(List<String> data) {
-			this.data = new ArrayList<String>(data);
-		}
-		
-		@Override
-		public int getCount() {
-			return data.size();
-		}
-
-		@Override
-		public String getItem(int arg0) {
-			return data.get(arg0);
-		}
-
-		@Override
-		public long getItemId(int arg0) {
-			return arg0;
-		}
-
-		@Override
-		public int getItemViewType(int arg0) {
-			return 0;
-		}
-
-		@Override
-		public View getView(int pos, View view, ViewGroup parent) {
-			if (view == null) {
-				view = new TextView(parent.getContext());
-				
-			}
-			TextView textView = (TextView) view;
-			textView.setTextColor(Color.BLACK);
-			textView.setText(getItem(pos));
-			return view;
-		}
-
-		@Override
-		public int getViewTypeCount() {
-			return 1;
-		}
-
-		@Override
-		public boolean hasStableIds() {
-			return true;
-		}
-
-		@Override
-		public boolean isEmpty() {
-			return false;
-		}
-
-		@Override
-		public void registerDataSetObserver(DataSetObserver arg0) {
-		}
-
-		@Override
-		public void unregisterDataSetObserver(DataSetObserver arg0) {
-		}
-
-		@Override
-		public View getDropDownView(int arg0, View arg1, ViewGroup arg2) {
-			arg1 = getView(arg0, arg1, arg2);
-			arg1.setPadding(20, 20, 20, 20);
-			return arg1;
+			super(getActivity(), android.R.layout.simple_spinner_item, new ArrayList<String>(data));
+			setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		}
 		
 	}
