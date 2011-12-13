@@ -248,6 +248,8 @@ public class DataController {
 			db.getDatabase().beginTransaction();
 			db.getDatabase().delete("files", null, null);
 			db.getDatabase().delete("data", null, null);
+			db.getDatabase().delete("todos", null, null);
+			db.getDatabase().delete("priorities", null, null);
 			db.getDatabase().setTransactionSuccessful();
 			return true;
 		} catch (Exception e) {
@@ -276,6 +278,104 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return null;
+	}
+	
+	public boolean addTodoType(int group, String name, boolean done) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("groupnum", group);
+			values.put("name", name);
+			values.put("isdone", done? 1: 0);
+			db.getDatabase().insert("todos", null, values);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+	
+	public boolean addPriorityType(String name) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("name", name);
+			db.getDatabase().insert("priorities", null, values);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+	
+	public class TodoState {
+		public int group;
+		public String name;
+		public boolean done;
+	}
+	
+	public List<TodoState> getTodoTypes() {
+		if (null == db) {
+			return new ArrayList<TodoState>();
+		}
+		List<TodoState> result = new ArrayList<TodoState>();
+		try {
+			Cursor c = db.getDatabase().query("todos", 
+					new String[] {"groupnum", "name", "isdone"}, 
+					null, 
+					null, 
+					null, null, "groupnum, isdone, id");
+			if (c.moveToFirst()) {
+				do {
+					TodoState state = new TodoState();
+					state.group = c.getInt(0);
+					state.name = c.getString(1);
+					state.done = c.getInt(2) == 1? true: false;
+					result.add(state);
+				} while (c.moveToNext());
+			}
+			c.close();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<TodoState>();
+	}
+	
+	public List<String> getPrioritiesNG() {
+		if (null == db) {
+			return new ArrayList<String>();
+		}
+		List<String> result = new ArrayList<String>();
+		try {
+			Cursor c = db.getDatabase().query("priorities", 
+					new String[] {"name"}, 
+					null, 
+					null, 
+					null, null, "id");
+			if (c.moveToFirst()) {
+				do {
+					result.add(c.getString(0));
+				} while (c.moveToNext());
+			}
+			c.close();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<String>();
 	}
 	
 	public Integer addData(NoteNG note) {
@@ -399,6 +499,28 @@ public class DataController {
 					dataFields, 
 					"note_id=?", 
 					new String[] {noteID}, 
+					null, null, "id");
+			NoteNG note = null;
+			if (c.moveToFirst()) {
+				note = cursorToNote(c);
+			}
+			c.close();
+			return note;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public NoteNG findNoteByID(Integer id) {
+		try {
+			if (null == id) {
+				return null;
+			}
+			Cursor c = db.getDatabase().query("data", 
+					dataFields, 
+					"id=?", 
+					new String[] {id.toString()}, 
 					null, null, "id");
 			NoteNG note = null;
 			if (c.moveToFirst()) {

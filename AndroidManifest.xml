@@ -5,8 +5,8 @@
     android:versionName="0.6.2" >
 
     <uses-sdk
-        android:minSdkVersion="3"
-        android:targetSdkVersion="4" />
+        android:minSdkVersion="4"
+        android:targetSdkVersion="11" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -19,9 +19,8 @@
         <service android:name=".service.DataService" />
 
         <receiver android:name="MobileOrgStartupIntentReceiver" >
-            <intent-filter >
+            <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-
                 <category android:name="android.intent.category.HOME" />
             </intent-filter>
         </receiver>
@@ -29,12 +28,16 @@
         <activity
             android:label="MobileOrg"
             android:name=".ui.OutlineViewer" 
-            android:configChanges="orientation|keyboard"
-            >
-            <intent-filter >
+            android:configChanges="orientation|keyboardHidden">
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:label="Capture"
+            android:name=".ui.DataEditActivity" 
+            android:configChanges="keyboardHidden">
         </activity>
             <activity
             android:label="MobileOrg"

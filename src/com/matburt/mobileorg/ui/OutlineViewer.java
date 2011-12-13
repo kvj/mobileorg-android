@@ -34,6 +34,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
     
 	public OutlineViewer() {
 		super(DataService.class);
+		Log.i(TAG, "Activity constructor");
 	}
 	
 	ListView list;
@@ -42,6 +43,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.i(TAG, "Activity create: "+savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
         Intent serviceIntent = new Intent(this, DataService.class);
         startService(serviceIntent);
@@ -63,10 +65,18 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
 					int pos, long arg3) {
 				String noteID = listAdapter.getIntent(pos);
+				NoteNG note = listAdapter.getItem(pos);
 				if (null != noteID) {
 					Log.i(TAG, "Showing activity: "+noteID);
-					Intent intent = new Intent(OutlineViewer.this, OutlineViewer.class);
-					intent.putExtra("notePath", noteID);
+//					Intent intent = new Intent(OutlineViewer.this, OutlineViewer.class);
+//					intent.putExtra("notePath", noteID);
+//					startActivity(intent);
+					Intent intent = new Intent(OutlineViewer.this, DataEditActivity.class);
+					intent.putExtra("text", note.title);
+					intent.putExtra("type", "title");
+					intent.putExtra("todo", note.todo);
+					intent.putExtra("priority", note.priority);
+					intent.putExtra("tags", note.tags);
 					startActivity(intent);
 					return true;
 				}
@@ -78,6 +88,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
+		Log.i(TAG, "Activity config change");
 		if (controller == null) {
 			return;
 		}
@@ -91,6 +102,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 	@Override
 	public void onController(DataController controller) {
 		super.onController(controller);
+		Log.i(TAG, "Activity controller");
 		Integer noteID = null;
 		String notePath = null;
 		if (null != getIntent().getExtras()) {
@@ -126,11 +138,10 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
             return true;
         case OP_MENU_SETTINGS:
             return showSettings();
-//        case MobileOrgActivity.OP_MENU_OUTLINE:
-//            Intent dispIntent = new Intent(this, MobileOrgActivity.class);
-//            dispIntent.putIntegerArrayListExtra( "nodePath", new ArrayList<Integer>() );
-//            startActivity(dispIntent);
-//            return true;
+        case OP_MENU_CAPTURE:
+            Intent dispIntent = new Intent(this, DataEditActivity.class);
+            startActivity(dispIntent);
+            return true;
 //        case MobileOrgActivity.OP_MENU_CAPTURE:
 //            return this.runCapture();
         }

@@ -46,7 +46,9 @@ public class OrgNGParser {
 	}
 	
 	interface ItemListener {
-		boolean onItem(NoteNG note);
+		
+		void onSharpLine(String name, String value);
+		void onItem(NoteNG note);
 	}
 	
 	private void debugExp(Matcher m) {
@@ -55,7 +57,12 @@ public class OrgNGParser {
 		}
 	}
 	
-	public String parseFile(String name, ItemListener listener, NoteNG _parent) {
+	class ParseFileOptions {
+		boolean agenda = false;
+		int todoGroup = 0;
+	}
+	
+	public String parseFile(String name, ItemListener listener, NoteNG _parent, ParseFileOptions options) {
 		try {
 			BufferedReader reader = synchronizer.fetchOrgFile(name);
 			String line = null;
@@ -105,12 +112,19 @@ public class OrgNGParser {
 //					debugExp(m);
 					NoteNG note = new NoteNG();
 					note.type = NoteNG.TYPE_OUTLINE;
+					if (options.agenda) {
+						note.type = NoteNG.TYPE_AGENDA_OUTLINE;
+					}
 					note.raw = line;
 					note.title = m.group(5);
 					note.priority = m.group(4);
 					note.todo = m.group(2);
 					if (null != note.todo) {
 						note.todo = note.todo.trim();
+					} else {
+						if (options.agenda) {
+							note.type = NoteNG.TYPE_AGENDA;
+						}
 					}
 					int level = m.group(1).trim().length();
 					note.level = level;
@@ -143,9 +157,7 @@ public class OrgNGParser {
 						controller.addData(listNote);
 						listNote = null;
 					}
-					if(!listener.onItem(note)) {
-						continue;
-					}
+					listener.onItem(note);
 //					Log.i(TAG, "Note["+note.parentID+"] ["+note.title+"] ["+note.before+"] ["+note.after+"]");
 					continue;
 				}
@@ -171,6 +183,7 @@ public class OrgNGParser {
 						controller.addData(listNote);
 						listNote = null;
 					}
+					listener.onSharpLine(m.group(1), m.group(3));
 					continue;
 				}
 				m = paramPattern.matcher(line);
@@ -233,6 +246,18 @@ public class OrgNGParser {
 					}
 					listNote = n;
 				} else {
+					if (options.agenda && "".equals(line)) {
+						//Empty line - step up
+						if (null != listNote) {
+							controller.addData(listNote);
+							listNote = null;
+						}
+						if (!parents.empty()) {
+							parent = parents.pop();
+						}
+						marker = Marker.Outline;
+						continue;
+					}
 					if (null != listNote) {
 						listNote.raw += '\n'+line.trim();
 					} else {
@@ -266,10 +291,10 @@ public class OrgNGParser {
 			String prevSession = controller.appContext.getStringPreference("prevSyncSession", "");
 			Log.i(TAG, "Start sync");
 			String newSession = synchronizer.getFileHash("checksums.dat");
-			if (null != newSession && newSession.equals(prevSession)) {
-				Log.i(TAG, "No changes detected - exiting");
-				return null;
-			}
+//			if (null != newSession && newSession.equals(prevSession)) {
+//				Log.i(TAG, "No changes detected - exiting");
+//				return null;
+//			}
 			if (!controller.cleanupDB()) {
 				return "DB error";
 			}
@@ -297,27 +322,28 @@ public class OrgNGParser {
 			if (null ==indexFileID) {
 				return "DB error";
 			}
+			final ParseFileOptions indexOptions = new ParseFileOptions();
 			String error = parseFile("index.org", new ItemListener() {
 				
 				@Override
-				public boolean onItem(NoteNG note) {
-					Log.i(TAG, "See file note: "+note.title);
+				public void onItem(NoteNG note) {
+//					Log.i(TAG, "See file note: "+note.title);
 					Matcher m = linkPattern.matcher(note.title);
 					if (!m.find()) {
-						return false;
+						return;
 					}
 //					debugExp(m);
 					note.title = m.group(5);
 					if (!controller.updateData(note, "type", NoteNG.TYPE_FILE)) {
-						return false;
+						return;
 					}
 					if (!controller.updateData(note, "title", note.title)) {
-						return false;
+						return;
 					}
 					String fileName = m.group(4);
 					Integer fileID = controller.updateFile(fileName, sums.get(fileName));
 					if (null == fileID) {
-						return false;
+						return;
 					}
 					NoteNG n = new NoteNG();
 					n.id = note.id;
@@ -326,22 +352,46 @@ public class OrgNGParser {
 					if (!isAgenda) {
 						note.editable = true;
 					}
+					ParseFileOptions options = new ParseFileOptions();
+					options.agenda = isAgenda;
 					String error = parseFile(fileName, new ItemListener() {
 						
 						@Override
-						public boolean onItem(NoteNG note) {
-							if (isAgenda && note.level == 1) {
-								controller.updateData(note, "type", NoteNG.TYPE_AGENDA);
-							}
-							return true;
+						public void onItem(NoteNG note) {
 						}
-					}, n);
+
+						@Override
+						public void onSharpLine(String name, String value) {
+						}
+					}, n, options);
 					if (null != error) {
 						Log.e(TAG, "Error parsing: "+error);
 					}
-					return true;
 				}
-			}, root);
+
+				@Override
+				public void onSharpLine(String name, String value) {
+//					Log.i(TAG, "# line: "+name+", "+value);
+					if ("TODO".equals(name)) {
+						String[] items = value.split("\\s");
+						boolean done = false;
+						for (int i = 0; i < items.length; i++) {
+							if ("|".equals(items[i])) {
+								done = true;
+								continue;
+							}
+							controller.addTodoType(indexOptions.todoGroup, items[i], done);
+						}
+						indexOptions.todoGroup++;
+					}
+					if ("ALLPRIORITIES".equals(name)) {
+						String[] items = value.split("\\s");
+						for (int i = 0; i < items.length; i++) {
+							controller.addPriorityType(items[i]);
+						}
+					}
+				}
+			}, root, indexOptions);
 			Log.i(TAG, "Stop sync");
 			if (null == error) {
 				controller.appContext.setStringPreference("prevSyncSession", newSession);

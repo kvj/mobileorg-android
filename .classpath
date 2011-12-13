@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="libs/signpost-core-1.2.1.1.jar"/>
 	<classpathentry kind="lib" path="libs/dropbox-android-sdk-1.2.2.jar"/>
 	<classpathentry kind="lib" path="libs/httpmime-4.0.3.jar"/>
+	<classpathentry kind="lib" path="libs/android-support-v4.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

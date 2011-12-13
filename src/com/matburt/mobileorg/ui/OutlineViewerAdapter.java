@@ -1,19 +1,25 @@
 package com.matburt.mobileorg.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.service.DataController.TodoState;
 import com.matburt.mobileorg.ui.theme.Default;
 
 import android.content.Context;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.text.style.UnderlineSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,11 +34,15 @@ public class OutlineViewerAdapter implements ListAdapter {
 	Integer selected = null;
 	Integer clicked = null;
 	Default theme = null;
+	int[] levelColors = new int[0];
 
 	public OutlineViewerAdapter(Context context) {
 		theme = new Default();
 		wide = context.getResources().getConfiguration().orientation 
 				== Configuration.ORIENTATION_LANDSCAPE;
+		levelColors = new int[] {theme.ccLBlue, theme.c3Yellow, theme.ceLCyan, theme.c1Red, 
+				theme.c2Green, theme.c5Purple, theme.ccLBlue, theme.c2Green, 
+				theme.ccLBlue, theme.c3Yellow, theme.ceLCyan};
 	}
 
 	private static final String TAG = "OutlineView";
@@ -40,6 +50,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 	DataSetObserver observer = null;
 	DataController controller = null;
 	private boolean wide = false;
+	Map<String, Boolean> todos = new HashMap<String, Boolean>();
+	Map<String, Integer> priorities = new HashMap<String, Integer>();
 
 	@Override
 	public int getCount() {
@@ -62,12 +74,16 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	public static void addSpan(SpannableStringBuilder buffer, String text,
-			Object span) {
+			Object... span) {
 		int start = buffer.length();
 		int end = start + text.length();
 		buffer.append(text);
 		if (null != span) {
-			buffer.setSpan(span, start, end, 0);
+			for (int i = 0; i < span.length; i++) {
+				if (null != span[i]) {
+					buffer.setSpan(span[i], start, end, 0);
+				}
+			}
 		}
 	}
 
@@ -81,13 +97,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 		NoteNG note = getItem(position);
 //		boolean isselected = selected == note.id;
-//		boolean isclicked = clicked == note.id;
+		boolean isclicked = clicked == note.id;
 		TextView title = (TextView) convertView
 				.findViewById(R.id.outline_viewer_item_text);
-//		Log.i(TAG, "getView: "+note.title+", "+isselected+
-//				", "+convertView.isFocused()+
-//				", "+title.isFocused()+
-//				", "+parent.isFocused());
 //		convertView.setBackgroundColor(isselected 
 //				? theme.c2Green 
 //				: isclicked
@@ -106,37 +118,55 @@ public class OutlineViewerAdapter implements ListAdapter {
 			}
 			indent = new String(sb.toString());
 		}
-		if (wide && null != note.before) {
+		if (wide && null != note.before && !NoteNG.TYPE_SUBLIST.equals(note.type)) {
 			addSpan(sb, note.before, new ForegroundColorSpan(theme.c3Yellow));
 		}
 		if (null != note.todo) {
+			Boolean done = todos.get(note.todo);
+			if (null == done) {
+				done = false;
+			}
 			addSpan(sb, note.todo + ' ', 
-					new ForegroundColorSpan(theme.c1Red));
+					new ForegroundColorSpan(done? theme.c9LRed: theme.c1Red));
 			// sb.append(note.todo+' ');
 		}
+		int titleColor = theme.c7White;
+		if (NoteNG.TYPE_AGENDA.equals(note.type)) {
+			titleColor = theme.ccLBlue;
+		}
+		if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
+			titleColor = levelColors[(note.level-1) % levelColors.length];
+		}
 		if (null != note.priority) {
-			addSpan(sb, "[#" + note.priority + "] ", new ForegroundColorSpan(
-					theme.c2Green));
+			Integer priority = priorities.get(note.priority);
+			if (null == priority) {
+				priority = 2;
+			}
+			int prColor = theme.c7White;
+			if (0 == priority) {
+				prColor = theme.cfLWhite;
+			}
+			addSpan(sb, "[#" + note.priority + "]", 
+					new ForegroundColorSpan(prColor), 
+					priority>1? new UnderlineSpan(): null);
+			addSpan(sb, " ");
 		}
 		if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
 			String[] lines = note.raw.split("\\n");
 			for (int i = 0; i < lines.length; i++) {
 				if (i == 0) {
-					addSpan(sb, note.before+' ', null);
-//					if (note.expanded == NoteNG.EXPAND_ONE) {
-//						break;
-//					}
+					addSpan(sb, note.before+' ');
 				} else {
-					addSpan(sb, '\n'+indent, null);
+					addSpan(sb, '\n'+indent);
 				}
-				addSpan(sb, lines[i], null);
+				addSpan(sb, lines[i]);
 			}
-		} else if (NoteNG.TYPE_AGENDA.equals(note.type)) {
-			addSpan(sb, note.title, new ForegroundColorSpan(
-					theme.ccLBlue));
 		} else {
 			addSpan(sb, note.title, new ForegroundColorSpan(
-					theme.cfLWhite));
+					titleColor));
+		}
+		if (isclicked) {
+			sb.setSpan(new StyleSpan(Typeface.BOLD), 0, sb.length(), 0);
 		}
 		title.setText(sb, BufferType.SPANNABLE);
 		return convertView;
@@ -187,10 +217,26 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	public void reload() {
-		List<NoteNG> _list = controller.getData(id);
-		if (null != _list) {
-			data.clear();
-			data.addAll(_list);
+		data.clear();
+		todos.clear();
+		List<TodoState> todoStates = controller.getTodoTypes();
+		for (TodoState t : todoStates) {
+			todos.put(t.name, t.done);
+		}
+		priorities.clear();
+		List<String> prList = controller.getPrioritiesNG();
+		for (int i = 0; i < prList.size(); i++) {
+			priorities.put(prList.get(i), i);
+		}
+		NoteNG root = controller.findNoteByID(id);
+		if (null != root) {
+			data.add(root);
+			expandNote(root, 0, false);
+		} else {
+			List<NoteNG> _list = controller.getData(id);
+			if (null != _list) {
+				data.addAll(_list);
+			}
 		}
 		if (null != observer) {
 			observer.onChanged();

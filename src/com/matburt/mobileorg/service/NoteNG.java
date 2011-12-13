@@ -5,6 +5,7 @@ public class NoteNG {
 	public static final String TYPE_FILE = "file";
 	public static final String TYPE_AGENDA = "agenda";
 	public static final String TYPE_OUTLINE = "outline";
+	public static final String TYPE_AGENDA_OUTLINE = "aoutline";
 	public static final String TYPE_PROPERTY = "prop";
 	public static final String TYPE_DRAWER = "drawer";
 	public static final String TYPE_TEXT = "text";
@@ -36,6 +37,7 @@ public class NoteNG {
 	
 	public boolean isExpandable() {
 		return TYPE_AGENDA.equals(type) 
+			|| TYPE_AGENDA_OUTLINE.equals(type) 
 			|| TYPE_FILE.equals(type) 
 			|| TYPE_OUTLINE.equals(type)
 			|| TYPE_SUBLIST.equals(type)
