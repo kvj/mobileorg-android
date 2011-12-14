@@ -33,6 +33,13 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 		edit = (EditText) findViewById(R.id.data_edit_text);
 		togglePanel = (ImageButton) findViewById(R.id.data_edit_button);
 		save = (Button) findViewById(R.id.data_edit_save);
+		save.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				onSave();
+			}
+		});
 		panel = (DataEditOptionsPanel) getSupportFragmentManager().findFragmentById(R.id.data_edit_panel);
 		if (null == savedInstanceState) {
 			data = getIntent().getExtras();
@@ -94,5 +101,11 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 		outState.putBoolean("panel", panel.getView().getVisibility() == View.VISIBLE);
 		outState.putString("text", edit.getText().toString().trim());
 		panel.saveData(outState);
+	}
+	
+	private void onSave() {
+		panel.saveData(data);
+		String text = edit.getText().toString().trim();
+		finish();
 	}
 }

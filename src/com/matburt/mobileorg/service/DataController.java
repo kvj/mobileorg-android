@@ -1,5 +1,7 @@
 package com.matburt.mobileorg.service;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +25,7 @@ import android.util.Log;
 public class DataController {
 
 	private static final String TAG = "DataController";
-	private MobileOrgDBHelper db = null;
+	MobileOrgDBHelper db = null;
 	ApplicationContext appContext = null;
 	
 	public DataController(ApplicationContext appContext, Context context) {
@@ -431,7 +433,7 @@ public class DataController {
 		return false;
 	}
 
-	private NoteNG cursorToNote(Cursor c) {
+	NoteNG cursorToNote(Cursor c) {
 		NoteNG note = new NoteNG();
 		note.id = c.getInt(0);
 //		note.indent = c.getInt(1);
@@ -450,7 +452,7 @@ public class DataController {
 		return note;
 	}
 	
-	private static String[] dataFields = new String[] {
+	static String[] dataFields = new String[] {
 		"id", "indent", "editable", "note_id", "original_id", 
 		"type", "priority", "todo", "title", "tags", "level", 
 		"before","after", "raw"};
@@ -532,6 +534,52 @@ public class DataController {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/* Type: body, data, heading, todo, priority, tags */
+	public boolean addChange(Integer noteID, String type, String oldValue, String newValue) {
+		if (null == db) {
+			return false;
+		}
+		NoteNG note = findNoteByID(noteID);
+		if (null == note) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			if (!"data".equals(type)) {
+				//Not new item - try to update existing
+				Cursor c = db.getDatabase().query("changes", 
+						new String [] {"id"}, 
+						"type=? and data_id=?", 
+						new String[] {type, noteID.toString()}, 
+						null, null, "id");
+				if (c.moveToFirst()) {
+					//Found - update
+					ContentValues values = new ContentValues();
+					values.put("new_value", newValue);
+					db.getDatabase().update("changes", null, "id=?", new String[] {c.getString(0)});
+					db.getDatabase().setTransactionSuccessful();
+					c.close();
+					return true;
+				}
+				c.close();
+			}
+			//Otherwise - insert new entry
+			ContentValues values = new ContentValues();
+			values.put("type", type);
+			values.put("data_id", noteID);
+			values.put("old_value", oldValue);
+			values.put("new_value", newValue);
+			db.getDatabase().insert("changes", null, values);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
 	}
 	
 }
