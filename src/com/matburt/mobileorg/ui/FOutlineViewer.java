@@ -34,6 +34,8 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 	@Override
 	protected void onCreate(Bundle savedState) {
 		super.onCreate(savedState);
+        Intent serviceIntent = new Intent(this, DataService.class);
+        startService(serviceIntent);
 		if (null != savedState) {
 			data = savedState;
 		} else {

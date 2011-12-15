@@ -6,7 +6,8 @@
     <FrameLayout 
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_weight="0.6">
+        android:layout_weight="0.6"
+        android:background="@drawable/panel_border">
 	    <fragment 
 	        android:id="@+id/viewer_left_pane"
 	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
@@ -17,7 +18,8 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_weight="0.4"
-        android:background="@android:drawable/dialog_frame">
+        android:background="@drawable/panel_border"
+        android:layout_marginLeft="3dp">
 	    <fragment 
 	        android:id="@+id/viewer_right_pane"
 	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"

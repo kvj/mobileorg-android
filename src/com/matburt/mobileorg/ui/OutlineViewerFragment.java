@@ -6,9 +6,11 @@ import com.matburt.mobileorg.service.DataController;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
+import android.view.View.OnKeyListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
@@ -47,6 +49,29 @@ public class OutlineViewerFragment extends ListFragment {
 				return true;
 			}
 		});
+		getListView().setOnKeyListener(new OnKeyListener() {
+			
+			@Override
+			public boolean onKey(View v, int keyCode, KeyEvent event) {
+				return keyListener(keyCode, event);
+			}
+		});
+	}
+	
+	public boolean keyListener(int keyCode, KeyEvent event) {
+//		Log.i(TAG, "Key listener: "+keyCode);
+		int pos = getSelectedItemPosition();
+//		if (KeyEvent.KEYCODE_SPACE == keyCode && -1 != pos) {
+//			adapter.collapseExpand(pos, true);
+//			return true;
+//		}
+		if (KeyEvent.KEYCODE_SPACE == keyCode && -1 != pos) {
+			if (null != dataListener) {
+				dataListener.onOpen(this, pos);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@Override

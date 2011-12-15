@@ -91,7 +91,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != span) {
 			for (int i = 0; i < span.length; i++) {
 				if (null != span[i]) {
-					buffer.setSpan(span[i], start, end, 0);
+					buffer.setSpan(span[i], start, end, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
 				}
 			}
 		}
@@ -180,7 +180,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 			if (null == tagColor) {
 				tagColor = titleColor;
 			}
-			addSpan(sb, note.tags, new ForegroundColorSpan(tagColor), new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE));
+			int size = sb.length();
+			addSpan(sb, note.tags);
+			sb.setSpan(new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE), size, sb.length()-1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
 		}
 		if (isclicked) {
 			sb.setSpan(new StyleSpan(Typeface.BOLD), 0, sb.length(), 0);
