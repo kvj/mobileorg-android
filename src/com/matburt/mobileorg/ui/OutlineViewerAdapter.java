@@ -15,8 +15,10 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
+import android.text.Layout.Alignment;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.style.AlignmentSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
@@ -32,9 +34,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	Integer id = null;
 	Integer selected = null;
-	Integer clicked = null;
+	NoteNG clicked = null;
 	Default theme = null;
 	int[] levelColors = new int[0];
+	Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
 
 	public OutlineViewerAdapter(Context context) {
 		theme = new Default();
@@ -43,6 +46,13 @@ public class OutlineViewerAdapter implements ListAdapter {
 		levelColors = new int[] {theme.ccLBlue, theme.c3Yellow, theme.ceLCyan, theme.c1Red, 
 				theme.c2Green, theme.c5Purple, theme.ccLBlue, theme.c2Green, 
 				theme.ccLBlue, theme.c3Yellow, theme.ceLCyan};
+		tagMapping.put(theme.c1Red, theme.c9LRed);
+		tagMapping.put(theme.c2Green, theme.caLGreen);
+		tagMapping.put(theme.c3Yellow, theme.cbLYellow);
+		tagMapping.put(theme.c4Blue, theme.ccLBlue);
+		tagMapping.put(theme.c5Purple, theme.cdLPurple);
+		tagMapping.put(theme.c6Cyan, theme.ceLCyan);
+		tagMapping.put(theme.c7White, theme.cfLWhite);
 	}
 
 	private static final String TAG = "OutlineView";
@@ -97,7 +107,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 		NoteNG note = getItem(position);
 //		boolean isselected = selected == note.id;
-		boolean isclicked = clicked == note.id;
+		boolean isclicked = null != clicked && clicked.id == note.id;
 		TextView title = (TextView) convertView
 				.findViewById(R.id.outline_viewer_item_text);
 //		convertView.setBackgroundColor(isselected 
@@ -165,6 +175,13 @@ public class OutlineViewerAdapter implements ListAdapter {
 			addSpan(sb, note.title, new ForegroundColorSpan(
 					titleColor));
 		}
+		if (null != note.tags) {
+			Integer tagColor = tagMapping.get(titleColor);
+			if (null == tagColor) {
+				tagColor = titleColor;
+			}
+			addSpan(sb, note.tags, new ForegroundColorSpan(tagColor), new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE));
+		}
 		if (isclicked) {
 			sb.setSpan(new StyleSpan(Typeface.BOLD), 0, sb.length(), 0);
 		}
@@ -208,15 +225,18 @@ public class OutlineViewerAdapter implements ListAdapter {
 		return true;
 	}
 
-	public void setController(Integer id, DataController controller) {
+	public void setController(Integer id, DataController controller, List<Integer> selection) {
 		if (null == this.controller) {
-			this.id = id;
 			this.controller = controller;
-			reload();
 		}
+		this.id = id;
+		if (null != id && -1 == id) {
+			this.id = null;
+		}
+		reload(selection);
 	}
 
-	public void reload() {
+	public void reload(List<Integer> selection) {
 		data.clear();
 		todos.clear();
 		List<TodoState> todoStates = controller.getTodoTypes();
@@ -231,11 +251,38 @@ public class OutlineViewerAdapter implements ListAdapter {
 		NoteNG root = controller.findNoteByID(id);
 		if (null != root) {
 			data.add(root);
-			expandNote(root, 0, false);
+			if (null == selection) {
+				selection = new ArrayList<Integer>();
+				selection.add(root.id);
+			}
+//			expandNote(root, 0, false);
 		} else {
 			List<NoteNG> _list = controller.getData(id);
 			if (null != _list) {
 				data.addAll(_list);
+			}
+		}
+		Log.i(TAG, "Reload with: "+selection);
+		if (null != selection) {
+			int start = 0;
+			int end = data.size();
+			for (int i = 0; i < selection.size(); i++) {
+				Integer id = selection.get(i);
+				boolean found = false;
+				for (int j = start; j < end; j++) {
+					NoteNG n = data.get(j);
+					if (n.id.equals(id)) {
+						//Found
+						clicked = n;
+						start = j+1;
+						end = expandNote(n, j, false)+start;
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					break;
+				}
 			}
 		}
 		if (null != observer) {
@@ -245,7 +292,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	public void collapseExpand(int position, boolean notify) {
 		NoteNG note = getItem(position);
-		clicked = note.id;
+		clicked = note;
 		if (!note.isExpandable()) {
 			return;
 		}
@@ -284,6 +331,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		int pos = 0;
 		for (int i = 0; i < list.size(); i++) {
 			NoteNG n = list.get(i);
+			n.parentNote = note;
 			n.indent = note.indent + 1;
 			pos++;
 			data.add(position + pos, n);
@@ -311,6 +359,19 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != observer) {
 			observer.onChanged();
 		}
+	}
+	
+	ArrayList<Integer> getSelection() {
+		if (clicked == null) {
+			return null;
+		}
+		ArrayList<Integer> result = new ArrayList<Integer>();
+		NoteNG note = clicked;
+		while(null != note) {
+			result.add(0, note.id);
+			note = note.parentNote;
+		}
+		return result;
 	}
 
 }

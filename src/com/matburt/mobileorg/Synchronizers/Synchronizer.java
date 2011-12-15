@@ -278,4 +278,8 @@ abstract public class Synchronizer
     public String getFileHash(String name) throws ReportableError {
     	return null;
     }
+    
+    public boolean putFile(boolean append, String fileName, String data) {
+    	return false;
+    }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+    <FrameLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="0.6">
+	    <fragment 
+	        android:id="@+id/viewer_left_pane"
+	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent"/>
+    </FrameLayout>
+    <FrameLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="0.4"
+        android:background="@android:drawable/dialog_frame">
+	    <fragment 
+	        android:id="@+id/viewer_right_pane"
+	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent"/>
+    </FrameLayout>
+</LinearLayout>

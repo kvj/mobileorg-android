@@ -27,12 +27,17 @@
 
         <activity
             android:label="MobileOrg"
-            android:name=".ui.OutlineViewer" 
-            android:configChanges="orientation|keyboardHidden">
+            android:name=".ui.FOutlineViewer" 
+            android:configChanges="keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+            <activity
+            android:label="MobileOrg"
+            android:name=".ui.OutlineViewer" 
+            android:configChanges="orientation|keyboardHidden">
         </activity>
         <activity
             android:label="Capture"

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/menu_capture" android:title="Capture"></item>
+    <item android:id="@+id/menu_add_outline" android:title="Add outline"></item>
+    <item android:id="@+id/menu_edit" android:title="Edit"></item>
+    <group android:id="@+id/menu_add_group">
+        <item android:id="@+id/menu_add_text" android:title="Add text note"></item>
+        <item android:id="@+id/menu_add_outline" android:title="Add outline"></item>
+    </group>
+    <item android:id="@+id/menu_remove" android:title="Remove"></item>
+</menu>

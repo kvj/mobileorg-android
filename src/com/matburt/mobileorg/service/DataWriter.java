@@ -2,6 +2,7 @@ package com.matburt.mobileorg.service;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
 import android.database.Cursor;
 
@@ -13,11 +14,38 @@ public class DataWriter {
 		this.controller = controller;
 	}
 	
-	private void writeIndent(int indent, Writer writer) {
-		
+	private void writeIndent(int indent, Writer writer) throws IOException {
+		for (int i = 0; i < indent; i++) {
+			writer.write(' ');
+		}
 	}
 	
-	private void writeDataItem(NoteNG note, int indent, Writer writer) {
+	private void writeDataItem(NoteNG note, int indent, Writer writer) throws IOException {
+		if (NoteNG.TYPE_SUBLIST.equals(note.title)) {
+			//Write line by line
+			int itemIndent = 1+note.before.length();
+			String[] lines = note.raw.split("\\n");
+			for (int i = 0; i < lines.length; i++) {
+				if (i == 0) {
+					writeIndent(indent, writer);
+					writer.write(note.before+' ');
+				} else {
+					writeIndent(indent+itemIndent, writer);
+				}
+				writer.write(lines[i]+'\n');
+			}
+			//Write other notes
+			List<NoteNG> subNotes = controller.getData(note.id);
+			for (int i = 0; i < subNotes.size(); i++) {
+				writeDataItem(subNotes.get(i), indent+itemIndent, writer);
+			}
+			return;
+		}
+		String[] lines = note.raw.split("\\n");
+		for (int i = 0; i < lines.length; i++) {
+			writeIndent(indent, writer);
+			writer.write(lines[i]+'\n');
+		}
 	}
 	
 	public boolean writeOutlineWithChildren(NoteNG note, Writer writer, boolean writeItself) throws IOException {
@@ -30,7 +58,7 @@ public class DataWriter {
 		int indent = 0;
 		if (writeItself) {
 			for (int i = 0; i < note.level; i++) {
-				writer.write("*");
+				writer.write('*');
 			}
 			indent = 1+note.level;
 			if (null != note.todo) {
@@ -41,9 +69,9 @@ public class DataWriter {
 			}
 			writer.write(" "+note.title);
 			if (null != note.tags) {
-				writer.write("\\t"+note.tags);
+				writer.write("\t"+note.tags);
 			}
-			writer.write("\n");
+			writer.write('\n');
 		}
 		try {
 			Cursor c = controller.db.getDatabase().query("data", 
@@ -80,19 +108,26 @@ public class DataWriter {
 					null, null, "id");
 			if (c.moveToFirst()) {
 				do {
-					if ("data".equals(c.getString(1))) {
-						//Type is data - means capture
-						
-						continue;
-					}
 					NoteNG note = controller.findNoteByID(c.getInt(0));
 					if (null == note) {
 						continue;
 					}
-					String id = note.originalID;
-					if (null == id) {
-						id = note.noteID;
+					if ("data".equals(c.getString(1))) {
+						//Type is data - means capture
+						writeOutlineWithChildren(note, writer, true);
+					} else {
+						String id = note.originalID;
+						if (null == id) {
+							id = note.noteID;
+						}
+						if (null == id) {
+							continue;
+						}
+						writer.write(String.format("* F(edit:%s) [[id:%s][%s]\n", c.getString(1), id, note.title));
+						writer.write(String.format("** Old value\n%s\n", c.getString(3)));
+						writer.write(String.format("** New value\n%s\n", c.getString(2)));
 					}
+					writer.write("\n\n");
 				} while (c.moveToNext());
 			}
 			return true;

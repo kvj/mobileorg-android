@@ -242,4 +242,33 @@ public class DropboxSynchronizer extends Synchronizer {
 		}
     }
     
+    @Override
+    public boolean putFile(boolean append, String fileName, String data) {
+    	ByteArrayOutputStream fileData = new ByteArrayOutputStream();
+    	if (append) {
+			//Read file first
+    		try {
+				BufferedReader br = fetchOrgFile(fileName);
+				String line = null;
+				while(null != (line = br.readLine())) {
+					fileData.write(line.getBytes("utf-8"));
+					fileData.write('\n');
+				}
+				br.close();
+			} catch (Throwable e) {
+			}
+		}
+    	try {
+        	fileData.write(data.getBytes("utf-8"));
+        	fileData.close();
+        	long size = fileData.size();
+    		ByteArrayInputStream stream = new ByteArrayInputStream(fileData.toByteArray());
+    		api.putFileOverwrite(getPath()+fileName, stream, size, null);
+    		stream.close();
+    		return true;
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+    	return false;
+    }
 }

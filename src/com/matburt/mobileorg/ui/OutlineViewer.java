@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -117,32 +118,32 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 			}
 		}
 		Log.i(TAG, "Show from: "+noteID);
-		listAdapter.setController(noteID, controller);
+		listAdapter.setController(noteID, controller, null);
 	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(0, OP_MENU_OUTLINE, 0, R.string.menu_outline);
-        menu.add(0, OP_MENU_CAPTURE, 0, R.string.menu_capture);
-        menu.add(0, OP_MENU_SYNC, 0, R.string.menu_sync);
-        menu.add(0, OP_MENU_SETTINGS, 0, R.string.menu_settings);
+		super.onCreateOptionsMenu(menu);
+		getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
 	}
 	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+		Log.i(TAG, "Clicked: "+item.getItemId()+", "+R.id.menu_capture+", "+R.id.menu_sync);
         switch (item.getItemId()) {
-        case OP_MENU_SYNC:
+        case R.id.menu_sync:
+        	Log.i(TAG, "Synchronizer");
             runSynchronizer();
             return true;
-        case OP_MENU_SETTINGS:
+        case R.id.menu_options:
+        	Log.i(TAG, "Settings");
             return showSettings();
-        case OP_MENU_CAPTURE:
+        case R.id.menu_capture:
+        	Log.i(TAG, "Capture");
             Intent dispIntent = new Intent(this, DataEditActivity.class);
             startActivity(dispIntent);
             return true;
-//        case MobileOrgActivity.OP_MENU_CAPTURE:
-//            return this.runCapture();
         }
         return false;
 	}
@@ -175,7 +176,7 @@ public class OutlineViewer extends SuperActivity<App, DataController, DataServic
 				} else {
 					notifyUser("Updated");
 				}
-				listAdapter.reload();
+				listAdapter.reload(null);
 			};
 			
 		}.execute();

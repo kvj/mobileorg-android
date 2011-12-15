@@ -4,6 +4,7 @@ import org.kvj.bravo7.ControllerConnector;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 
 import android.app.Activity;
+import android.content.Context;
 import android.widget.Toast;
 
 public class SuperActivity<A extends ApplicationContext, T, S extends SuperService<T, A>> extends Activity implements ControllerReceiver<T>{
@@ -31,6 +32,10 @@ public class SuperActivity<A extends ApplicationContext, T, S extends SuperServi
 	protected void onStop() {
 		super.onStop();
 		connector.disconnectController();
+	}
+	
+	public static void notifyUser(Context context, String message) {
+		Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
 	}
 	
 	public void notifyUser(String message) {

@@ -1,6 +1,7 @@
 package com.matburt.mobileorg.service;
 
 import java.io.BufferedReader;
+import java.io.StringWriter;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,7 +77,7 @@ public class OrgNGParser {
 			while ((line = reader.readLine()) != null) {
 				if (marker == Marker.Drawer) {
 					drawerBuilder.append('\n');
-					drawerBuilder.append(line);
+					drawerBuilder.append(line.trim());
 					Matcher m = drawerPattern.matcher(line);
 					if (m.find()) {
 						if ("END".equals(m.group(1).trim())) {
@@ -166,7 +167,7 @@ public class OrgNGParser {
 					marker = Marker.Drawer;
 					drawerBuilder = new StringBuilder();
 					drawerValues.clear();
-					drawerBuilder.append(line);
+					drawerBuilder.append(line.trim());
 //					Log.i(TAG, "Start drawer: "+m.group(1));
 					if (null != listNote) {
 						controller.addData(listNote);
@@ -288,6 +289,20 @@ public class OrgNGParser {
 	
 	public String parse() {
 		try {
+			if (controller.hasChanges()) {
+				StringWriter writer = new StringWriter();
+				DataWriter dataWriter = new DataWriter(controller);
+				if(!dataWriter.writeChanges(writer)) {
+					return "Problem writing data";
+				}
+				Log.i(TAG, "Controller has changes: "+writer);
+				if (!synchronizer.putFile(true, "mobileorg.org", writer.toString())) {
+					return "Error sending data";
+				}
+				controller.clearChanges();
+			} else {
+				Log.i(TAG, "No changes to send");
+			}
 			String prevSession = controller.appContext.getStringPreference("prevSyncSession", "");
 			Log.i(TAG, "Start sync");
 			String newSession = synchronizer.getFileHash("checksums.dat");
@@ -392,6 +407,12 @@ public class OrgNGParser {
 					}
 				}
 			}, root, indexOptions);
+			NoteNG capturedNotes = new NoteNG();
+			capturedNotes.type = NoteNG.TYPE_FILE;
+			capturedNotes.fileID = -1;
+			capturedNotes.level = 1;
+			capturedNotes.title = "Captured";
+			controller.addData(capturedNotes);
 			Log.i(TAG, "Stop sync");
 			if (null == error) {
 				controller.appContext.setStringPreference("prevSyncSession", newSession);

@@ -32,6 +32,7 @@ public class NoteNG {
 	public String before = null;
 	public String after = null;
 	public Integer fileID = null;
+	public NoteNG parentNote = null;
 	
 	public int expanded = EXPAND_COLLAPSED;
 	

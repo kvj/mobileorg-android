@@ -2,7 +2,10 @@ package com.matburt.mobileorg.service;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,8 @@ public class DataController {
 	private static final String TAG = "DataController";
 	MobileOrgDBHelper db = null;
 	ApplicationContext appContext = null;
+	DateFormat dateTimeFormat = new SimpleDateFormat("[yyyy-MM-dd EEE HH:mm]");
+	DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd EEE]");
 	
 	public DataController(ApplicationContext appContext, Context context) {
 		this.appContext = appContext;
@@ -381,15 +386,22 @@ public class DataController {
 	}
 	
 	public Integer addData(NoteNG note) {
+		return addData(note, false);
+	}
+	
+	public Integer addData(NoteNG note, boolean haveTransaction) {
 		if (null == db) {
 			return null;
 		}
 		try {
-			db.getDatabase().beginTransaction();
+			if (!haveTransaction) {
+				db.getDatabase().beginTransaction();
+			}
 			ContentValues values = new ContentValues();
 			values.put("after", note.after);
 			values.put("before", note.before);
 			values.put("parent_id", note.parentID);
+			values.put("file_id", note.fileID);
 			values.put("priority", note.priority);
 			values.put("todo", note.todo);
 			values.put("raw", note.raw);
@@ -400,12 +412,16 @@ public class DataController {
 			values.put("level", note.level);
 			int result = (int) db.getDatabase().insert("data", null, values);
 			note.id = result;
-			db.getDatabase().setTransactionSuccessful();
+			if (!haveTransaction) {
+				db.getDatabase().setTransactionSuccessful();
+			}
 			return result;
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			db.getDatabase().endTransaction();
+			if (!haveTransaction) {
+				db.getDatabase().endTransaction();
+			}
 		}
 		return null;
 	}
@@ -550,17 +566,23 @@ public class DataController {
 			if (!"data".equals(type)) {
 				//Not new item - try to update existing
 				Cursor c = db.getDatabase().query("changes", 
-						new String [] {"id"}, 
-						"type=? and data_id=?", 
-						new String[] {type, noteID.toString()}, 
+						new String [] {"id", "type"}, 
+						"(type=? or type=?) and data_id=?", 
+						new String[] {type, "data", noteID.toString()}, 
 						null, null, "id");
 				if (c.moveToFirst()) {
+					if ("data".equals(c.getString(1))) {
+						//We have data means new outline - don't need to modify
+						c.close();
+						db.getDatabase().setTransactionSuccessful();
+						return true;
+					}
 					//Found - update
 					ContentValues values = new ContentValues();
 					values.put("new_value", newValue);
 					db.getDatabase().update("changes", null, "id=?", new String[] {c.getString(0)});
-					db.getDatabase().setTransactionSuccessful();
 					c.close();
+					db.getDatabase().setTransactionSuccessful();
 					return true;
 				}
 				c.close();
@@ -582,4 +604,104 @@ public class DataController {
 		return false;
 	}
 	
+	public boolean hasChanges() {
+		if (null == db) {
+			return false;
+		}
+		try {
+			Cursor c = db.getDatabase().query("changes", new String[] {"id"}, null, null, null, null, null);
+			int result = c.getCount();
+			c.close();
+			return result>0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	public boolean clearChanges() {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			db.getDatabase().delete("changes", null, null);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+	
+	public String generateNoteID(int size) {
+		char[] chars = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 
+				's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 
+				'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', 
+				'4', '5', '6', '7', '8', '9', '0'};
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < size; i++) {
+			sb.append(chars[(int) Math.floor(Math.random()*chars.length)]);
+		}
+		return sb.toString();
+	}
+	
+	public Integer createNewNote(NoteNG note) {
+		if (null == db) {
+			return null;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			if (null == note.parentID) {
+				//No parentID - captured note - search for "Captured"
+				Cursor c = db.getDatabase().query("data", 
+						new String[] {"id"}, "file_id=-1 and parent_id is null", 
+						null, null, null, null);
+				if (c.moveToFirst()) {
+					Log.i(TAG, "Found parent for note");
+					note.parentID = c.getInt(0);
+					note.fileID = -1;
+				} else {
+					Log.w(TAG, "Parent ID for new note is not found");
+					c.close();
+					return null;
+				}
+				c.close();
+			}
+			note.noteID = generateNoteID(12);
+			Integer newNoteID = addData(note, true);//Note created
+			if (null == newNoteID) {
+				return null;
+			}
+			//Create 2 notes: properties with ID and text with date created
+			NoteNG drawerNote = new NoteNG();
+			drawerNote.parentID = note.id;
+			drawerNote.fileID = note.fileID;
+			drawerNote.raw = ":PROPERTIES:\n:ID: "+note.noteID+"\n:END:";
+			drawerNote.type = NoteNG.TYPE_DRAWER;
+			if (null == addData(drawerNote)) {
+				return null;
+			}
+			NoteNG dateNote = new NoteNG();
+			dateNote.parentID = note.id;
+			dateNote.fileID = note.fileID;
+			dateNote.raw = dateFormat.format(new Date());
+			dateNote.title = dateNote.raw;
+			dateNote.type = NoteNG.TYPE_TEXT;
+			if (null == addData(dateNote)) {
+				return null;
+			}
+			db.getDatabase().setTransactionSuccessful();
+			Log.i(TAG, "Note created: "+note.noteID+", "+note.title);
+			return note.id;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return null;
+	}
+
 }
