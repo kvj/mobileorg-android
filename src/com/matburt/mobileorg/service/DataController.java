@@ -557,6 +557,7 @@ public class DataController {
 		if (null == db) {
 			return false;
 		}
+		Log.i(TAG, "addChange: "+type+", "+oldValue+", "+newValue);
 		NoteNG note = findNoteByID(noteID);
 		if (null == note) {
 			return false;
@@ -573,6 +574,7 @@ public class DataController {
 				if (c.moveToFirst()) {
 					if ("data".equals(c.getString(1))) {
 						//We have data means new outline - don't need to modify
+						Log.i(TAG, "New outline - finish");
 						c.close();
 						db.getDatabase().setTransactionSuccessful();
 						return true;
@@ -580,6 +582,7 @@ public class DataController {
 					//Found - update
 					ContentValues values = new ContentValues();
 					values.put("new_value", newValue);
+					Log.i(TAG, "Existing - only update");
 					db.getDatabase().update("changes", null, "id=?", new String[] {c.getString(0)});
 					c.close();
 					db.getDatabase().setTransactionSuccessful();
@@ -587,6 +590,7 @@ public class DataController {
 				}
 				c.close();
 			}
+			Log.i(TAG, "New change - insert");
 			//Otherwise - insert new entry
 			ContentValues values = new ContentValues();
 			values.put("type", type);

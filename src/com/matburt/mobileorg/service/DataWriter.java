@@ -21,7 +21,7 @@ public class DataWriter {
 	}
 	
 	private void writeDataItem(NoteNG note, int indent, Writer writer) throws IOException {
-		if (NoteNG.TYPE_SUBLIST.equals(note.title)) {
+		if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
 			//Write line by line
 			int itemIndent = 1+note.before.length();
 			String[] lines = note.raw.split("\\n");
@@ -41,10 +41,10 @@ public class DataWriter {
 			}
 			return;
 		}
-		String[] lines = note.raw.split("\\n");
+		String[] lines = note.raw.split("\n");
 		for (int i = 0; i < lines.length; i++) {
 			writeIndent(indent, writer);
-			writer.write(lines[i]+'\n');
+			writer.write(lines[i].trim()+'\n');
 		}
 	}
 	
@@ -82,7 +82,7 @@ public class DataWriter {
 			if (c.moveToFirst()) {
 				do {
 					NoteNG n = controller.cursorToNote(c);
-					if (NoteNG.TYPE_AGENDA.equals(n.type)) {
+					if (NoteNG.TYPE_OUTLINE.equals(n.type)) {
 						writeOutlineWithChildren(n, writer, true);
 					} else {
 						writeDataItem(n, indent, writer);
@@ -126,6 +126,7 @@ public class DataWriter {
 						writer.write(String.format("* F(edit:%s) [[id:%s][%s]\n", c.getString(1), id, note.title));
 						writer.write(String.format("** Old value\n%s\n", c.getString(3)));
 						writer.write(String.format("** New value\n%s\n", c.getString(2)));
+						writer.write("** End of edit\n");
 					}
 					writer.write("\n\n");
 				} while (c.moveToNext());

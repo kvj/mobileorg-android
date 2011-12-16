@@ -1,25 +1,24 @@
 package com.matburt.mobileorg.ui;
 
-import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.service.DataController;
-
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.View.OnKeyListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
+
+import com.matburt.mobileorg.service.DataController;
 
 public class OutlineViewerFragment extends ListFragment {
 
 	public interface DataListener {
 		
 		public void onOpen(OutlineViewerFragment fragment, int position);
+		public void onSelect(OutlineViewerFragment fragment, int position);
 		
 	}
 
@@ -34,7 +33,6 @@ public class OutlineViewerFragment extends ListFragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		setHasOptionsMenu(true);
 		adapter = new OutlineViewerAdapter(getActivity());
 		setListAdapter(adapter);
 		getListView().setOnItemLongClickListener(new OnItemLongClickListener() {
@@ -48,6 +46,22 @@ public class OutlineViewerFragment extends ListFragment {
 				}
 				return true;
 			}
+		});
+		getListView().setOnItemSelectedListener(new OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> arg0, View arg1,
+					int pos, long arg3) {
+				Log.i(TAG, "Item selected: "+pos+", "+dataListener);
+				if (null != dataListener) {
+					dataListener.onSelect(OutlineViewerFragment.this, pos);
+				}
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> arg0) {
+			}
+			
 		});
 		getListView().setOnKeyListener(new OnKeyListener() {
 			
@@ -73,12 +87,6 @@ public class OutlineViewerFragment extends ListFragment {
 		}
 		return false;
 	}
-	
-	@Override
-	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-		super.onCreateOptionsMenu(menu, inflater);
-		inflater.inflate(R.menu.viewer_menu, menu);
-	}
 
 	public void loadData(String name, DataController controller, Bundle data) {
 		this.name = name;
@@ -98,6 +106,9 @@ public class OutlineViewerFragment extends ListFragment {
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		adapter.collapseExpand(position, true);
+		if (null != dataListener) {
+			dataListener.onSelect(OutlineViewerFragment.this, position);
+		}
 	}
 	
 	public void setDataListener(DataListener dataListener) {

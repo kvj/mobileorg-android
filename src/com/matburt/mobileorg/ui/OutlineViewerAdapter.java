@@ -181,7 +181,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 				tagColor = titleColor;
 			}
 			int size = sb.length();
-			addSpan(sb, note.tags);
+			addSpan(sb, '\n'+note.tags, new ForegroundColorSpan(tagColor));
 			sb.setSpan(new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE), size, sb.length()-1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
 		}
 		if (isclicked) {
@@ -374,6 +374,27 @@ public class OutlineViewerAdapter implements ListAdapter {
 			note = note.parentNote;
 		}
 		return result;
+	}
+	
+	public NoteNG findNearestNote(NoteNG note, boolean forceID) {
+		do {
+			if (null == note) {
+				return null;
+			}
+			if (NoteNG.TYPE_OUTLINE.equals(note.type) && (null != note.noteID || !forceID)) {
+				//Found - return
+				return note;
+			}
+//			if (NoteNG.TYPE_AGENDA_OUTLINE.equals(note.type) && null != note.originalID) {
+//				//We are in outline - try to jump
+//				NoteNG n = controller.findNoteByNoteID(note.originalID);
+//				if (null != note) {
+//					note = n;
+//					continue;
+//				}
+//			}
+			note = note.parentNote;
+		} while(true);
 	}
 
 }

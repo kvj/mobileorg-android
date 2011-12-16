@@ -1,10 +1,8 @@
 package com.matburt.mobileorg.ui;
 
-import java.util.List;
-
 import org.kvj.bravo7.ControllerConnector;
-import org.kvj.bravo7.SuperActivity;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
+import org.kvj.bravo7.SuperActivity;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -12,6 +10,7 @@ import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -25,11 +24,16 @@ import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
 public class FOutlineViewer extends FragmentActivity implements ControllerReceiver<DataController>, DataListener {
 
+	private static final String TAG = "OutlineViewer";
+	public static final int ADD_EDIT_NOTE = 101;
+	public static final int ADD_EDIT_NOTE_OK = 102;
 	Bundle data = null;
 	OutlineViewerFragment left = null;
 	OutlineViewerFragment right = null;
 	ControllerConnector<App, DataController, DataService> conn = null;
 	DataController controller = null;
+	Menu menu = null;
+	OutlineViewerFragment currentFragment = null;
 	
 	@Override
 	protected void onCreate(Bundle savedState) {
@@ -44,16 +48,15 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 				data = new Bundle();
 			}
 		}
-		if (data.getBoolean("slave", false) && 
-				getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			//Slave activity  - not show in landscape
+		setContentView(R.layout.f_outline_viewer);
+		left = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.viewer_left_pane);
+		right = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.viewer_right_pane);
+		if (data.getBoolean("slave", false) && null != right) {
+			//Slave activity and have right - finish this
             finish();
             return;
         }
-		setContentView(R.layout.f_outline_viewer);
-		left = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.viewer_left_pane);
 		left.setDataListener(this);
-		right = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.viewer_right_pane);
 		if (null != right) {
 			right.setDataListener(this);
 		}
@@ -63,6 +66,7 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		getMenuInflater().inflate(R.menu.main_menu, menu);
+		this.menu = menu;
 		return true;
 	}
 	
@@ -166,6 +170,15 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 		case R.id.menu_sync:
 			runSynchronizer();
 			break;
+		case R.id.menu_add_outline:
+			runEditCurrent(NoteNG.TYPE_OUTLINE);
+			break;
+		case R.id.menu_add_text:
+			runEditCurrent(NoteNG.TYPE_TEXT);
+			break;
+		case R.id.menu_edit:
+			runEditCurrent(null);
+			break;
 		case R.id.menu_capture:
 			runCapture();
 			break;
@@ -174,6 +187,82 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 			break;
 		}
 		return true;
+	}
+	
+	private void runEditCurrent(String type) {
+		if (null == currentFragment || null == currentFragment.adapter.clicked) {
+			SuperActivity.notifyUser(this, "No item selected");
+			return;
+		}
+		NoteNG note = currentFragment.adapter.clicked; 
+		//Current selected
+		NoteNG nearest = currentFragment.adapter.findNearestNote(note, true);
+		Integer agendaNote = null;
+		//Nearest note with ID - we'll put it's new body to DB
+		//NoteNG nearestNote = currentFragment.adapter.findNearestNote(note, false);
+		
+		if (NoteNG.TYPE_AGENDA_OUTLINE.equals(note.type) && null == type) {
+			//Edit item in agenda - jump to real item
+			agendaNote = note.id;
+			note = controller.findNoteByNoteID(note.originalID);
+			nearest = note;
+			//nearestNote = note;
+		}
+		if (null == nearest) {
+			SuperActivity.notifyUser(this, "Selected item is readonly");
+			return;
+		}
+        Intent dispIntent = new Intent(this, DataEditActivity.class);
+        if (null == type) {
+			//Edit current
+    		dispIntent.putExtra("noteID", note.id.intValue());//This is where to save
+    		if (note.id != nearest.id) {
+        		dispIntent.putExtra("changeID", nearest.id.intValue());//This is body to modify
+			}
+    		if (null != agendaNote) {
+    			dispIntent.putExtra("agendaID", agendaNote.intValue());//Modify this also
+			}
+        	if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
+				//Edit outline
+        		dispIntent.putExtra("text", note.title);
+        		dispIntent.putExtra("type", "title");
+        		dispIntent.putExtra("todo", note.todo);
+        		dispIntent.putExtra("priority", note.priority);
+        		dispIntent.putExtra("tags", note.tags);
+			}
+        	if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+        		dispIntent.putExtra("text", note.before+" "+note.raw);
+        		dispIntent.putExtra("type", "sublist");
+        		dispIntent.putExtra("before", note.before);
+			}
+        	if (NoteNG.TYPE_TEXT.equals(note.type)) {
+        		dispIntent.putExtra("text", note.raw);
+        		dispIntent.putExtra("type", "text");
+			}
+		} else {
+			//Add new entry
+    		NoteNG nearestNote = currentFragment.adapter.findNearestNote(note, false);//Should be always not null
+    		//This is nearest note to add/refresh
+			dispIntent.putExtra("changeID", nearest.id.intValue());
+			if (NoteNG.TYPE_OUTLINE.equals(type)) {
+				//Trying to add outline
+				dispIntent.putExtra("parentID", nearestNote.id.intValue()); //Where to save/refresh
+				dispIntent.putExtra("type", "title");
+			}
+			if (NoteNG.TYPE_TEXT.equals(type)) {
+				//Trying to add text
+	        	if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+	        		dispIntent.putExtra("text", note.before+" ");
+	        		dispIntent.putExtra("type", "sublist");
+	        		dispIntent.putExtra("before", note.before);
+	        		dispIntent.putExtra("parentID", note.id.intValue()); //Where to save/refresh - add to me
+				} else {
+					dispIntent.putExtra("type", "text");
+					dispIntent.putExtra("parentID", nearestNote.id.intValue()); //Where to save/refresh
+				}
+			}
+		}
+        startActivityForResult(dispIntent, ADD_EDIT_NOTE);
 	}
 
 	private void runOptions() {
@@ -184,5 +273,46 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 	private void runCapture() {
         Intent dispIntent = new Intent(this, DataEditActivity.class);
         startActivity(dispIntent);
+	}
+
+	@Override
+	public void onSelect(OutlineViewerFragment fragment, int position) {
+		Log.i(TAG, "onSelect: "+position+", "+menu);
+		currentFragment = fragment;
+		if (null == menu) {
+			return;
+		}
+		boolean canAdd = false;
+		boolean canEdit = false;
+		boolean canRemove = false;
+		try {
+			if (-1 != position) {
+				NoteNG current = fragment.adapter.getItem(position);
+				Log.i(TAG, "Current: "+current.type+", "+current.title);
+				if (NoteNG.TYPE_OUTLINE.equals(current.type) || 
+						NoteNG.TYPE_AGENDA_OUTLINE.equals(current.type) ||
+						NoteNG.TYPE_TEXT.equals(current.type) || 
+						NoteNG.TYPE_SUBLIST.equals(current.type)) {
+					canAdd = true;
+					canEdit = true;
+					canRemove = true;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		Log.i(TAG, "Select: "+position+", "+canAdd);
+		menu.findItem(R.id.menu_add_outline).setEnabled(canAdd);
+		menu.findItem(R.id.menu_add_text).setEnabled(canAdd);
+		menu.findItem(R.id.menu_edit).setEnabled(canEdit);
+		menu.findItem(R.id.menu_remove).setEnabled(canRemove);
+	}
+	
+	@Override
+	protected void onActivityResult(int req, int res, Intent intent) {
+		super.onActivityResult(req, res, intent);
+		if (ADD_EDIT_NOTE == req && ADD_EDIT_NOTE_OK == res) {
+			//Need to refresh
+		}
 	}
 }

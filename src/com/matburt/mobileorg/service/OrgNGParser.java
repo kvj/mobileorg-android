@@ -39,7 +39,7 @@ public class OrgNGParser {
 	private static Pattern controlPattern = Pattern.compile("^\\#\\+([A-Z_-]+)(\\:\\s(.*))?$");
 	//[[file:main.org][Main]] file: 3, main.org: 4 main.org: Main: 5
 	private static Pattern linkPattern = Pattern.compile("\\[((\\[([a-zA-Z_-]+)\\:(.*)\\]\\[(.+)\\])|(\\[(.*)\\]))\\]");
-	private static Pattern listPattern = Pattern.compile("^(\\s*)(\\+|\\-|\\*|(\\d+\\.))\\s(.+)$");
+	public static Pattern listPattern = Pattern.compile("^(\\s*)(\\+|\\-|\\*|(\\d+\\.))\\s(.+)$");
 	
 	public OrgNGParser(DataController controller, Synchronizer synchronizer) {
 		this.controller = controller;
@@ -193,7 +193,7 @@ public class OrgNGParser {
 					n.editable = false;
 					n.fileID = parent.fileID;
 					n.parentID = parent.id;
-					n.raw = line;
+					n.raw = line.trim();
 					n.title = line.trim();
 					n.type = NoteNG.TYPE_PROPERTY;
 					controller.addData(n);

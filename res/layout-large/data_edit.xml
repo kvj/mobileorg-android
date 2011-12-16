@@ -18,20 +18,12 @@
 		        android:id="@+id/data_edit_button"
 		        android:layout_width="50dp"
 		        android:layout_height="50dp"
-		        android:src="@drawable/icon"/>
+		        android:src="@drawable/more"/>
 			<fragment class="com.matburt.mobileorg.ui.DataEditOptionsPanel"
 			    android:id="@+id/data_edit_panel"
-			    android:layout_width="200dp"
+			    android:layout_width="300dp"
 			    android:layout_height="wrap_content"
 			    android:layout_weight="1"/>
 	    </TableRow>
 	</TableLayout>
-	<FrameLayout 
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content">
-	    <Button android:text="Save"
-	        android:id="@+id/data_edit_save"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"/>
-	</FrameLayout>
 </LinearLayout>
