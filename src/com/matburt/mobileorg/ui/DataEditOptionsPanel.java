@@ -76,7 +76,8 @@ public class DataEditOptionsPanel extends Fragment {
 		}
 		prioritySpinner.setAdapter(new StringListAdapter(items));
 		prioritySpinner.setSelection(selectedPriority);
-		tagsText.setText(data.getString("tags"));
+		String tags = data.getString("tags", ":");
+		tagsText.setText(tags);
 	}
 	
 	public void saveData(Bundle data) {
@@ -91,9 +92,16 @@ public class DataEditOptionsPanel extends Fragment {
 			data.putString("priority", prioritySpinner.getSelectedItem().toString());
 		}
 		String tagsString = tagsText.getText().toString().trim();
-		data.putString("tags", 
-				"".equals(tagsString)? null
-						: tagsString);
+		if (!tagsString.startsWith(":")) {
+			tagsString = ":"+tagsString;
+		}
+		if (!tagsString.endsWith(":")) {
+			tagsString = tagsString+":";
+		}
+		if (":".equals(tagsString)) {
+			tagsString = null;
+		}
+		data.putString("tags", tagsString);
 	}
 	
 }

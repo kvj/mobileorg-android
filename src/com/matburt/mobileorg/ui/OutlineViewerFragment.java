@@ -47,22 +47,22 @@ public class OutlineViewerFragment extends ListFragment {
 				return true;
 			}
 		});
-		getListView().setOnItemSelectedListener(new OnItemSelectedListener() {
-
-			@Override
-			public void onItemSelected(AdapterView<?> arg0, View arg1,
-					int pos, long arg3) {
-				Log.i(TAG, "Item selected: "+pos+", "+dataListener);
-				if (null != dataListener) {
-					dataListener.onSelect(OutlineViewerFragment.this, pos);
-				}
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> arg0) {
-			}
-			
-		});
+//		getListView().setOnItemSelectedListener(new OnItemSelectedListener() {
+//
+//			@Override
+//			public void onItemSelected(AdapterView<?> arg0, View arg1,
+//					int pos, long arg3) {
+//				Log.i(TAG, "Item selected: "+pos+", "+dataListener);
+//				if (null != dataListener) {
+//					dataListener.onSelect(OutlineViewerFragment.this, pos);
+//				}
+//			}
+//
+//			@Override
+//			public void onNothingSelected(AdapterView<?> arg0) {
+//			}
+//			
+//		});
 		getListView().setOnKeyListener(new OnKeyListener() {
 			
 			@Override
@@ -73,7 +73,10 @@ public class OutlineViewerFragment extends ListFragment {
 	}
 	
 	public boolean keyListener(int keyCode, KeyEvent event) {
-//		Log.i(TAG, "Key listener: "+keyCode);
+//		Log.i(TAG, "Key listener: "+keyCode+", "+event.getAction());
+		if (KeyEvent.ACTION_DOWN != event.getAction()) {
+			return false;
+		}
 		int pos = getSelectedItemPosition();
 //		if (KeyEvent.KEYCODE_SPACE == keyCode && -1 != pos) {
 //			adapter.collapseExpand(pos, true);
@@ -92,7 +95,14 @@ public class OutlineViewerFragment extends ListFragment {
 		this.name = name;
 		this.controller = controller;
 		this.data = data;
-		adapter.setController(data.getInt(name+"_id", -1), controller, data.getIntegerArrayList(name+"_sel"));
+		int pos = adapter.setController(data.getInt(name+"_id", -1), controller, data.getIntegerArrayList(name+"_sel"));
+		Log.i(TAG, "After setC: "+pos);
+		if (-1 != pos) {
+			setSelection(pos);
+			if (null != dataListener) {
+				dataListener.onSelect(this, pos);
+			}
+		}
 	}
 	
 	public void saveData() {
@@ -116,7 +126,22 @@ public class OutlineViewerFragment extends ListFragment {
 	}
 
 	public void reload() {
+		if (null == controller) {
+			return;
+		}
 		adapter.reload(adapter.getSelection());
+	}
+
+	public void setSelected(int pos) {
+//		Log.i(TAG, "Selecting: "+pos);
+		if (pos == -1) {
+			return;
+		}
+		adapter.setSelected(pos);
+		setSelection(pos);
+		if (null != dataListener) {
+			dataListener.onSelect(this, pos);
+		}
 	}
 	
 }

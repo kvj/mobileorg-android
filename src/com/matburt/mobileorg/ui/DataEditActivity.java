@@ -41,7 +41,7 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.i(TAG, "onCreate: "+getResources().getConfiguration().screenLayout+", "+getResources().getDisplayMetrics().densityDpi);
+//		Log.i(TAG, "onCreate: "+getResources().getConfiguration().screenLayout+", "+getResources().getDisplayMetrics().densityDpi);
 		setContentView(R.layout.data_edit);
 		edit = (EditText) findViewById(R.id.data_edit_text);
 		togglePanel = (ImageButton) findViewById(R.id.data_edit_button);
@@ -131,42 +131,40 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 		note.title = text;
 		Log.i(TAG, "Create new entry "+parentID+", "+text);
 		NoteNG change = null;
-		if (-1 != parentID) {
-			//Try to find
-			NoteNG parent = controller.findNoteByID(parentID);
-			change = controller.findNoteByID(data.getInt("changeID", -1));
-			if (null == parent || null == change) {
-				return "Invalid entry";
-			}
-			note.level = parent.level+1;
-			note.parentID = parent.id;
-			//Save body
-			StringWriter sw = new StringWriter();
-			DataWriter dw = new DataWriter(controller);
-			try {
-				dw.writeOutlineWithChildren(change, sw, false);
-				changeBody = sw.toString();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return "Error writing";
-			}
-		}
 		if ("title".equals(data.getString("type"))) {
-			//This is outline
+			//This is outline - only capture
 			note.priority = data.getString("priority");
 			note.tags = data.getString("tags");
 			note.todo = data.getString("todo");
 			note.type = NoteNG.TYPE_OUTLINE;
+			note.fileID = -1;
 			if (null == controller.createNewNote(note)) {
 				return "DB error";
 			}
-			if (-1 == parentID) {
-				controller.addChange(note.id, "data", null, null);
-				return null;
-			}
+			controller.addChange(note.id, "data", null, null);
+			return null;
 		}
 		if (-1 == parentID) {
-			return "Invalid item";
+			//Should be always
+			return "Invalid entry";
+		}
+		
+		NoteNG parent = controller.findNoteByID(parentID);
+		change = controller.findNoteByID(data.getInt("changeID", -1));
+		if (null == parent || null == change) {
+			return "Invalid entry";
+		}
+		note.parentID = parent.id;
+		note.fileID = parent.fileID;
+		//Save body
+		StringWriter sw = new StringWriter();
+		DataWriter dw = new DataWriter(controller);
+		try {
+			dw.writeOutlineWithChildren(change, sw, false);
+			changeBody = sw.toString();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
 		}
 		if ("text".equals(data.getString("type"))) {
 			//New text
@@ -178,30 +176,25 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 				note.title = m.group(4);
 				note.type = NoteNG.TYPE_SUBLIST;
 			}
-			note.raw = note.title;
-			if (null == controller.addData(note)) {
-				return "DB error";
-			}
 		}
 		if ("sublist".equals(data.getString("type"))) {
 			//New text
 			Matcher m = OrgNGParser.listPattern.matcher(text);
 			note.type = NoteNG.TYPE_SUBLIST;
-			if (!m.find()) {
+			if (m.find()) {
 				//Convert to list
 				note.before = m.group(2);
 				note.title = m.group(4);
 			} else {
 				note.before = data.getString("before");
 			}
-			note.raw = note.title;
-			if (null == controller.addData(note)) {
-				return "DB error";
-			}
+		}
+		note.raw = note.title;
+		if (null == controller.addData(note)) {
+			return "DB error";
 		}
 		Log.i(TAG, "Updating body...");
-		StringWriter sw = new StringWriter();
-		DataWriter dw = new DataWriter(controller);
+		sw = new StringWriter();
 		try {
 			dw.writeOutlineWithChildren(change, sw, false);
 			controller.addChange(change.id, "body", changeBody, sw.toString());
@@ -212,13 +205,114 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 		return null;
 	}
 	
+	private boolean writeChange(String field, String type, String oldValue, String newValue, NoteNG note, NoteNG agenda) {
+		if (!stringChanged(oldValue, newValue)) {
+			return true;
+		}
+		if (!controller.updateData(note, field, newValue)) {
+			return false;
+		}
+		if (null != agenda && !controller.updateData(agenda, field, newValue)) {
+			return false;
+		}
+		if(!controller.addChange(note.id, type, oldValue, newValue)) {
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean stringChanged(String s1, String s2) {
+		if (null == s1 && null == s2) {
+			return false;
+		}
+		if (null != s1 && null != s2) {
+			return !s1.trim().equals(s2.trim());
+		}
+		return true;
+	}
+	
 	private String editEntry(int noteID, String text) {
-		return "Not implemented";
+		NoteNG change = controller.findNoteByID(data.getInt("changeID", -1));
+		NoteNG agenda = controller.findNoteByID(data.getInt("agendaID", -1));
+		NoteNG note = controller.findNoteByID(noteID);
+		if (null == note || null == change) {
+			Log.w(TAG, "Invalid entry: "+note+", "+change+", "+agenda);
+			return "Invalid entry";
+		}
+		if ("title".equals(data.getString("type"))) {
+			if (!writeChange("title", "heading", note.title, text, change, agenda)) {
+				return "DB error";
+			}
+			if (!writeChange("todo", "todo", note.todo, data.getString("todo"), change, agenda)) {
+				return "DB error";
+			}
+			if (!writeChange("priority", "priority", note.priority, data.getString("priority"), change, agenda)) {
+				return "DB error";
+			}
+			if (!writeChange("tags", "tags", note.tags, data.getString("tags"), change, agenda)) {
+				return "DB error";
+			}
+			return null;
+		}
+		String changeBody = null;
+		StringWriter sw = new StringWriter();
+		DataWriter dw = new DataWriter(controller);
+		try {
+			dw.writeOutlineWithChildren(change, sw, false);
+			changeBody = sw.toString();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		if ("text".equals(data.getString("type"))) {
+			//New text
+			Matcher m = OrgNGParser.listPattern.matcher(text);
+			note.type = NoteNG.TYPE_TEXT;
+			if (m.find()) {
+				//Convert to list
+				note.before = m.group(2);
+				note.title = m.group(4);
+				note.type = NoteNG.TYPE_SUBLIST;
+			} else {
+				note.title = text;
+			}
+		}
+		if ("sublist".equals(data.getString("type"))) {
+			//New text
+			Matcher m = OrgNGParser.listPattern.matcher(text);
+			note.type = NoteNG.TYPE_SUBLIST;
+			if (m.find()) {
+				Log.i(TAG, "is list: ["+m.group(2)+"] ["+m.group(4)+"]");
+				//Convert to list
+				note.before = m.group(2);
+				note.title = m.group(4);
+			} else {
+				Log.i(TAG, "not is list: ["+text+"]");
+				note.before = data.getString("before");
+				note.title = text;
+			}
+		}
+		note.raw = note.title;
+		if (!controller.updateData(note, "title", note.title) 
+				|| !controller.updateData(note, "raw", note.raw)) {
+			return "DB error";
+		}
+		Log.i(TAG, "Updating body... "+text);
+		sw = new StringWriter();
+		try {
+			dw.writeOutlineWithChildren(change, sw, false);
+			controller.addChange(change.id, "body", changeBody, sw.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		return null;
 	}
 	
 	private void onSave() {
 		panel.saveData(data);
 		String text = edit.getText().toString().trim();
+		Log.i(TAG, "onSave ["+text+"] ["+edit.getText()+"]");
 		if ("".equals(text)) {
 			SuperActivity.notifyUser(this, "Text is empty");
 			return;
@@ -235,6 +329,7 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 			SuperActivity.notifyUser(this, error);
 			return;
 		}
+		setResult(RESULT_OK);
 		finish();
 	}
 

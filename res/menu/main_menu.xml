@@ -3,7 +3,6 @@
     <item android:id="@+id/menu_sync" android:title="Sync" android:showAsAction="ifRoom"></item>
     <item android:id="@+id/menu_capture" android:title="Capture" android:showAsAction="ifRoom"></item>
     <item android:id="@+id/menu_add_text" android:title="Add text note" android:showAsAction="ifRoom|withText" android:enabled="false"></item>
-    <item android:id="@+id/menu_add_outline" android:title="Add outline" android:showAsAction="ifRoom|withText" android:enabled="false"></item>
     <item android:id="@+id/menu_edit" android:title="Edit" android:showAsAction="ifRoom|withText" android:enabled="false"></item>
     <item android:id="@+id/menu_remove" android:title="Remove" android:enabled="false"></item>
     <item android:id="@+id/menu_options" android:title="Options"></item>

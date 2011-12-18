@@ -1,5 +1,7 @@
 package com.matburt.mobileorg.ui;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.Map;
 
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.service.DataController.TodoState;
 import com.matburt.mobileorg.ui.theme.Default;
@@ -33,7 +36,6 @@ import android.widget.TextView.BufferType;
 public class OutlineViewerAdapter implements ListAdapter {
 
 	Integer id = null;
-	Integer selected = null;
 	NoteNG clicked = null;
 	Default theme = null;
 	int[] levelColors = new int[0];
@@ -107,7 +109,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 		NoteNG note = getItem(position);
 //		boolean isselected = selected == note.id;
-		boolean isclicked = null != clicked && clicked.id == note.id;
+		boolean isclicked = null != clicked && clicked.id.equals(note.id);
 		TextView title = (TextView) convertView
 				.findViewById(R.id.outline_viewer_item_text);
 //		convertView.setBackgroundColor(isselected 
@@ -162,12 +164,20 @@ public class OutlineViewerAdapter implements ListAdapter {
 			addSpan(sb, " ");
 		}
 		if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+			StringWriter sw = new StringWriter();
+			try {
+				DataWriter.writeIndent(1+note.before.length(), sw);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			String subListIndent = sw.toString();
 			String[] lines = note.raw.split("\\n");
 			for (int i = 0; i < lines.length; i++) {
 				if (i == 0) {
 					addSpan(sb, note.before+' ');
 				} else {
-					addSpan(sb, '\n'+indent);
+					addSpan(sb, '\n'+indent+subListIndent);
 				}
 				addSpan(sb, lines[i]);
 			}
@@ -185,7 +195,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 			sb.setSpan(new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE), size, sb.length()-1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
 		}
 		if (isclicked) {
-			sb.setSpan(new StyleSpan(Typeface.BOLD), 0, sb.length(), 0);
+			sb.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, sb.length(), 0);
 		}
 		title.setText(sb, BufferType.SPANNABLE);
 		return convertView;
@@ -227,7 +237,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		return true;
 	}
 
-	public void setController(Integer id, DataController controller, List<Integer> selection) {
+	public int setController(Integer id, DataController controller, List<Integer> selection) {
 		if (null == this.controller) {
 			this.controller = controller;
 		}
@@ -235,10 +245,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != id && -1 == id) {
 			this.id = null;
 		}
-		reload(selection);
+		return reload(selection);
 	}
 
-	public void reload(List<Integer> selection) {
+	public int reload(List<Integer> selection) {
 		data.clear();
 		todos.clear();
 		List<TodoState> todoStates = controller.getTodoTypes();
@@ -255,6 +265,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 			data.add(root);
 			if (null == selection) {
 				selection = new ArrayList<Integer>();
+			}
+			if (0 == selection.size()) {
 				selection.add(root.id);
 			}
 //			expandNote(root, 0, false);
@@ -264,7 +276,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 				data.addAll(_list);
 			}
 		}
-		Log.i(TAG, "Reload with: "+selection);
+		int selectedPos = -1;
+//		Log.i(TAG, "Reload with: "+selection);
 		if (null != selection) {
 			int start = 0;
 			int end = data.size();
@@ -276,6 +289,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 					if (n.id.equals(id)) {
 						//Found
 						clicked = n;
+						selectedPos = j;
 						start = j+1;
 						end = expandNote(n, j, false)+start;
 						found = true;
@@ -290,15 +304,29 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != observer) {
 			observer.onChanged();
 		}
+		return selectedPos;
 	}
 
+	public void setExpanded(int position, int state) {
+		if (-1 == position) {
+			return;
+		}
+		NoteNG note = getItem(position);
+		collapseNote(note, position);
+		if (NoteNG.EXPAND_COLLAPSED != state) {
+			expandNote(note, position, NoteNG.EXPAND_MANY == state? true: false);
+		}
+	}
+	
 	public void collapseExpand(int position, boolean notify) {
 		NoteNG note = getItem(position);
 		clicked = note;
 		if (!note.isExpandable()) {
+			if (notify && null != observer) {
+				observer.onChanged();
+			}
 			return;
 		}
-		selected = note.id;
 		if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
 			expandNote(note, position, false);
 		} else if (note.expanded == NoteNG.EXPAND_ONE){
@@ -376,12 +404,12 @@ public class OutlineViewerAdapter implements ListAdapter {
 		return result;
 	}
 	
-	public NoteNG findNearestNote(NoteNG note, boolean forceID) {
+	public NoteNG findNearestNote(NoteNG note) {
 		do {
 			if (null == note) {
 				return null;
 			}
-			if (NoteNG.TYPE_OUTLINE.equals(note.type) && (null != note.noteID || !forceID)) {
+			if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
 				//Found - return
 				return note;
 			}
@@ -395,6 +423,27 @@ public class OutlineViewerAdapter implements ListAdapter {
 //			}
 			note = note.parentNote;
 		} while(true);
+	}
+	
+	public int findItem(Integer id) {
+		synchronized (data) {
+			for (int i = 0; i < data.size(); i++) {
+				if (data.get(i).id.equals(id)) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+
+	public void setSelected(int pos) {
+		if (-1 == pos) {
+			return;
+		}
+		clicked = getItem(pos);
+		if (null != observer) {
+			observer.onChanged();
+		}
 	}
 
 }

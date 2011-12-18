@@ -14,7 +14,7 @@ public class DataWriter {
 		this.controller = controller;
 	}
 	
-	private void writeIndent(int indent, Writer writer) throws IOException {
+	public static void writeIndent(int indent, Writer writer) throws IOException {
 		for (int i = 0; i < indent; i++) {
 			writer.write(' ');
 		}
@@ -55,12 +55,11 @@ public class DataWriter {
 		if (!NoteNG.TYPE_OUTLINE.equals(note.type)) {
 			return false;
 		}
-		int indent = 0;
+		int indent = 1+note.level;
 		if (writeItself) {
 			for (int i = 0; i < note.level; i++) {
 				writer.write('*');
 			}
-			indent = 1+note.level;
 			if (null != note.todo) {
 				writer.write(" "+note.todo);
 			}
@@ -82,9 +81,9 @@ public class DataWriter {
 			if (c.moveToFirst()) {
 				do {
 					NoteNG n = controller.cursorToNote(c);
-					if (NoteNG.TYPE_OUTLINE.equals(n.type)) {
-						writeOutlineWithChildren(n, writer, true);
-					} else {
+					if (!NoteNG.TYPE_OUTLINE.equals(n.type)) {
+//						writeOutlineWithChildren(n, writer, true);
+//					} else {
 						writeDataItem(n, indent, writer);
 					}
 				} while (c.moveToNext());
@@ -123,9 +122,9 @@ public class DataWriter {
 						if (null == id) {
 							continue;
 						}
-						writer.write(String.format("* F(edit:%s) [[id:%s][%s]\n", c.getString(1), id, note.title));
-						writer.write(String.format("** Old value\n%s\n", c.getString(3)));
-						writer.write(String.format("** New value\n%s\n", c.getString(2)));
+						writer.write(String.format("* F(edit:%s) [[id:%s][%s]]\n", c.getString(1), id, note.title));
+						writer.write(String.format("** Old value\n%s\n", c.getString(3) == null? "": c.getString(3)));
+						writer.write(String.format("** New value\n%s\n", c.getString(2) == null? "": c.getString(2)));
 						writer.write("** End of edit\n");
 					}
 					writer.write("\n\n");

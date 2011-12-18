@@ -1,9 +1,13 @@
 package com.matburt.mobileorg.ui;
 
+import java.io.IOException;
+import java.io.StringWriter;
+
 import org.kvj.bravo7.ControllerConnector;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import org.kvj.bravo7.SuperActivity;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -19,14 +23,15 @@ import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.Settings.SettingsActivity;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
+import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
 public class FOutlineViewer extends FragmentActivity implements ControllerReceiver<DataController>, DataListener {
 
 	private static final String TAG = "OutlineViewer";
-	public static final int ADD_EDIT_NOTE = 101;
-	public static final int ADD_EDIT_NOTE_OK = 102;
+	public static final int ADD_NOTE = 101;
+	public static final int EDIT_NOTE = 102;
 	Bundle data = null;
 	OutlineViewerFragment left = null;
 	OutlineViewerFragment right = null;
@@ -34,6 +39,7 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 	DataController controller = null;
 	Menu menu = null;
 	OutlineViewerFragment currentFragment = null;
+	int currentSelectedPosition = -1;
 	
 	@Override
 	protected void onCreate(Bundle savedState) {
@@ -67,6 +73,11 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 		super.onCreateOptionsMenu(menu);
 		getMenuInflater().inflate(R.menu.main_menu, menu);
 		this.menu = menu;
+		menu.findItem(R.id.menu_sync).setVisible(!data.getBoolean("slave", false));
+		menu.findItem(R.id.menu_options).setVisible(!data.getBoolean("slave", false));
+		if (null != currentFragment) {
+			onSelect(currentFragment, currentSelectedPosition);
+		}
 		return true;
 	}
 	
@@ -110,6 +121,12 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 			NoteNG n = controller.findNoteByNoteID(note.originalID);
 			if (null != n) {
 				note = n;
+			}
+		}
+		if (null == note.noteID) {
+			if (!NoteNG.TYPE_AGENDA.equals(note.type)) {
+				SuperActivity.notifyUser(this, "Invalid outline");
+				return;
 			}
 		}
 		data.putInt("right_id", note.id);
@@ -170,14 +187,14 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 		case R.id.menu_sync:
 			runSynchronizer();
 			break;
-		case R.id.menu_add_outline:
-			runEditCurrent(NoteNG.TYPE_OUTLINE);
-			break;
 		case R.id.menu_add_text:
 			runEditCurrent(NoteNG.TYPE_TEXT);
 			break;
 		case R.id.menu_edit:
 			runEditCurrent(null);
+			break;
+		case R.id.menu_remove:
+			runRemoveCurrent();
 			break;
 		case R.id.menu_capture:
 			runCapture();
@@ -188,15 +205,61 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 		}
 		return true;
 	}
+
+	private String doRemove(NoteNG note, NoteNG change) {
+		StringWriter sw = new StringWriter();
+		DataWriter dw = new DataWriter(controller);
+		String changeBody = null;
+		try {
+			dw.writeOutlineWithChildren(change, sw, false);
+			changeBody = sw.toString();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		if (!controller.removeData(note.id)) {
+			return "DB error";
+		}
+		sw = new StringWriter();
+		try {
+			dw.writeOutlineWithChildren(change, sw, false);
+			controller.addChange(change.id, "body", changeBody, sw.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		return null;
+	}
 	
-	private void runEditCurrent(String type) {
+	private void runRemoveCurrent() {
 		if (null == currentFragment || null == currentFragment.adapter.clicked) {
 			SuperActivity.notifyUser(this, "No item selected");
 			return;
 		}
 		NoteNG note = currentFragment.adapter.clicked; 
 		//Current selected
-		NoteNG nearest = currentFragment.adapter.findNearestNote(note, true);
+		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
+		if (null == nearest || null == nearest.noteID) {
+			SuperActivity.notifyUser(this, "Outline is readonly");
+			return;
+		}
+		String error = doRemove(note, nearest);
+		if (null != error) {
+			SuperActivity.notifyUser(this, "No item selected");
+			return;
+		}
+		refresh(currentFragment.adapter.findItem(note.parentNote.id), false);
+	}
+
+	private void runEditCurrent(String type) {
+//		Log.i(TAG, "current: "+currentFragment+", "+currentFragment.adapter.clicked);
+		if (null == currentFragment || null == currentFragment.adapter.clicked) {
+			SuperActivity.notifyUser(this, "No item selected");
+			return;
+		}
+		NoteNG note = currentFragment.adapter.clicked; 
+		//Current selected
+		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
 		Integer agendaNote = null;
 		//Nearest note with ID - we'll put it's new body to DB
 		//NoteNG nearestNote = currentFragment.adapter.findNearestNote(note, false);
@@ -208,17 +271,22 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 			nearest = note;
 			//nearestNote = note;
 		}
+		Log.i(TAG, "Add/Edit: "+note.title+", "+note.noteID+", "+nearest);
 		if (null == nearest) {
 			SuperActivity.notifyUser(this, "Selected item is readonly");
 			return;
 		}
+		if (null == nearest.noteID) {
+			SuperActivity.notifyUser(this, "Selected item is readonly");
+			return;
+		}
         Intent dispIntent = new Intent(this, DataEditActivity.class);
+        int editType = ADD_NOTE;
         if (null == type) {
+        	editType = EDIT_NOTE;
 			//Edit current
     		dispIntent.putExtra("noteID", note.id.intValue());//This is where to save
-    		if (note.id != nearest.id) {
-        		dispIntent.putExtra("changeID", nearest.id.intValue());//This is body to modify
-			}
+    		dispIntent.putExtra("changeID", nearest.id.intValue());//This is body to modify
     		if (null != agendaNote) {
     			dispIntent.putExtra("agendaID", agendaNote.intValue());//Modify this also
 			}
@@ -241,28 +309,17 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 			}
 		} else {
 			//Add new entry
-    		NoteNG nearestNote = currentFragment.adapter.findNearestNote(note, false);//Should be always not null
-    		//This is nearest note to add/refresh
 			dispIntent.putExtra("changeID", nearest.id.intValue());
-			if (NoteNG.TYPE_OUTLINE.equals(type)) {
-				//Trying to add outline
-				dispIntent.putExtra("parentID", nearestNote.id.intValue()); //Where to save/refresh
-				dispIntent.putExtra("type", "title");
-			}
-			if (NoteNG.TYPE_TEXT.equals(type)) {
-				//Trying to add text
-	        	if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
-	        		dispIntent.putExtra("text", note.before+" ");
-	        		dispIntent.putExtra("type", "sublist");
-	        		dispIntent.putExtra("before", note.before);
-	        		dispIntent.putExtra("parentID", note.id.intValue()); //Where to save/refresh - add to me
-				} else {
-					dispIntent.putExtra("type", "text");
-					dispIntent.putExtra("parentID", nearestNote.id.intValue()); //Where to save/refresh
-				}
+    		dispIntent.putExtra("parentID", note.id.intValue()); //Where to save/refresh - add to me
+        	if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+        		dispIntent.putExtra("text", note.before+" ");
+        		dispIntent.putExtra("type", "sublist");
+        		dispIntent.putExtra("before", note.before);
+			} else {
+				dispIntent.putExtra("type", "text");
 			}
 		}
-        startActivityForResult(dispIntent, ADD_EDIT_NOTE);
+        startActivityForResult(dispIntent, editType);
 	}
 
 	private void runOptions() {
@@ -279,6 +336,7 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 	public void onSelect(OutlineViewerFragment fragment, int position) {
 		Log.i(TAG, "onSelect: "+position+", "+menu);
 		currentFragment = fragment;
+		currentSelectedPosition = position;
 		if (null == menu) {
 			return;
 		}
@@ -288,31 +346,68 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 		try {
 			if (-1 != position) {
 				NoteNG current = fragment.adapter.getItem(position);
-				Log.i(TAG, "Current: "+current.type+", "+current.title);
+//				Log.i(TAG, "Current: "+current.type+", "+current.title);
 				if (NoteNG.TYPE_OUTLINE.equals(current.type) || 
 						NoteNG.TYPE_AGENDA_OUTLINE.equals(current.type) ||
 						NoteNG.TYPE_TEXT.equals(current.type) || 
 						NoteNG.TYPE_SUBLIST.equals(current.type)) {
 					canAdd = true;
 					canEdit = true;
-					canRemove = true;
+					canRemove = false;
+					if (NoteNG.TYPE_TEXT.equals(current.type) || 
+							NoteNG.TYPE_SUBLIST.equals(current.type)) {
+						canRemove = true;
+					}
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		Log.i(TAG, "Select: "+position+", "+canAdd);
-		menu.findItem(R.id.menu_add_outline).setEnabled(canAdd);
+//		Log.i(TAG, "Select: "+position+", "+canAdd);
 		menu.findItem(R.id.menu_add_text).setEnabled(canAdd);
 		menu.findItem(R.id.menu_edit).setEnabled(canEdit);
 		menu.findItem(R.id.menu_remove).setEnabled(canRemove);
+	}
+
+	private void refresh(int refreshPos, boolean refreshParent) {
+		if (null == currentFragment) {
+			Log.e(TAG, "No fragment");
+			return;
+		}
+		if (-1 == refreshPos) {
+			Log.e(TAG, "No item");
+			return;
+		}
+		NoteNG note = currentFragment.adapter.getItem(refreshPos);
+		if (refreshParent) {
+			NoteNG parent = note.parentNote;
+			if (null == parent) {
+				//This is top note
+				Log.i(TAG, "Reload full view");
+				currentFragment.adapter.setController(note.id, controller, null);
+			} else {
+				Log.i(TAG, "Reload parent");
+				currentFragment.adapter.setExpanded(currentFragment.adapter.findItem(parent.id), NoteNG.EXPAND_ONE);
+			}
+		} else {
+			Log.i(TAG, "Refresh this note");
+			currentFragment.adapter.setExpanded(refreshPos, NoteNG.EXPAND_ONE);
+		}
+		currentFragment.setSelected(currentFragment.adapter.findItem(note.id));
 	}
 	
 	@Override
 	protected void onActivityResult(int req, int res, Intent intent) {
 		super.onActivityResult(req, res, intent);
-		if (ADD_EDIT_NOTE == req && ADD_EDIT_NOTE_OK == res) {
-			//Need to refresh
+		Log.i(TAG, "onActivityResult: "+req+", "+res+", "+currentFragment.getSelectedItemPosition());
+		if (res != Activity.RESULT_OK) {
+			return;
+		}
+		if (ADD_NOTE == req) {
+			refresh(currentSelectedPosition, false);
+		}
+		if (EDIT_NOTE == req) {
+			refresh(currentSelectedPosition, true);
 		}
 	}
 }

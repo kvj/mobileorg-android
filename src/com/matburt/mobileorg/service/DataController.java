@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.kvj.bravo7.ApplicationContext;
 
@@ -401,6 +402,7 @@ public class DataController {
 			values.put("after", note.after);
 			values.put("before", note.before);
 			values.put("parent_id", note.parentID);
+			values.put("note_id", note.noteID);
 			values.put("file_id", note.fileID);
 			values.put("priority", note.priority);
 			values.put("todo", note.todo);
@@ -433,7 +435,7 @@ public class DataController {
 		try {
 			db.getDatabase().beginTransaction();
 			ContentValues values = new ContentValues();
-			if (value instanceof String) {
+			if (null == value || value instanceof String) {
 				values.put(field, (String) value);
 			} else if (value instanceof Number) {
 				values.put(field, (Integer) value);
@@ -583,7 +585,7 @@ public class DataController {
 					ContentValues values = new ContentValues();
 					values.put("new_value", newValue);
 					Log.i(TAG, "Existing - only update");
-					db.getDatabase().update("changes", null, "id=?", new String[] {c.getString(0)});
+					db.getDatabase().update("changes", values, "id=?", new String[] {c.getString(0)});
 					c.close();
 					db.getDatabase().setTransactionSuccessful();
 					return true;
@@ -646,8 +648,9 @@ public class DataController {
 				'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', 
 				'4', '5', '6', '7', '8', '9', '0'};
 		StringBuilder sb = new StringBuilder();
+		Random r = new Random(new Date().getTime());
 		for (int i = 0; i < size; i++) {
-			sb.append(chars[(int) Math.floor(Math.random()*chars.length)]);
+			sb.append(chars[r.nextInt(chars.length)]);
 		}
 		return sb.toString();
 	}
@@ -706,6 +709,44 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return null;
+	}
+	
+	public boolean removeData(Integer id) {
+		return removeData(id, false);
+	}
+	
+	private boolean removeData(Integer id, boolean inTransaction) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			if (!inTransaction) {
+				db.getDatabase().beginTransaction();
+			}
+			Cursor c = db.getDatabase().query("data", new String [] {"id"}, 
+					"parent_id=?", new String[] {id.toString()}, null, null, null);
+			if (c.moveToFirst()) {
+				do {
+					if (!removeData(c.getInt(0), true)) {
+						c.close();
+						return false;
+					}
+				} while (c.moveToNext());
+			}
+			c.close();
+			db.getDatabase().delete("data", "id=?", new String[] {id.toString()});
+			if (!inTransaction) {
+				db.getDatabase().setTransactionSuccessful();
+			}
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (!inTransaction) {
+				db.getDatabase().endTransaction();
+			}
+		}
+		return false;
 	}
 
 }
