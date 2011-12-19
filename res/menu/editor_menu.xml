@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
-    <item android:id="@+id/menu_save" android:title="Save" android:showAsAction="ifRoom|withText"></item>
+
+    <item
+        android:id="@+id/menu_save"
+        android:showAsAction="ifRoom|withText"
+        android:title="Save"
+        android:icon="@drawable/save"/>
+
 </menu>

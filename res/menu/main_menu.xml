@@ -1,9 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/menu_sync" android:title="Sync" android:showAsAction="ifRoom"></item>
-    <item android:id="@+id/menu_capture" android:title="Capture" android:showAsAction="ifRoom"></item>
-    <item android:id="@+id/menu_add_text" android:title="Add text note" android:showAsAction="ifRoom|withText" android:enabled="false"></item>
-    <item android:id="@+id/menu_edit" android:title="Edit" android:showAsAction="ifRoom|withText" android:enabled="false"></item>
-    <item android:id="@+id/menu_remove" android:title="Remove" android:enabled="false"></item>
-    <item android:id="@+id/menu_options" android:title="Options"></item>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/menu_sync"
+        android:icon="@drawable/sync"
+        android:showAsAction="ifRoom"
+        android:title="Sync"/>
+
+    <item
+        android:id="@+id/menu_capture"
+        android:icon="@drawable/capture"
+        android:showAsAction="ifRoom"
+        android:title="Capture"/>
+
+    <item
+        android:id="@+id/menu_add_text"
+        android:enabled="false"
+        android:icon="@drawable/add_text"
+        android:showAsAction="ifRoom|withText"
+        android:title="Add text note"/>
+
+    <item
+        android:id="@+id/menu_edit"
+        android:enabled="false"
+        android:showAsAction="ifRoom|withText"
+        android:title="Edit"
+        android:icon="@drawable/edit"/>
+
+    <item
+        android:id="@+id/menu_remove"
+        android:enabled="false"
+        android:title="Remove"
+        android:showAsAction="ifRoom|withText"
+        android:icon="@drawable/remove"/>
+
+    <item
+        android:id="@+id/menu_options"
+        android:title="Options"
+        android:icon="@drawable/options"/>
+
 </menu>
