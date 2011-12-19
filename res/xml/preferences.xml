@@ -32,13 +32,6 @@
         android:entries="@array/storageModes"
         android:entryValues="@array/storageModesVals"
         android:defaultValue="internal" />
-    <ListPreference
-        android:title="Document text size"
-        android:summary="Font size to display documents"
-        android:key="docFontSize"
-        android:entries="@array/docFontSizes"
-        android:entryValues="@array/docFontSizesVals"
-        android:defaultValue="20" />
   </PreferenceCategory>
   <PreferenceCategory android:title="Other">
     <PreferenceScreen

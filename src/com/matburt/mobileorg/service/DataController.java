@@ -248,14 +248,16 @@ public class DataController {
         return parser.parse();
 	}
 	
-	public boolean cleanupDB() {
+	public boolean cleanupDB(boolean full) {
 		if (null == db) {
 			return false;
 		}
 		try {
 			db.getDatabase().beginTransaction();
-			db.getDatabase().delete("files", null, null);
-			db.getDatabase().delete("data", null, null);
+			if (full) {
+				db.getDatabase().delete("files", null, null);
+				db.getDatabase().delete("data", null, null);
+			}
 			db.getDatabase().delete("todos", null, null);
 			db.getDatabase().delete("priorities", null, null);
 			db.getDatabase().setTransactionSuccessful();
@@ -268,7 +270,7 @@ public class DataController {
 		return false;
 	}
 	
-	public Integer updateFile(String name, String checksum) {
+	public Integer addFile(String name, String checksum, Integer dataID) {
 		if (null == db) {
 			return null;
 		}
@@ -277,6 +279,7 @@ public class DataController {
 			ContentValues values = new ContentValues();
 			values.put("file", name);
 			values.put("checksum", checksum);
+			values.put("data_id", dataID);
 			int result = (int) db.getDatabase().insert("files", null, values);
 			db.getDatabase().setTransactionSuccessful();
 			return result;
@@ -286,6 +289,25 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return null;
+	}
+	
+	public boolean updateFile(String name, String checksum) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("checksum", checksum);
+			db.getDatabase().update("files", values, "file=?", new String[] {name});
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
 	}
 	
 	public boolean addTodoType(int group, String name, boolean done) {
@@ -642,6 +664,23 @@ public class DataController {
 		return false;
 	}
 	
+	public boolean clearCaptured() {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			db.getDatabase().delete("data", "file_id=? and type<>?", new String[] {"-1", NoteNG.TYPE_FILE});
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+	
 	public String generateNoteID(int size) {
 		char[] chars = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 
 				's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 
@@ -747,6 +786,35 @@ public class DataController {
 			}
 		}
 		return false;
+	}
+
+	public NoteNG findAndRefreshFile(String fileName) {
+		if (null == db) {
+			return null;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			Cursor file = db.getDatabase().query("files", 
+					new String[] {"id", "data_id"}, "file=?", new String[] {fileName}, null, null, null);
+			if (!file.moveToFirst()) {
+				Log.e(TAG, "File not found: "+fileName);
+				file.close();
+				return null;
+			}
+			int fileID = file.getInt(0);
+			int noteID = file.getInt(1);
+			file.close();
+			NoteNG note = findNoteByID(noteID);
+			note.fileID = fileID;
+			db.getDatabase().delete("data", "file_id=?", new String[] {Integer.toString(fileID)});
+			db.getDatabase().setTransactionSuccessful();
+			return note;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return null;
 	}
 
 }

@@ -220,7 +220,12 @@ abstract public class Synchronizer
             if (TextUtils.isEmpty(eachLine))
                 continue;
             String[] chksTuple = eachLine.split("\\s+");
-            chksums.put(chksTuple[1], chksTuple[0]);
+            String name = chksTuple[1];
+            String value = chksTuple[0];
+            if ("mobileorg.org".equals(name)) {
+				continue;
+			}
+            chksums.put(name, value);
         }
         return chksums;
     }

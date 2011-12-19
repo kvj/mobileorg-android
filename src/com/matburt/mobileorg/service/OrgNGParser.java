@@ -61,6 +61,7 @@ public class OrgNGParser {
 	class ParseFileOptions {
 		boolean agenda = false;
 		int todoGroup = 0;
+		boolean sharpOnly = false;
 	}
 	
 	public String parseFile(String name, ItemListener listener, NoteNG _parent, ParseFileOptions options) {
@@ -306,33 +307,66 @@ public class OrgNGParser {
 			String prevSession = controller.appContext.getStringPreference("prevSyncSession", "");
 			Log.i(TAG, "Start sync");
 			String newSession = synchronizer.getFileHash("checksums.dat");
-//			if (null != newSession && newSession.equals(prevSession)) {
-//				Log.i(TAG, "No changes detected - exiting");
-//				return null;
-//			}
-			if (!controller.cleanupDB()) {
+			if (null != newSession && newSession.equals(prevSession)) {
+				Log.i(TAG, "No changes detected - exiting");
+				return null;
+			}
+			if (!controller.clearCaptured()) {
 				return "DB error";
 			}
 			String checksums = synchronizer.fetchOrgFileString("checksums.dat");
 			final Map<String, String> sums = synchronizer.getChecksums(checksums);
 			//file1 s1, file2 s2, file3 s3
 			Map<String, String> nowSums = controller.getChecksums();
-			Log.i(TAG, "Comparing: "+sums+" and "+nowSums);
-			//file1 s1, file2 s2`
-//			List<String> filesToClear = new ArrayList<String>(nowSums.keySet());
-//			filesToClear.removeAll(sums.keySet());
-//			//empty
-//			for (String file : sums.keySet()) {
-//				String hash = sums.get(file);
-//				String oldHash = nowSums.get(file);
-//				if (hash.equals(oldHash) && "index.org" != "file") {
-//					
-//				}
-//			}
-			
+			Log.i(TAG, "Comparing["+sums.size()+"] = ["+nowSums.size()+"]: "+sums+" and "+nowSums);
+			if (sums.size() != nowSums.size()) {
+				Log.i(TAG, "Full sync");
+			} else if (!sums.get("index.org").equals(nowSums.get("index.org"))) {
+				Log.i(TAG, "Index changed - full sync");
+			} else {
+				for (String name : nowSums.keySet()) {
+					String chsum = nowSums.get(name);
+					String otherSum = sums.get(name);
+					if (chsum.equals(otherSum)) {
+						sums.remove(name);
+					}
+				}
+				Log.i(TAG, "Parse only["+sums.size()+"]: "+sums);
+				for (String fileName : sums.keySet()) {
+					String sum = sums.get(fileName);
+					NoteNG root = controller.findAndRefreshFile(fileName);
+					if (null == root) {
+						return "DB error";
+					}
+					ParseFileOptions options = new ParseFileOptions();
+					final boolean isAgenda = "agendas.org".equals(fileName);
+					options.agenda = isAgenda;
+					String error = parseFile(fileName, new ItemListener() {
+						
+						@Override
+						public void onItem(NoteNG note) {
+						}
+
+						@Override
+						public void onSharpLine(String name, String value) {
+						}
+					}, root, options);
+					if (null != error) {
+						return error;
+					}
+					if (!controller.updateFile(fileName, sum)) {
+						return "DB error";
+					}
+				}
+				controller.appContext.setStringPreference("prevSyncSession", newSession);
+				return null;
+			}
+			if (!controller.cleanupDB(true)) {
+				return "DB error";
+			}
 			//Next step - parse index.org
-			Integer indexFileID = controller.updateFile("index.org", sums.get("index.org"));
 			NoteNG root = new NoteNG();
+			Integer indexFileID = controller.addFile("index.org", sums.get("index.org"), null);
 			root.fileID = indexFileID;
 			if (null ==indexFileID) {
 				return "DB error";
@@ -356,7 +390,7 @@ public class OrgNGParser {
 						return;
 					}
 					String fileName = m.group(4);
-					Integer fileID = controller.updateFile(fileName, sums.get(fileName));
+					Integer fileID = controller.addFile(fileName, sums.get(fileName), note.id);
 					if (null == fileID) {
 						return;
 					}
