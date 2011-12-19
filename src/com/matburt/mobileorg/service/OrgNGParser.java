@@ -190,6 +190,10 @@ public class OrgNGParser {
 				}
 				m = paramPattern.matcher(line);
 				if (m.find()) {
+					if (null != listNote) {
+						controller.addData(listNote);
+						listNote = null;
+					}
 					NoteNG n = new NoteNG();
 					n.editable = false;
 					n.fileID = parent.fileID;
@@ -198,10 +202,6 @@ public class OrgNGParser {
 					n.title = line.trim();
 					n.type = NoteNG.TYPE_PROPERTY;
 					controller.addData(n);
-					if (null != listNote) {
-						controller.addData(listNote);
-						listNote = null;
-					}
 					continue;
 				}
 //				Log.i(TAG, "Unknown line: "+line);
