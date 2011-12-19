@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.Settings;
+package com.matburt.mobileorg.settings;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,7 +6,7 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.Synchronizers.DropboxAuthActivity;
+import com.matburt.mobileorg.synchronizers.DropboxAuthActivity;
 
 public class DropboxSettingsActivity extends PreferenceActivity implements OnPreferenceClickListener
 {

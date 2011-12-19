@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.Settings;
+package com.matburt.mobileorg.settings;
 
 import android.content.Context;
 import android.content.Intent;
@@ -6,7 +6,8 @@ import android.content.pm.PackageItemInfo;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
-import com.matburt.mobileorg.MobileOrgApplication;
+
+import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 
 import java.util.List;
@@ -25,7 +26,7 @@ public class SettingsActivity extends PreferenceActivity
 
     protected void populateSyncSources()
     {
-        List<PackageItemInfo> synchronizers = MobileOrgApplication.discoverSynchronizerPlugins((Context) this);
+        List<PackageItemInfo> synchronizers = App.discoverSynchronizerPlugins((Context) this);
 
         ListPreference syncSource = (ListPreference)findPreference("syncSource");
 

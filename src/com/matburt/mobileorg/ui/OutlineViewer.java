@@ -19,10 +19,10 @@ import android.widget.ListView;
 
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.Settings.SettingsActivity;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.settings.SettingsActivity;
 
 public class OutlineViewer extends SuperActivity<App, DataController, DataService> {
 

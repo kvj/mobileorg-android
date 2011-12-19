@@ -1,12 +1,17 @@
-package com.matburt.mobileorg.Synchronizers;
+package com.matburt.mobileorg.synchronizers;
 
-import android.content.Context;
-import android.content.res.Resources.NotFoundException;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.service.DataController;
-import com.matburt.mobileorg.R;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.auth.AuthScope;
@@ -24,16 +29,13 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.regex.Pattern;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
+import android.content.Context;
+import android.content.res.Resources.NotFoundException;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+import com.matburt.mobileorg.R;
+import com.matburt.mobileorg.service.DataController;
 
 public class WebDAVSynchronizer extends Synchronizer
 {

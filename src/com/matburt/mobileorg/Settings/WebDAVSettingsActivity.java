@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.Settings;
+package com.matburt.mobileorg.settings;
 
 import android.os.Bundle;
 import android.preference.PreferenceActivity;

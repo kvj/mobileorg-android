@@ -1,7 +1,5 @@
 package com.matburt.mobileorg.service;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,26 +11,23 @@ import java.util.Random;
 
 import org.kvj.bravo7.ApplicationContext;
 
-import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.Error.ErrorReporter;
-import com.matburt.mobileorg.Synchronizers.DropboxSynchronizer;
-import com.matburt.mobileorg.Synchronizers.SDCardSynchronizer;
-import com.matburt.mobileorg.Synchronizers.Synchronizer;
-import com.matburt.mobileorg.Synchronizers.WebDAVSynchronizer;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDiskIOException;
 import android.util.Log;
+
+import com.matburt.mobileorg.synchronizers.DropboxSynchronizer;
+import com.matburt.mobileorg.synchronizers.SDCardSynchronizer;
+import com.matburt.mobileorg.synchronizers.Synchronizer;
+import com.matburt.mobileorg.synchronizers.WebDAVSynchronizer;
 
 public class DataController {
 
 	private static final String TAG = "DataController";
 	MobileOrgDBHelper db = null;
 	ApplicationContext appContext = null;
-	DateFormat dateTimeFormat = new SimpleDateFormat("[yyyy-MM-dd EEE HH:mm]");
-	DateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd EEE]");
+	DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd EEE HH:mm");
+	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
 	
 	public DataController(ApplicationContext appContext, Context context) {
 		this.appContext = appContext;
@@ -733,7 +728,7 @@ public class DataController {
 			NoteNG dateNote = new NoteNG();
 			dateNote.parentID = note.id;
 			dateNote.fileID = note.fileID;
-			dateNote.raw = dateFormat.format(new Date());
+			dateNote.raw = "["+dateFormat.format(new Date())+"]";
 			dateNote.title = dateNote.raw;
 			dateNote.type = NoteNG.TYPE_TEXT;
 			if (null == addData(dateNote)) {

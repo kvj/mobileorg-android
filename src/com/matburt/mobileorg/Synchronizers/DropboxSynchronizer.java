@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.Synchronizers;
+package com.matburt.mobileorg.synchronizers;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -13,7 +13,6 @@ import com.dropbox.client2.DropboxAPI.DropboxInputStream;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
-import com.matburt.mobileorg.Error.ReportableError;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 

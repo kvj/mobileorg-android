@@ -1,11 +1,10 @@
-package com.matburt.mobileorg.Synchronizers;
+package com.matburt.mobileorg.synchronizers;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import com.matburt.mobileorg.Error.ReportableError;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.R;
 

@@ -18,7 +18,7 @@
         android:name=".App" >
         <service android:name=".service.DataService" />
 
-        <receiver android:name="MobileOrgStartupIntentReceiver" >
+        <receiver android:name=".MobileOrgStartupIntentReceiver" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <category android:name="android.intent.category.HOME" />
@@ -34,70 +34,30 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-            <activity
-            android:label="MobileOrg"
-            android:name=".ui.OutlineViewer" 
-            android:configChanges="orientation|keyboardHidden">
-        </activity>
         <activity
             android:label="Capture"
             android:name=".ui.DataEditActivity" 
             android:configChanges="keyboardHidden">
         </activity>
-            <activity
-            android:label="MobileOrg"
-            android:name="MobileOrgActivity" >
-        </activity>
         <activity
             android:label="MobileOrg Settings"
-            android:name=".Settings.SettingsActivity" >
+            android:name=".settings.SettingsActivity" >
         </activity>
         <activity
             android:label="Dropbox Authentication"
-            android:name=".Synchronizers.DropboxAuthActivity" >
-        </activity>
-        <activity
-            android:label="Org View"
-            android:name="SimpleTextDisplay" >
-        </activity>
-        <activity
-            android:label="TODO State Selection"
-            android:name=".Capture.EditDetailsActivity" >
-        </activity>
-        <activity
-            android:label="OrgMenu"
-            android:name="OrgContextMenu" >
-        </activity>
-        <activity
-            android:exported="true"
-            android:label="Org Capture"
-            android:name=".Capture.Capture"
-            android:windowSoftInputMode="adjustResize" >
-            <intent-filter >
-                <action android:name="com.matburt.mobileorg.CAPTURE" />
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <intent-filter >
-                <action android:name="android.intent.action.SEND" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="text/*" />
-            </intent-filter>
+            android:name=".synchronizers.DropboxAuthActivity" >
         </activity>
         <activity
             android:label="WebDAV Settings"
-            android:name=".Settings.WebDAVSettingsActivity" >
+            android:name=".settings.WebDAVSettingsActivity" >
         </activity>
         <activity
             android:label="SDCard Settings"
-            android:name=".Settings.SDCardSettingsActivity" >
+            android:name=".settings.SDCardSettingsActivity" >
         </activity>
         <activity
             android:label="Dropbox Settings"
-            android:name=".Settings.DropboxSettingsActivity" >
+            android:name=".settings.DropboxSettingsActivity" >
         </activity>
         <activity
             android:configChanges="orientation|keyboard"
@@ -112,10 +72,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".Capture.ViewNodeDetailsActivity"
-            android:windowSoftInputMode="adjustPan" >
         </activity>
     </application>
 

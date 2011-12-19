@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.Synchronizers;
+package com.matburt.mobileorg.synchronizers;
 
 import android.app.Activity;
 import android.content.Context;

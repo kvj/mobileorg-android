@@ -20,11 +20,11 @@ import android.view.MenuItem;
 
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.Settings.SettingsActivity;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.settings.SettingsActivity;
 import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
 public class FOutlineViewer extends FragmentActivity implements ControllerReceiver<DataController>, DataListener {

@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 
 import android.util.Log;
 
-import com.matburt.mobileorg.Error.ReportableError;
-import com.matburt.mobileorg.Synchronizers.Synchronizer;
+import com.matburt.mobileorg.synchronizers.ReportableError;
+import com.matburt.mobileorg.synchronizers.Synchronizer;
 
 public class OrgNGParser {
 
