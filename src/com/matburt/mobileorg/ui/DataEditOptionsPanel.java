@@ -76,7 +76,10 @@ public class DataEditOptionsPanel extends Fragment {
 		}
 		prioritySpinner.setAdapter(new StringListAdapter(items));
 		prioritySpinner.setSelection(selectedPriority);
-		String tags = data.getString("tags", ":");
+		String tags = data.getString("tags");
+		if (null == tags) {
+			tags = ":";
+		}
 		tagsText.setText(tags);
 	}
 	
