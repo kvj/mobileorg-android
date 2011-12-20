@@ -26,8 +26,8 @@ public class DataController {
 	private static final String TAG = "DataController";
 	MobileOrgDBHelper db = null;
 	ApplicationContext appContext = null;
-	DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd EEE HH:mm");
-	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
+	public static DateFormat timeFormat = new SimpleDateFormat("HH:mm");
+	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
 	
 	public DataController(ApplicationContext appContext, Context context) {
 		this.appContext = appContext;
@@ -810,6 +810,10 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return null;
+	}
+	
+	public Context getContext() {
+		return appContext;
 	}
 
 }

@@ -2,15 +2,20 @@ package com.matburt.mobileorg.ui;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.service.OrgNGParser;
 import com.matburt.mobileorg.service.DataController.TodoState;
 import com.matburt.mobileorg.ui.theme.Default;
 
@@ -40,6 +45,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 	Default theme = null;
 	int[] levelColors = new int[0];
 	Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
+	PlainTextFormatter textFormatter = null;
+	PlainTextFormatter sublistFormatter = null;
 
 	public OutlineViewerAdapter(Context context) {
 		theme = new Default();
@@ -55,6 +62,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 		tagMapping.put(theme.c5Purple, theme.cdLPurple);
 		tagMapping.put(theme.c6Cyan, theme.ceLCyan);
 		tagMapping.put(theme.c7White, theme.cfLWhite);
+		DateTextFormatter dateTextFormatter = new DateTextFormatter();
+		textFormatter = new PlainTextFormatter(dateTextFormatter);
+		sublistFormatter = new PlainTextFormatter(dateTextFormatter);
 	}
 
 	private static final String TAG = "OutlineView";
@@ -99,6 +109,81 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
+	interface TextFormatter {
+		Pattern getPattern();
+		void format(SpannableStringBuilder sb, Matcher m, String text);
+	}
+	
+	class DateTextFormatter implements TextFormatter {
+
+		@Override
+		public Pattern getPattern() {
+			return OrgNGParser.dateTimePattern;
+		}
+
+		@Override
+		public void format(SpannableStringBuilder sb, Matcher m, String text) {
+//			OrgNGParser.debugExp(m);
+			StringBuilder builder = new StringBuilder();
+			builder.append(m.group(1));
+			try {
+				DateFormat dateFormat = android.text.format.DateFormat.getDateFormat(controller.getContext());
+				Date date = DataController.dateFormat.parse(m.group(2));
+				builder.append(dateFormat.format(date));
+				if (null != m.group(3)) {
+					DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(controller.getContext());
+					date = DataController.timeFormat.parse(m.group(3));
+					builder.append(' ');
+					builder.append(timeFormat.format(date));
+				}
+				builder.append(m.group(4));
+				addSpan(sb, builder.toString(), new ForegroundColorSpan(theme.c5Purple));
+			} catch (Exception e) {
+				e.printStackTrace();
+				addSpan(sb, "Error!", new ForegroundColorSpan(theme.c9LRed));
+			}
+			
+		}
+		
+	}
+	
+	class PlainTextFormatter {
+		
+		TextFormatter[] formatters;
+		
+		public PlainTextFormatter(TextFormatter... formatters) {
+			this.formatters = formatters;
+		}
+		
+		private void writePlainText(SpannableStringBuilder sb, int defColor, String text, int index) {
+			if (index >= formatters.length) {
+				addSpan(sb, text, new ForegroundColorSpan(defColor));
+				return;
+			}
+			TextFormatter formatter = formatters[index];
+			Matcher m = formatter.getPattern().matcher(text);
+			if (!m.find()) {
+				writePlainText(sb, defColor, text, index+1);
+				return;
+			}
+			do {
+				StringBuffer buffer = new StringBuffer();
+				m.appendReplacement(buffer, "");
+				formatter.format(sb, m, buffer.toString());
+			} while(m.find());
+			StringBuffer buffer = new StringBuffer();
+			m.appendTail(buffer);
+			if (0 != buffer.length()) {
+				writePlainText(sb, defColor, buffer.toString(), index+1);
+			}
+		}
+		
+		void writePlainText(SpannableStringBuilder sb, int defColor, String text) {
+			writePlainText(sb, defColor, text, 0);
+		}
+		
+	}
+	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {
@@ -142,6 +227,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 					new ForegroundColorSpan(done? theme.c9LRed: theme.c1Red));
 			// sb.append(note.todo+' ');
 		}
+		
 		int titleColor = theme.c7White;
 		if (NoteNG.TYPE_AGENDA.equals(note.type)) {
 			titleColor = theme.ccLBlue;
@@ -179,11 +265,13 @@ public class OutlineViewerAdapter implements ListAdapter {
 				} else {
 					addSpan(sb, '\n'+indent+subListIndent);
 				}
-				addSpan(sb, lines[i]);
+				sublistFormatter.writePlainText(sb, theme.c7White, lines[i]);
+//				addSpan(sb, lines[i]);
 			}
 		} else {
-			addSpan(sb, note.title, new ForegroundColorSpan(
-					titleColor));
+			textFormatter.writePlainText(sb, titleColor, note.title);
+//			addSpan(sb, note.title, new ForegroundColorSpan(
+//					titleColor));
 		}
 		if (null != note.tags) {
 			Integer tagColor = tagMapping.get(titleColor);

@@ -32,6 +32,8 @@ public class OrgNGParser {
 			"(<before>(.*)</before>)?"+
 			"(<after>(.*)</after>)?"+
 			"$");
+	
+	public static Pattern dateTimePattern = Pattern.compile("(\\<|\\[)(\\d{4}-\\d{2}-\\d{2}\\s[A-Z][a-z]{2})(\\s\\d{2}\\:\\d{2})?(\\>|\\])");
 	private static Pattern drawerPattern = Pattern.compile("^\\s*:([A-Z_-]+):\\s*(.*)\\s*$");
 	private static Pattern paramPattern = Pattern.compile("^\\s*([A-Z_-]+):\\s*(.*)\\s*$");
 	
@@ -52,7 +54,7 @@ public class OrgNGParser {
 		void onItem(NoteNG note);
 	}
 	
-	private void debugExp(Matcher m) {
+	public static void debugExp(Matcher m) {
 		for (int i = 1; i <= m.groupCount(); i++) {
 			Log.i(TAG, "Matcher "+i+", ["+m.group(i)+"]");
 		}
@@ -327,7 +329,7 @@ public class OrgNGParser {
 				for (String name : nowSums.keySet()) {
 					String chsum = nowSums.get(name);
 					String otherSum = sums.get(name);
-					if (chsum.equals(otherSum)) {
+					if (otherSum.equals(chsum)) {
 						sums.remove(name);
 					}
 				}
