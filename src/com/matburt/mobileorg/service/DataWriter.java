@@ -127,7 +127,6 @@ public class DataWriter {
 						writer.write(String.format("** New value\n%s\n", c.getString(2) == null? "": c.getString(2)));
 						writer.write("** End of edit\n");
 					}
-					writer.write("\n\n");
 				} while (c.moveToNext());
 			}
 			return true;

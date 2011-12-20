@@ -28,7 +28,7 @@ public class OrgNGParser {
 			"(\\[\\#([A-Z])\\]\\s+)?" +
 			"(.+)$");
 	private static Pattern outlineTailPattern = Pattern.compile(
-			"(((\\:[a-z]+)*\\:)+)?" +
+			"((((\\:[a-z]+)+\\:)|\\:)+)?" +
 			"(<before>(.*)</before>)?"+
 			"(<after>(.*)</after>)?"+
 			"$");
@@ -146,13 +146,17 @@ public class OrgNGParser {
 					Matcher m2 = outlineTailPattern.matcher(note.title);
 					if (m2.find()) {
 //						debugExp(m2);
-						//before: 5, after: 7
+						//before: 6, after: 8
 						StringBuffer buffer = new StringBuffer();
 						m2.appendReplacement(buffer, "");
-						note.title = buffer.toString().trim();
 						note.tags = m2.group(1);
-						note.before = m2.group(5);
-						note.after = m2.group(7);
+						if (":".equals(note.tags)) {
+							note.tags = null;
+							buffer.append(":");
+						}
+						note.title = buffer.toString().trim();
+						note.before = m2.group(6);
+						note.after = m2.group(8);
 					}
 					controller.addData(note);
 					parents.push(parent);
