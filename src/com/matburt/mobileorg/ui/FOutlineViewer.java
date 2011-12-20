@@ -17,6 +17,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
 
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
@@ -53,6 +54,10 @@ public class FOutlineViewer extends FragmentActivity implements ControllerReceiv
 			if (null == data) {
 				data = new Bundle();
 			}
+		}
+		Log.i(TAG, "We are on: "+android.os.Build.VERSION.SDK_INT);
+		if (android.os.Build.VERSION.SDK_INT<11) {//<3.0
+			requestWindowFeature(Window.FEATURE_NO_TITLE);
 		}
 		setContentView(R.layout.f_outline_viewer);
 		left = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.viewer_left_pane);

@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
@@ -41,6 +42,9 @@ public class DataEditActivity extends FragmentActivity implements ControllerRece
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		if (android.os.Build.VERSION.SDK_INT<11) {//<3.0
+			requestWindowFeature(Window.FEATURE_NO_TITLE);
+		}
 //		Log.i(TAG, "onCreate: "+getResources().getConfiguration().screenLayout+", "+getResources().getDisplayMetrics().densityDpi);
 		setContentView(R.layout.data_edit);
 		edit = (EditText) findViewById(R.id.data_edit_text);
