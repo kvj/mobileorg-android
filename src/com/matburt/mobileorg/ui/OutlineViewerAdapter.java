@@ -169,7 +169,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 			do {
 				StringBuffer buffer = new StringBuffer();
 				m.appendReplacement(buffer, "");
-				formatter.format(sb, m, buffer.toString());
+				if (0 != buffer.length()) {
+					writePlainText(sb, defColor, buffer.toString(), index+1);
+				}
+				formatter.format(sb, m, m.group());
 			} while(m.find());
 			StringBuffer buffer = new StringBuffer();
 			m.appendTail(buffer);
