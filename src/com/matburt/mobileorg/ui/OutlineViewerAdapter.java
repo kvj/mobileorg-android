@@ -288,6 +288,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (isclicked) {
 			sb.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, sb.length(), 0);
 		}
+		
 		title.setText(sb, BufferType.SPANNABLE);
 		return convertView;
 	}
@@ -453,6 +454,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		for (int i = 0; i < list.size(); i++) {
 			NoteNG n = list.get(i);
 			n.parentNote = note;
+			n.index = i;
 			n.indent = note.indent + 1;
 			pos++;
 			data.add(position + pos, n);

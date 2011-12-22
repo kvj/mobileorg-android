@@ -16,6 +16,10 @@ public class NoteNG {
 	public static final int EXPAND_ONE = 1;
 	public static final int EXPAND_MANY = 2;
 	
+	public static final int REF_ID = 0;
+	public static final int REF_OLP = 1;
+	public static final int REF_INDEX = 2;
+	
 	public Integer id = null;
 	public Integer parentID = null;
 	public int indent = 0;
@@ -35,6 +39,7 @@ public class NoteNG {
 	public NoteNG parentNote = null;
 	
 	public int expanded = EXPAND_COLLAPSED;
+	public int index = 0;
 	
 	public boolean isExpandable() {
 		return TYPE_AGENDA.equals(type) 
@@ -43,5 +48,25 @@ public class NoteNG {
 			|| TYPE_OUTLINE.equals(type)
 			|| TYPE_SUBLIST.equals(type)
 			;
+	}
+	
+	public String createNotePath(int refType) {
+		String link = "";
+		if (REF_ID == refType) {
+			String id = noteID;
+			if (null == id) {
+				id = originalID;
+			}
+			link = "id:"+id;
+		} else {
+			StringBuilder sb = new StringBuilder(REF_OLP == refType? title: Integer.toString(index));
+			NoteNG note = parentNote;
+			while(null != note) {
+				sb.insert(0, (REF_OLP == refType? note.title: Integer.toString(note.index))+"/");
+				note = note.parentNote;
+			}
+			link = (REF_OLP == refType? "olp:": "index:")+sb;
+		}
+		return (EXPAND_MANY == expanded? "a": "e")+"::"+link;
 	}
 }

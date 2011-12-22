@@ -61,6 +61,25 @@
         </activity>
         <activity
             android:configChanges="orientation|keyboard"
+            android:label="Widget Preferences"
+            android:name=".settings.WidgetPreferences" >
+            <intent-filter>
+                <action android:name=".settings.WidgetPreferences" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:configChanges="orientation|keyboard"
+            android:label="Widget Preference"
+            android:name=".settings.widget.WidgetConfigActivity" >
+        </activity>
+        <activity
+            android:configChanges="orientation|keyboard"
+            android:label="Select outline"
+            android:name=".settings.widget.SelectOutlineActivity" >
+        </activity>
+         <activity
+            android:configChanges="orientation|keyboard"
             android:launchMode="singleTask"
             android:name="com.dropbox.client2.android.AuthActivity" >
             <intent-filter >

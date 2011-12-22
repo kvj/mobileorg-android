@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+	<PreferenceCategory 
+	    android:key="common">
+	    <EditTextPreference
+	        android:title="Widget name"
+	        android:key="name"
+	        android:dialogTitle="Enter widget name"/>
+	</PreferenceCategory>
+	<PreferenceCategory 
+	    android:title="Outlines to display">
+		<com.matburt.mobileorg.settings.widget.OutlineListPreference
+		    android:key="items"/>
+	</PreferenceCategory>
+</PreferenceScreen>

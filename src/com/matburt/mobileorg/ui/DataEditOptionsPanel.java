@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.R.color;
+import android.app.Activity;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Color;
@@ -24,10 +25,10 @@ import com.matburt.mobileorg.service.DataController.TodoState;
 
 public class DataEditOptionsPanel extends Fragment {
 
-	class StringListAdapter extends ArrayAdapter<String> {
+	public static class StringListAdapter extends ArrayAdapter<String> {
 
-		public StringListAdapter(List<String> data) {
-			super(getActivity(), android.R.layout.simple_spinner_item, new ArrayList<String>(data));
+		public StringListAdapter(Activity activity, List<String> data) {
+			super(activity, android.R.layout.simple_spinner_item, new ArrayList<String>(data));
 			setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		}
 		
@@ -62,7 +63,7 @@ public class DataEditOptionsPanel extends Fragment {
 				selectedTODO = i+1;
 			}
 		}
-		todoSpinner.setAdapter(new StringListAdapter(items));
+		todoSpinner.setAdapter(new StringListAdapter(getActivity(), items));
 		todoSpinner.setSelection(selectedTODO);
 		items.clear();
 		items.add("Empty");
@@ -74,7 +75,7 @@ public class DataEditOptionsPanel extends Fragment {
 				selectedPriority = i+1;
 			}
 		}
-		prioritySpinner.setAdapter(new StringListAdapter(items));
+		prioritySpinner.setAdapter(new StringListAdapter(getActivity(), items));
 		prioritySpinner.setSelection(selectedPriority);
 		String tags = data.getString("tags");
 		if (null == tags) {

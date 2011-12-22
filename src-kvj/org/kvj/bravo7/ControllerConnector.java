@@ -13,12 +13,12 @@ import android.util.Log;
 public class ControllerConnector<A extends ApplicationContext, T extends Object, S extends SuperService<T, A>> implements ServiceConnection {
 	
 	private static final String TAG = "ControllerConnector";
-	private Activity activity = null;
+	private Context activity = null;
 	private ControllerReceiver<T> receiver = null;
 	@SuppressWarnings("rawtypes")
 	private LocalBinder localBinder = null;
 	
-	public ControllerConnector(Activity activity, ControllerReceiver<T> receiver) {
+	public ControllerConnector(Context activity, ControllerReceiver<T> receiver) {
 		this.activity = activity;
 		this.receiver = receiver;
 	}

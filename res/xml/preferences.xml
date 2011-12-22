@@ -8,7 +8,7 @@
         android:entries="@array/fileSources"
         android:entryValues="@array/fileSourcesVals"
         android:defaultValue="webdav" />
-     <com.matburt.mobileorg.Settings.SynchronizerPreferences
+     <com.matburt.mobileorg.settings.SynchronizerPreferences
                 android:key="syncPref"
                 android:defaultValue="32"
                 android:title="Custom Preference" />
@@ -35,9 +35,11 @@
   </PreferenceCategory>
   <PreferenceCategory android:title="Other">
     <PreferenceScreen
-        android:key="Widget"
+        android:key="Widgets"
         android:title="Widget Preferences"
-        android:summary="Preferences for a Widget">
+        android:summary="Preferences for a Widgets">
+        <intent android:action=".settings.WidgetPreferences">
+        </intent>
     </PreferenceScreen>
     <PreferenceScreen
         android:key="VersionDisp"

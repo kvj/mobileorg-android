@@ -3,6 +3,7 @@ package org.kvj.bravo7;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import android.appwidget.AppWidgetProvider;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -133,49 +135,38 @@ public class ApplicationContext extends Application {
 	public void setIntPreference(String name, int value) {
 		getPreferences().edit().putString(name, Integer.toString(value)).commit();
 	}
-
-		
-	public void setWidgetConfig(int id, JSONObject config) {
-		JSONObject obj = new JSONObject();
-		try {
-			obj.putOpt("id", id);
-			obj.putOpt("config", config);
-			setStringPreference("widget_"+id, obj.toString());
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+	
+	public void setWidgetConfig(int id, String name) {
+		setStringPreference("widget_"+id, name);
 	}
 	
-	public JSONObject getWidgetConfig(int id) {
-		try {
-			JSONObject obj = new JSONObject(getStringPreference("widget_"+id, "{}"));
-			return obj.optJSONObject("config");
-		} catch (JSONException e) {
-			e.printStackTrace();
+	public SharedPreferences getWidgetConfig(int id) {
+		if ( null != getStringPreference("widget_"+id, null)) {
+			return getSharedPreferences("widget_"+id, Context.MODE_PRIVATE);
 		}
 		return null;
 	}
 	
-	public Map<Integer, JSONObject> getWidgetConfigs(String provider) {
-		Map<Integer, JSONObject> result = new HashMap<Integer, JSONObject>();
+	public Map<Integer, String> getWidgetConfigs(String provider) {
+		Map<Integer, String> result = new LinkedHashMap<Integer, String>();
 		Set<String> keys = getPreferences().getAll().keySet();
 		AppWidgetManager manager = AppWidgetManager.getInstance(this);
 		for (String key : keys) {
 			if (key.startsWith("widget_")) {
 				try {
-					JSONObject object = new JSONObject(getStringPreference(key, "{}"));
-					int widgetID = object.optInt("id", -1);
-					JSONObject config = object.optJSONObject("config");
+					String name = getStringPreference(key, "");
+					int widgetID = Integer.parseInt(key.substring("widget_".length()));
 					AppWidgetProviderInfo info = manager.getAppWidgetInfo(widgetID);
-					if (info == null || config == null) {
-						Log.w(TAG, "updateWidgets no info or config for "+widgetID);
+//					if (info == null) {
+//						Log.w(TAG, "updateWidgets no info or config for "+widgetID);
+//						continue;
+//					}
+					if (provider != null && !info.provider.getClassName().equals(provider)) {
 						continue;
 					}
-					if (info.provider.getClassName().equals(provider)) {
-						result.put(widgetID, config);
-					}
+					result.put(widgetID, name);
 				} catch (Exception e) {
-					Log.e(TAG, "updateWidgets error:", e);
+					Log.e(TAG, "getWidgetConfigs error:", e);
 				}
 			}
 		}
@@ -190,8 +181,8 @@ public class ApplicationContext extends Application {
 			if (key.startsWith("widget_")) {
 				try {
 //					Log.i(TAG, "updateWidgets: key: "+key);
-					JSONObject object = new JSONObject(getStringPreference(key, "{}"));
-					int widgetID = object.optInt("id", -1);
+//					String type = getStringPreference(key, "");
+					int widgetID = Integer.parseInt(key.substring("widget_".length()));
 					AppWidgetProviderInfo info = manager.getAppWidgetInfo(widgetID);
 					if (info == null) {
 						Log.w(TAG, "updateWidgets no info for "+widgetID);
@@ -199,7 +190,7 @@ public class ApplicationContext extends Application {
 						continue;
 					}
 					if (id != -1 && id != widgetID) {
-						Log.w(TAG, "updateWidgets not a requested ID");
+//						Log.w(TAG, "updateWidgets not a requested ID");
 						continue;
 					}
 					AppWidgetProvider provider = (AppWidgetProvider) getClass().getClassLoader().loadClass(info.provider.getClassName()).newInstance();
@@ -211,9 +202,11 @@ public class ApplicationContext extends Application {
 				}
 			}
 		}
+		Editor editor = getPreferences().edit();
 		for (String key : toRemove) {
-			getPreferences().edit().remove(key).commit();
+			editor.remove(key);
 		}
+		editor.commit();
 	}
 	
 	public void publishBean(Object object) {

@@ -12,6 +12,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ListView;
 
 import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.NoteNG;
 
 public class OutlineViewerFragment extends ListFragment {
 
@@ -142,6 +143,10 @@ public class OutlineViewerFragment extends ListFragment {
 		if (null != dataListener) {
 			dataListener.onSelect(this, pos);
 		}
+	}
+	
+	public NoteNG getSelectedItem(int pos) {
+		return adapter.getItem(pos);
 	}
 	
 }
