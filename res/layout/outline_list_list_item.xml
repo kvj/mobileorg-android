@@ -9,15 +9,16 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:text="Test text"
-        android:gravity="center_vertical"/>
-    <ImageButton
-        android:id="@+id/outline_list_item_remove_button"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:src="@drawable/remove"/>
+        android:gravity="center_vertical"
+        style="@android:style/TextAppearance.DeviceDefault.Medium"/>
     <ImageButton
         android:id="@+id/outline_list_item_edit_button"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:src="@drawable/edit"/>
+    <ImageButton
+        android:id="@+id/outline_list_item_remove_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:src="@drawable/remove"/>
 </LinearLayout>

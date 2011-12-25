@@ -4,8 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.kvj.bravo7.ControllerConnector;
-import org.kvj.bravo7.SuperActivity;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
+import org.kvj.bravo7.SuperActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.widget.Spinner;
 
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
@@ -16,25 +21,20 @@ import com.matburt.mobileorg.ui.DataEditOptionsPanel;
 import com.matburt.mobileorg.ui.OutlineViewerFragment;
 import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
-import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
-import android.provider.ContactsContract.CommonDataKinds.Note;
-import android.support.v4.app.FragmentActivity;
-import android.util.Log;
-import android.widget.Spinner;
-
-public class SelectOutlineActivity extends FragmentActivity implements ControllerReceiver<DataController>, DataListener {
+public class SelectOutlineActivity extends FragmentActivity implements
+		ControllerReceiver<DataController>, DataListener {
 
 	ControllerConnector<App, DataController, DataService> connector = null;
 	OutlineViewerFragment fragment = null;
 	Spinner type = null;
-	
+	Spinner expand = null;
+
 	@Override
 	protected void onCreate(Bundle arg0) {
 		super.onCreate(arg0);
 		setContentView(R.layout.select_outline_dialog);
-		fragment = (OutlineViewerFragment) getSupportFragmentManager().findFragmentById(R.id.select_outline_list);
+		fragment = (OutlineViewerFragment) getSupportFragmentManager()
+				.findFragmentById(R.id.select_outline_list);
 		fragment.setDataListener(this);
 		List<String> items = new ArrayList<String>();
 		items.add("By ID");
@@ -43,12 +43,21 @@ public class SelectOutlineActivity extends FragmentActivity implements Controlle
 		type = (Spinner) findViewById(R.id.select_outline_type);
 		type.setAdapter(new DataEditOptionsPanel.StringListAdapter(this, items));
 		type.setSelection(0);
+		expand = (Spinner) findViewById(R.id.select_outline_expand);
+		items = new ArrayList<String>();
+		items.add("One level");
+		items.add("Two levels");
+		items.add("All");
+		expand.setAdapter(new DataEditOptionsPanel.StringListAdapter(this,
+				items));
+		expand.setSelection(0);
 	}
-	
+
 	@Override
 	protected void onStart() {
 		super.onStart();
-		connector = new ControllerConnector<App, DataController, DataService>(this, this);
+		connector = new ControllerConnector<App, DataController, DataService>(
+				this, this);
 		connector.connectController(DataService.class);
 	}
 
@@ -56,7 +65,7 @@ public class SelectOutlineActivity extends FragmentActivity implements Controlle
 	public void onController(DataController controller) {
 		fragment.loadData("list", controller, new Bundle());
 	}
-	
+
 	@Override
 	protected void onStop() {
 		super.onStop();
@@ -66,7 +75,8 @@ public class SelectOutlineActivity extends FragmentActivity implements Controlle
 	@Override
 	public void onOpen(OutlineViewerFragment fragment, int position) {
 		NoteNG note = fragment.getSelectedItem(position);
-		if (NoteNG.TYPE_TEXT.equals(note.type) || NoteNG.TYPE_SUBLIST.equals(note.type)) {
+		if (NoteNG.TYPE_TEXT.equals(note.type)
+				|| NoteNG.TYPE_SUBLIST.equals(note.type)) {
 			SuperActivity.notifyUser(this, "Invalid outline selected");
 			return;
 		}
@@ -79,7 +89,17 @@ public class SelectOutlineActivity extends FragmentActivity implements Controlle
 			return;
 		}
 		Intent result = new Intent();
-		result.putExtra("data", note.createNotePath(type.getSelectedItemPosition()));
+		String expandType = "e";
+		switch (expand.getSelectedItemPosition()) {
+		case 1:
+			expandType = "e2";
+			break;
+		case 2:
+			expandType = "a";
+			break;
+		}
+		result.putExtra("data",
+				note.createNotePath(expandType, type.getSelectedItemPosition()));
 		setResult(RESULT_OK, result);
 		finish();
 	}

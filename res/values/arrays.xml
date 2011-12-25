@@ -64,4 +64,34 @@
 	<item>21600000</item>
 	<item>43200000</item>
   </string-array>
+  <string-array name="sendIntervals">
+	<item>Disabled</item>
+	<item>15 sec</item>
+	<item>30 sec</item>
+	<item>1 min</item>
+	<item>5 min</item>
+	<item>10 min</item>
+  </string-array>
+  <string-array name="sendIntervalsVals">
+	<item>0</item>
+	<item>15000</item>
+	<item>30000</item>
+	<item>60000</item>
+	<item>300000</item>
+	<item>600000</item>
+  </string-array>
+  <string-array name="widgetBGid">
+	<item>0</item>
+	<item>1</item>
+	<item>2</item>
+	<item>3</item>
+	<item>4</item>
+  </string-array>
+  <string-array name="widgetBG">
+	<item>Transparent</item>
+	<item>10% Black</item>
+	<item>50% Black</item>
+	<item>80% Black</item>
+	<item>Black</item>
+  </string-array>
 </resources>

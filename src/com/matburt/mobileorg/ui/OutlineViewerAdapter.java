@@ -1,6 +1,5 @@
 package com.matburt.mobileorg.ui;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -11,22 +10,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.matburt.mobileorg.R;
-import com.matburt.mobileorg.service.DataController;
-import com.matburt.mobileorg.service.DataWriter;
-import com.matburt.mobileorg.service.NoteNG;
-import com.matburt.mobileorg.service.OrgNGParser;
-import com.matburt.mobileorg.service.DataController.TodoState;
-import com.matburt.mobileorg.ui.theme.Default;
-
 import android.content.Context;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
-import android.text.Layout.Alignment;
 import android.text.SpannableStringBuilder;
-import android.text.TextUtils;
-import android.text.style.AlignmentSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
@@ -38,23 +26,28 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
+import com.matburt.mobileorg.R;
+import com.matburt.mobileorg.service.DataController;
+import com.matburt.mobileorg.service.DataController.TodoState;
+import com.matburt.mobileorg.service.DataWriter;
+import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.service.OrgNGParser;
+import com.matburt.mobileorg.ui.theme.Default;
+
 public class OutlineViewerAdapter implements ListAdapter {
 
 	Integer id = null;
 	NoteNG clicked = null;
-	Default theme = null;
-	int[] levelColors = new int[0];
-	Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
+	static Default theme = new Default();
+	static int[] levelColors = new int[0];
+	static Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
 	PlainTextFormatter textFormatter = null;
 	PlainTextFormatter sublistFormatter = null;
 
-	public OutlineViewerAdapter(Context context) {
-		theme = new Default();
-		wide = context.getResources().getConfiguration().orientation 
-				== Configuration.ORIENTATION_LANDSCAPE;
-		levelColors = new int[] {theme.ccLBlue, theme.c3Yellow, theme.ceLCyan, theme.c1Red, 
-				theme.c2Green, theme.c5Purple, theme.ccLBlue, theme.c2Green, 
-				theme.ccLBlue, theme.c3Yellow, theme.ceLCyan};
+	static {
+		levelColors = new int[] { theme.ccLBlue, theme.c3Yellow, theme.ceLCyan,
+				theme.c1Red, theme.c2Green, theme.c5Purple, theme.ccLBlue,
+				theme.c2Green, theme.ccLBlue, theme.c3Yellow, theme.ceLCyan };
 		tagMapping.put(theme.c1Red, theme.c9LRed);
 		tagMapping.put(theme.c2Green, theme.caLGreen);
 		tagMapping.put(theme.c3Yellow, theme.cbLYellow);
@@ -62,6 +55,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 		tagMapping.put(theme.c5Purple, theme.cdLPurple);
 		tagMapping.put(theme.c6Cyan, theme.ceLCyan);
 		tagMapping.put(theme.c7White, theme.cfLWhite);
+	}
+
+	public OutlineViewerAdapter(Context context) {
+		wide = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 		DateTextFormatter dateTextFormatter = new DateTextFormatter();
 		textFormatter = new PlainTextFormatter(dateTextFormatter);
 		sublistFormatter = new PlainTextFormatter(dateTextFormatter);
@@ -103,7 +100,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != span) {
 			for (int i = 0; i < span.length; i++) {
 				if (null != span[i]) {
-					buffer.setSpan(span[i], start, end, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
+					buffer.setSpan(span[i], start, end,
+							SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
 				}
 			}
 		}
@@ -111,9 +109,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	interface TextFormatter {
 		Pattern getPattern();
+
 		void format(SpannableStringBuilder sb, Matcher m, String text);
 	}
-	
+
 	class DateTextFormatter implements TextFormatter {
 
 		@Override
@@ -123,39 +122,43 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 		@Override
 		public void format(SpannableStringBuilder sb, Matcher m, String text) {
-//			OrgNGParser.debugExp(m);
+			// OrgNGParser.debugExp(m);
 			StringBuilder builder = new StringBuilder();
 			builder.append(m.group(1));
 			try {
-				DateFormat dateFormat = android.text.format.DateFormat.getDateFormat(controller.getContext());
+				DateFormat dateFormat = android.text.format.DateFormat
+						.getDateFormat(controller.getContext());
 				Date date = DataController.dateFormat.parse(m.group(2));
 				builder.append(dateFormat.format(date));
 				if (null != m.group(3)) {
-					DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(controller.getContext());
+					DateFormat timeFormat = android.text.format.DateFormat
+							.getTimeFormat(controller.getContext());
 					date = DataController.timeFormat.parse(m.group(3));
 					builder.append(' ');
 					builder.append(timeFormat.format(date));
 				}
 				builder.append(m.group(4));
-				addSpan(sb, builder.toString(), new ForegroundColorSpan(theme.c5Purple));
+				addSpan(sb, builder.toString(), new ForegroundColorSpan(
+						theme.c5Purple));
 			} catch (Exception e) {
 				e.printStackTrace();
 				addSpan(sb, "Error!", new ForegroundColorSpan(theme.c9LRed));
 			}
-			
+
 		}
-		
+
 	}
-	
+
 	class PlainTextFormatter {
-		
+
 		TextFormatter[] formatters;
-		
+
 		public PlainTextFormatter(TextFormatter... formatters) {
 			this.formatters = formatters;
 		}
-		
-		private void writePlainText(SpannableStringBuilder sb, int defColor, String text, int index) {
+
+		private void writePlainText(SpannableStringBuilder sb, int defColor,
+				String text, int index) {
 			if (index >= formatters.length) {
 				addSpan(sb, text, new ForegroundColorSpan(defColor));
 				return;
@@ -163,48 +166,37 @@ public class OutlineViewerAdapter implements ListAdapter {
 			TextFormatter formatter = formatters[index];
 			Matcher m = formatter.getPattern().matcher(text);
 			if (!m.find()) {
-				writePlainText(sb, defColor, text, index+1);
+				writePlainText(sb, defColor, text, index + 1);
 				return;
 			}
 			do {
 				StringBuffer buffer = new StringBuffer();
 				m.appendReplacement(buffer, "");
 				if (0 != buffer.length()) {
-					writePlainText(sb, defColor, buffer.toString(), index+1);
+					writePlainText(sb, defColor, buffer.toString(), index + 1);
 				}
 				formatter.format(sb, m, m.group());
-			} while(m.find());
+			} while (m.find());
 			StringBuffer buffer = new StringBuffer();
 			m.appendTail(buffer);
 			if (0 != buffer.length()) {
-				writePlainText(sb, defColor, buffer.toString(), index+1);
+				writePlainText(sb, defColor, buffer.toString(), index + 1);
 			}
 		}
-		
+
 		void writePlainText(SpannableStringBuilder sb, int defColor, String text) {
 			writePlainText(sb, defColor, text, 0);
 		}
-		
+
 	}
-	
-	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
-		if (convertView == null) {
-			LayoutInflater inflater = (LayoutInflater) parent.getContext()
-					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			convertView = inflater.inflate(R.layout.outline_viewer_item,
-					parent, false);
-		}
-		NoteNG note = getItem(position);
-//		boolean isselected = selected == note.id;
-		boolean isclicked = null != clicked && clicked.id.equals(note.id);
-		TextView title = (TextView) convertView
-				.findViewById(R.id.outline_viewer_item_text);
-//		convertView.setBackgroundColor(isselected 
-//				? theme.c2Green 
-//				: isclicked
-//					? theme.c7White
-//					: theme.c0Black);
+
+	public class TextViewParts {
+		public CharSequence leftPart = null;
+		public CharSequence rightPart = null;
+	}
+
+	public TextViewParts customizeTextView(NoteNG note, boolean isclicked) {
+		TextViewParts result = new TextViewParts();
 		SpannableStringBuilder sb = new SpannableStringBuilder();
 		String indent = "";
 		if (note.indent > 0) {
@@ -218,7 +210,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 			}
 			indent = new String(sb.toString());
 		}
-		if (wide && null != note.before && !NoteNG.TYPE_SUBLIST.equals(note.type)) {
+		if (wide && null != note.before
+				&& !NoteNG.TYPE_SUBLIST.equals(note.type)) {
 			addSpan(sb, note.before, new ForegroundColorSpan(theme.c3Yellow));
 		}
 		if (null != note.todo) {
@@ -226,17 +219,17 @@ public class OutlineViewerAdapter implements ListAdapter {
 			if (null == done) {
 				done = false;
 			}
-			addSpan(sb, note.todo + ' ', 
-					new ForegroundColorSpan(done? theme.c9LRed: theme.c1Red));
+			addSpan(sb, note.todo + ' ', new ForegroundColorSpan(
+					done ? theme.c9LRed : theme.c1Red));
 			// sb.append(note.todo+' ');
 		}
-		
+
 		int titleColor = theme.c7White;
 		if (NoteNG.TYPE_AGENDA.equals(note.type)) {
 			titleColor = theme.ccLBlue;
 		}
 		if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
-			titleColor = levelColors[(note.level-1) % levelColors.length];
+			titleColor = levelColors[(note.level - 1) % levelColors.length];
 		}
 		if (null != note.priority) {
 			Integer priority = priorities.get(note.priority);
@@ -247,49 +240,80 @@ public class OutlineViewerAdapter implements ListAdapter {
 			if (0 == priority) {
 				prColor = theme.cfLWhite;
 			}
-			addSpan(sb, "[#" + note.priority + "]", 
-					new ForegroundColorSpan(prColor), 
-					priority>1? new UnderlineSpan(): null);
+			addSpan(sb, "[#" + note.priority + "]", new ForegroundColorSpan(
+					prColor), priority > 1 ? new UnderlineSpan() : null);
 			addSpan(sb, " ");
 		}
-		if (NoteNG.TYPE_SUBLIST.equals(note.type)) {
+		if (NoteNG.TYPE_SUBLIST.equals(note.type)
+				|| NoteNG.TYPE_TEXT.equals(note.type)) {
 			StringWriter sw = new StringWriter();
-			try {
-				DataWriter.writeIndent(1+note.before.length(), sw);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (null != note.before) {
+				try {
+					DataWriter.writeIndent(1 + note.before.length(), sw);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			String subListIndent = sw.toString();
 			String[] lines = note.raw.split("\\n");
 			for (int i = 0; i < lines.length; i++) {
 				if (i == 0) {
-					addSpan(sb, note.before+' ');
+					if (null != note.before) {
+						addSpan(sb, note.before + ' ');
+					}
 				} else {
-					addSpan(sb, '\n'+indent+subListIndent);
+					addSpan(sb, '\n' + indent + subListIndent);
 				}
 				sublistFormatter.writePlainText(sb, theme.c7White, lines[i]);
-//				addSpan(sb, lines[i]);
+				// addSpan(sb, lines[i]);
 			}
 		} else {
 			textFormatter.writePlainText(sb, titleColor, note.title);
-//			addSpan(sb, note.title, new ForegroundColorSpan(
-//					titleColor));
+			// addSpan(sb, note.title, new ForegroundColorSpan(
+			// titleColor));
 		}
 		if (null != note.tags) {
+			SpannableStringBuilder tagsText = new SpannableStringBuilder();
 			Integer tagColor = tagMapping.get(titleColor);
 			if (null == tagColor) {
 				tagColor = titleColor;
 			}
 			int size = sb.length();
-			addSpan(sb, '\n'+note.tags, new ForegroundColorSpan(tagColor));
-			sb.setSpan(new AlignmentSpan.Standard(Alignment.ALIGN_OPPOSITE), size, sb.length()-1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
+			addSpan(tagsText, note.tags, new ForegroundColorSpan(tagColor));
+			result.rightPart = tagsText;
 		}
 		if (isclicked) {
 			sb.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), 0, sb.length(), 0);
 		}
-		
-		title.setText(sb, BufferType.SPANNABLE);
+		result.leftPart = sb;
+		return result;
+	}
+
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		if (convertView == null) {
+			LayoutInflater inflater = (LayoutInflater) parent.getContext()
+					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			convertView = inflater.inflate(R.layout.outline_viewer_item,
+					parent, false);
+		}
+		NoteNG note = getItem(position);
+		// boolean isselected = selected == note.id;
+		boolean isclicked = null != clicked && clicked.id.equals(note.id);
+		TextView title = (TextView) convertView
+				.findViewById(R.id.outline_viewer_item_text);
+		TextView tags = (TextView) convertView
+				.findViewById(R.id.outline_viewer_item_tags);
+		// convertView.setBackgroundColor(isselected
+		// ? theme.c2Green
+		// : isclicked
+		// ? theme.c7White
+		// : theme.c0Black);
+		TextViewParts parts = customizeTextView(note, isclicked);
+		title.setText(parts.leftPart, BufferType.SPANNABLE);
+		tags.setText(parts.rightPart == null ? "" : parts.rightPart,
+				BufferType.SPANNABLE);
 		return convertView;
 	}
 
@@ -329,7 +353,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		return true;
 	}
 
-	public int setController(Integer id, DataController controller, List<Integer> selection) {
+	public int setController(Integer id, DataController controller,
+			List<Integer> selection) {
 		if (null == this.controller) {
 			this.controller = controller;
 		}
@@ -357,11 +382,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 			data.add(root);
 			if (null == selection) {
 				selection = new ArrayList<Integer>();
-			}
-			if (0 == selection.size()) {
 				selection.add(root.id);
 			}
-//			expandNote(root, 0, false);
 		} else {
 			List<NoteNG> _list = controller.getData(id);
 			if (null != _list) {
@@ -369,7 +391,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 			}
 		}
 		int selectedPos = -1;
-//		Log.i(TAG, "Reload with: "+selection);
+		// Log.i(TAG, "Reload with: "+selection);
 		if (null != selection) {
 			int start = 0;
 			int end = data.size();
@@ -379,11 +401,11 @@ public class OutlineViewerAdapter implements ListAdapter {
 				for (int j = start; j < end; j++) {
 					NoteNG n = data.get(j);
 					if (n.id.equals(id)) {
-						//Found
+						// Found
 						clicked = n;
 						selectedPos = j;
-						start = j+1;
-						end = expandNote(n, j, false)+start;
+						start = j + 1;
+						end = expandNote(n, j, false) + start;
 						found = true;
 						break;
 					}
@@ -406,14 +428,15 @@ public class OutlineViewerAdapter implements ListAdapter {
 		NoteNG note = getItem(position);
 		collapseNote(note, position);
 		if (NoteNG.EXPAND_COLLAPSED != state) {
-			expandNote(note, position, NoteNG.EXPAND_MANY == state? true: false);
+			expandNote(note, position, NoteNG.EXPAND_MANY == state ? true
+					: false);
 		}
 	}
-	
+
 	public void collapseExpand(int position, boolean notify) {
 		NoteNG note = getItem(position);
-		clicked = note;
 		if (!note.isExpandable()) {
+			clicked = note;
 			if (notify && null != observer) {
 				observer.onChanged();
 			}
@@ -421,12 +444,17 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 		if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
 			expandNote(note, position, false);
-		} else if (note.expanded == NoteNG.EXPAND_ONE){
-			collapseNote(note, position);
-			expandNote(note, position, true);
 		} else {
-			collapseNote(note, position);
+			if (null != clicked && clicked.id.equals(note.id)) {
+				if (note.expanded == NoteNG.EXPAND_ONE) {
+					collapseNote(note, position);
+					expandNote(note, position, true);
+				} else {
+					collapseNote(note, position);
+				}
+			}
 		}
+		clicked = note;
 		if (notify && null != observer) {
 			observer.onChanged();
 		}
@@ -444,8 +472,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	private int expandNote(NoteNG note, int position, boolean expandAll) {
-		note.expanded = expandAll? NoteNG.EXPAND_MANY: NoteNG.EXPAND_ONE;
+	public int expandNote(NoteNG note, int position, boolean expandAll) {
+		note.expanded = expandAll ? NoteNG.EXPAND_MANY : NoteNG.EXPAND_ONE;
 		List<NoteNG> list = controller.getData(note.id);
 		if (null == list) {
 			return 0;
@@ -464,7 +492,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 		return pos;
 	}
-	
+
 	public String getIntent(int position) {
 		NoteNG note = data.get(position);
 		String noteID = note.originalID;
@@ -472,52 +500,53 @@ public class OutlineViewerAdapter implements ListAdapter {
 			noteID = note.noteID;
 		}
 		if (null != noteID) {
-			return "id:"+noteID;
+			return "id:" + noteID;
 		}
 		return noteID;
 	}
-	
+
 	public void setShowWide(boolean wide) {
-		this.wide  = wide;
+		this.wide = wide;
 		if (null != observer) {
 			observer.onChanged();
 		}
 	}
-	
+
 	ArrayList<Integer> getSelection() {
 		if (clicked == null) {
 			return null;
 		}
 		ArrayList<Integer> result = new ArrayList<Integer>();
 		NoteNG note = clicked;
-		while(null != note) {
+		while (null != note) {
 			result.add(0, note.id);
 			note = note.parentNote;
 		}
 		return result;
 	}
-	
+
 	public NoteNG findNearestNote(NoteNG note) {
 		do {
 			if (null == note) {
 				return null;
 			}
 			if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
-				//Found - return
+				// Found - return
 				return note;
 			}
-//			if (NoteNG.TYPE_AGENDA_OUTLINE.equals(note.type) && null != note.originalID) {
-//				//We are in outline - try to jump
-//				NoteNG n = controller.findNoteByNoteID(note.originalID);
-//				if (null != note) {
-//					note = n;
-//					continue;
-//				}
-//			}
+			// if (NoteNG.TYPE_AGENDA_OUTLINE.equals(note.type) && null !=
+			// note.originalID) {
+			// //We are in outline - try to jump
+			// NoteNG n = controller.findNoteByNoteID(note.originalID);
+			// if (null != note) {
+			// note = n;
+			// continue;
+			// }
+			// }
 			note = note.parentNote;
-		} while(true);
+		} while (true);
 	}
-	
+
 	public int findItem(Integer id) {
 		synchronized (data) {
 			for (int i = 0; i < data.size(); i++) {
@@ -537,6 +566,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != observer) {
 			observer.onChanged();
 		}
+	}
+
+	public void setWide(boolean wide) {
+		this.wide = wide;
 	}
 
 }

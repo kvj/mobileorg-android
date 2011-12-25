@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-	<PreferenceCategory 
-	    android:key="common">
-	    <EditTextPreference
-	        android:title="Widget name"
-	        android:key="name"
-	        android:dialogTitle="Enter widget name"/>
-	</PreferenceCategory>
-	<PreferenceCategory 
-	    android:title="Outlines to display">
-		<com.matburt.mobileorg.settings.widget.OutlineListPreference
-		    android:key="items"/>
-	</PreferenceCategory>
+
+    <PreferenceCategory android:key="common" >
+
+        <EditTextPreference
+            android:dialogTitle="Enter widget name"
+            android:key="name"
+            android:title="Widget name" />
+    </PreferenceCategory>
+
+    <ListPreference
+        android:entries="@array/widgetBG"
+        android:entryValues="@array/widgetBGid"
+        android:key="background"
+        android:defaultValue="4"
+        android:title="Widget background" />
+    <CheckBoxPreference 
+        android:summaryOn="Long format"
+        android:summaryOff="Short format"
+        android:key="long"
+        android:defaultValue="false"
+        android:title="Use long format"/>
+    <PreferenceCategory android:title="Outlines to display" >
+
+        <com.matburt.mobileorg.settings.widget.OutlineListPreference android:key="items" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

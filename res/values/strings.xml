@@ -41,4 +41,9 @@
   <string name="priority">Priority</string>
   <string name="todo_state">Todo state</string>
   <string name="back">Back</string>
+  <string name="autoSend">autoSend</string>
+  <string name="autoSendDefault">0</string>
+  <string name="autoSyncInterval">autoSyncInterval</string>
+  <string name="autoSyncIntervalDefault">3600000</string>
+  <string name="doAutoSync">doAutoSync</string>
 </resources>

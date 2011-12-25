@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
 
 import org.kvj.bravo7.ApplicationContext;
 
@@ -16,6 +17,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.util.Log;
 
+import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.synchronizers.DropboxSynchronizer;
 import com.matburt.mobileorg.synchronizers.SDCardSynchronizer;
 import com.matburt.mobileorg.synchronizers.Synchronizer;
@@ -23,12 +25,24 @@ import com.matburt.mobileorg.synchronizers.WebDAVSynchronizer;
 
 public class DataController {
 
+	public static interface ControllerListener {
+
+		public void dataModified();
+
+		public void syncStarted();
+
+		public void syncFinished(boolean success);
+	}
+
 	private static final String TAG = "DataController";
 	MobileOrgDBHelper db = null;
 	ApplicationContext appContext = null;
+	ControllerListener listener = null;
+	boolean inSync = false;
+	int inEdit = 0;
 	public static DateFormat timeFormat = new SimpleDateFormat("HH:mm");
 	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
-	
+
 	public DataController(ApplicationContext appContext, Context context) {
 		this.appContext = appContext;
 		db = new MobileOrgDBHelper(context, "MobileOrg");
@@ -37,177 +51,178 @@ public class DataController {
 			db = null;
 		}
 	}
-	
-    public void wrapExecSQL(String sqlText) {
-    	if (null == db) {
+
+	public void wrapExecSQL(String sqlText) {
+		if (null == db) {
 			return;
 		}
-        try {
-            db.getDatabase().execSQL(sqlText);
-        }
-        catch (Exception e) {
-        	Log.e(TAG, "SQL error:", e);
-        }
-    }
+		try {
+			db.getDatabase().execSQL(sqlText);
+		} catch (Exception e) {
+			Log.e(TAG, "SQL error:", e);
+		}
+	}
 
-    public Cursor wrapRawQuery(String sqlText) {
-        Cursor result = null;
-        if (null == db) {
+	public Cursor wrapRawQuery(String sqlText) {
+		Cursor result = null;
+		if (null == db) {
 			return result;
 		}
-        try {
-            result = db.getDatabase().rawQuery(sqlText, null);
-        } catch (Exception e) {
-        	Log.e(TAG, "SQL error:", e);
-        }
-        return result;
-    }
-
-    public HashMap<String, String> getOrgFiles() {
-        HashMap<String, String> allFiles = new HashMap<String, String>();
-    	if (null == db) {
-    		return allFiles;
+		try {
+			result = db.getDatabase().rawQuery(sqlText, null);
+		} catch (Exception e) {
+			Log.e(TAG, "SQL error:", e);
 		}
-        Cursor result = wrapRawQuery("SELECT file, name FROM files");
-        if (result != null) {
-            if (result.getCount() > 0) {
-                result.moveToFirst();
-                do {
-                    allFiles.put(result.getString(0),
-                                 result.getString(1));
-                } while(result.moveToNext());
-            }
-            result.close();
-        }
-        return allFiles;
-    }
+		return result;
+	}
 
-    public Map<String, String> getChecksums() {
-        HashMap<String, String> fchecks = new HashMap<String, String>();
-        Cursor result = this.wrapRawQuery("SELECT file, checksum FROM files");
-        if (result != null) {
-            if (result.getCount() > 0) {
-                result.moveToFirst();
-                do {
-                    fchecks.put(result.getString(0),
-                                result.getString(1));
-                } while (result.moveToNext());
-            }
-            result.close();
-        }
-        return fchecks;
-    }
+	public HashMap<String, String> getOrgFiles() {
+		HashMap<String, String> allFiles = new HashMap<String, String>();
+		if (null == db) {
+			return allFiles;
+		}
+		Cursor result = wrapRawQuery("SELECT file, name FROM files");
+		if (result != null) {
+			if (result.getCount() > 0) {
+				result.moveToFirst();
+				do {
+					allFiles.put(result.getString(0), result.getString(1));
+				} while (result.moveToNext());
+			}
+			result.close();
+		}
+		return allFiles;
+	}
 
-    public void removeFile(String filename) {
-        this.wrapExecSQL("DELETE FROM files " +
-                           "WHERE file = '"+filename+"'");
-        Log.i(TAG, "Finished deleting from files");
-    }
+	public Map<String, String> getChecksums() {
+		HashMap<String, String> fchecks = new HashMap<String, String>();
+		Cursor result = this.wrapRawQuery("SELECT file, checksum FROM files");
+		if (result != null) {
+			if (result.getCount() > 0) {
+				result.moveToFirst();
+				do {
+					fchecks.put(result.getString(0), result.getString(1));
+				} while (result.moveToNext());
+			}
+			result.close();
+		}
+		return fchecks;
+	}
 
-    public void clearData() {
-        this.wrapExecSQL("DELETE FROM data");
-    }
+	public void removeFile(String filename) {
+		this.wrapExecSQL("DELETE FROM files " + "WHERE file = '" + filename
+				+ "'");
+		Log.i(TAG, "Finished deleting from files");
+	}
 
-    public void clearTodos() {
-        this.wrapExecSQL("DELETE from todos");
-    }
+	public void clearData() {
+		this.wrapExecSQL("DELETE FROM data");
+	}
 
-    public void clearPriorities() {
-        this.wrapExecSQL("DELETE from priorities");
-    }
+	public void clearTodos() {
+		this.wrapExecSQL("DELETE from todos");
+	}
 
-    public void addOrUpdateFile(String filename, String name, String checksum) {
-        Cursor result = this.wrapRawQuery("SELECT * FROM files " +
-                                       "WHERE file = '"+filename+"'");
-        if (result != null) {
-            if (result.getCount() > 0) {
-                this.wrapExecSQL("UPDATE files set name = '"+name+"', "+
-                              "checksum = '"+ checksum + "' where file = '"+filename+"'");
-            }
-            else {
-                this.wrapExecSQL("INSERT INTO files (file, name, checksum) " +
-                              "VALUES ('"+filename+"','"+name+"','"+checksum+"')");
-            }
-            result.close();
-        }
-    }
+	public void clearPriorities() {
+		this.wrapExecSQL("DELETE from priorities");
+	}
 
-    public ArrayList<HashMap<String, Integer>> getTodos() {
-        ArrayList<HashMap<String, Integer>> allTodos = new ArrayList<HashMap<String, Integer>>();
-        Cursor result = this.wrapRawQuery("SELECT tdgroup, name, isdone " +
-                                            "FROM todos order by tdgroup");
-        if (result != null) {
-            HashMap<String, Integer> grouping = new HashMap<String, Integer>();
-            int resultgroup = 0;
-            if (result.getCount() > 0) {
-                result.moveToFirst();
-                do {
-                    if (result.getInt(0) != resultgroup) {
-                        allTodos.add(grouping);
-                        grouping = new HashMap<String, Integer>();
-                        resultgroup = result.getInt(0);
-                    }
-                    grouping.put(result.getString(1),
-                                 result.getInt(2));
-                } while(result.moveToNext());
-                allTodos.add(grouping);
-            }
-            result.close();
-        }
-        return allTodos;
-    }
+	public void addOrUpdateFile(String filename, String name, String checksum) {
+		Cursor result = this.wrapRawQuery("SELECT * FROM files "
+				+ "WHERE file = '" + filename + "'");
+		if (result != null) {
+			if (result.getCount() > 0) {
+				this.wrapExecSQL("UPDATE files set name = '" + name + "', "
+						+ "checksum = '" + checksum + "' where file = '"
+						+ filename + "'");
+			} else {
+				this.wrapExecSQL("INSERT INTO files (file, name, checksum) "
+						+ "VALUES ('" + filename + "','" + name + "','"
+						+ checksum + "')");
+			}
+			result.close();
+		}
+	}
 
-    public ArrayList<ArrayList<String>> getPriorities() {
-        ArrayList<ArrayList<String>> allPriorities = new ArrayList<ArrayList<String>>();
-        Cursor result = this.wrapRawQuery("SELECT tdgroup, name FROM priorities order by tdgroup");
-        if (result != null) {
-            ArrayList<String> grouping = new ArrayList();
-            int resultgroup = 0;
-            if (result.getCount() > 0) {
-                result.moveToFirst();
-                do {
-                    if (result.getInt(0) != resultgroup) {
-                        allPriorities.add(grouping);
-                        grouping = new ArrayList();
-                        resultgroup = result.getInt(0);
-                    }
-                    grouping.add(result.getString(1));
-                } while(result.moveToNext());
-                allPriorities.add(grouping);
-            }
-            result.close();
-        }
-        return allPriorities;
-    }
+	public ArrayList<HashMap<String, Integer>> getTodos() {
+		ArrayList<HashMap<String, Integer>> allTodos = new ArrayList<HashMap<String, Integer>>();
+		Cursor result = this.wrapRawQuery("SELECT tdgroup, name, isdone "
+				+ "FROM todos order by tdgroup");
+		if (result != null) {
+			HashMap<String, Integer> grouping = new HashMap<String, Integer>();
+			int resultgroup = 0;
+			if (result.getCount() > 0) {
+				result.moveToFirst();
+				do {
+					if (result.getInt(0) != resultgroup) {
+						allTodos.add(grouping);
+						grouping = new HashMap<String, Integer>();
+						resultgroup = result.getInt(0);
+					}
+					grouping.put(result.getString(1), result.getInt(2));
+				} while (result.moveToNext());
+				allTodos.add(grouping);
+			}
+			result.close();
+		}
+		return allTodos;
+	}
 
-    public void setTodoList(ArrayList<HashMap<String, Boolean>> newList) {
-        this.clearTodos();
-        int grouping = 0;
-        for (HashMap<String, Boolean> entry : newList) {
-            for (String key : entry.keySet()) {
-                String isDone = "0";
-                if (entry.get(key))
-                    isDone = "1";
-                this.wrapExecSQL("INSERT INTO todos (tdgroup, name, isdone) " +
-                                   "VALUES (" + grouping + "," +
-                                   "        '" + key + "'," +
-                                   "        " + isDone + ")");
-            }
-            grouping++;
-        }
-    }
+	public ArrayList<ArrayList<String>> getPriorities() {
+		ArrayList<ArrayList<String>> allPriorities = new ArrayList<ArrayList<String>>();
+		Cursor result = this
+				.wrapRawQuery("SELECT tdgroup, name FROM priorities order by tdgroup");
+		if (result != null) {
+			ArrayList<String> grouping = new ArrayList();
+			int resultgroup = 0;
+			if (result.getCount() > 0) {
+				result.moveToFirst();
+				do {
+					if (result.getInt(0) != resultgroup) {
+						allPriorities.add(grouping);
+						grouping = new ArrayList();
+						resultgroup = result.getInt(0);
+					}
+					grouping.add(result.getString(1));
+				} while (result.moveToNext());
+				allPriorities.add(grouping);
+			}
+			result.close();
+		}
+		return allPriorities;
+	}
 
-    public void setPriorityList(ArrayList<ArrayList<String>> newList) {
-        this.clearPriorities();
-        for (int idx = 0; idx < newList.size(); idx++) {
-            for (int jdx = 0; jdx < newList.get(idx).size(); jdx++) {
-                this.wrapExecSQL("INSERT INTO priorities (tdgroup, name, isdone) " +
-                                   "VALUES (" + Integer.toString(idx) + "," +
-                                   "        '" + newList.get(idx).get(jdx) + "'," +
-                                   "        0)");
-            }
-        }
-    }
+	public void setTodoList(ArrayList<HashMap<String, Boolean>> newList) {
+		this.clearTodos();
+		int grouping = 0;
+		for (HashMap<String, Boolean> entry : newList) {
+			for (String key : entry.keySet()) {
+				String isDone = "0";
+				if (entry.get(key))
+					isDone = "1";
+				this.wrapExecSQL("INSERT INTO todos (tdgroup, name, isdone) "
+						+ "VALUES (" + grouping + "," + "        '" + key
+						+ "'," + "        " + isDone + ")");
+			}
+			grouping++;
+		}
+	}
+
+	public void setPriorityList(ArrayList<ArrayList<String>> newList) {
+		this.clearPriorities();
+		for (int idx = 0; idx < newList.size(); idx++) {
+			for (int jdx = 0; jdx < newList.get(idx).size(); jdx++) {
+				this.wrapExecSQL("INSERT INTO priorities (tdgroup, name, isdone) "
+						+ "VALUES ("
+						+ Integer.toString(idx)
+						+ ","
+						+ "        '"
+						+ newList.get(idx).get(jdx)
+						+ "',"
+						+ "        0)");
+			}
+		}
+	}
 
 	public long insert(String string, ContentValues recValues) {
 		if (null == db) {
@@ -223,26 +238,48 @@ public class DataController {
 		}
 		db.getDatabase().update(string, recValues, string2, strings);
 	}
-	
+
 	public String refresh() {
-        String userSynchro = appContext.getStringPreference("syncSource","");
-        final Synchronizer appSync;
-        if (userSynchro.equals("webdav")) {
-            appSync = new WebDAVSynchronizer(appContext, this);
-        }
-        else if (userSynchro.equals("sdcard")) {
-            appSync = new SDCardSynchronizer(appContext, this);
-        }
-        else if (userSynchro.equals("dropbox")) {
-            appSync = new DropboxSynchronizer(appContext, this);
-        }
-        else {
-            return "No configuration";
-        }
-        OrgNGParser parser = new OrgNGParser(this, appSync);
-        return parser.parse();
+		if (inSync || inEdit > 0) {
+			return "Sync is in progress";
+		}
+		inSync = true;
+		boolean success = false;
+		try {
+			if (null != listener) {
+				listener.syncStarted();
+			}
+			String userSynchro = appContext.getStringPreference("syncSource",
+					"");
+			final Synchronizer appSync;
+			if (userSynchro.equals("webdav")) {
+				appSync = new WebDAVSynchronizer(appContext, this);
+			} else if (userSynchro.equals("sdcard")) {
+				appSync = new SDCardSynchronizer(appContext, this);
+			} else if (userSynchro.equals("dropbox")) {
+				appSync = new DropboxSynchronizer(appContext, this);
+			} else {
+				return "No configuration";
+			}
+			OrgNGParser parser = new OrgNGParser(this, appSync);
+			String result = parser.parse();
+			success = result == null;
+			if (success) {
+				// Update all widgets
+				App.getInstance().updateWidgets(-1);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			inSync = false;
+			if (null != listener) {
+				listener.syncFinished(success);
+			}
+		}
+		return "Configuration error";
 	}
-	
+
 	public boolean cleanupDB(boolean full) {
 		if (null == db) {
 			return false;
@@ -264,7 +301,7 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public Integer addFile(String name, String checksum, Integer dataID) {
 		if (null == db) {
 			return null;
@@ -285,7 +322,7 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	public boolean updateFile(String name, String checksum) {
 		if (null == db) {
 			return false;
@@ -294,7 +331,8 @@ public class DataController {
 			db.getDatabase().beginTransaction();
 			ContentValues values = new ContentValues();
 			values.put("checksum", checksum);
-			db.getDatabase().update("files", values, "file=?", new String[] {name});
+			db.getDatabase().update("files", values, "file=?",
+					new String[] { name });
 			db.getDatabase().setTransactionSuccessful();
 			return true;
 		} catch (Exception e) {
@@ -304,7 +342,7 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public boolean addTodoType(int group, String name, boolean done) {
 		if (null == db) {
 			return false;
@@ -314,7 +352,7 @@ public class DataController {
 			ContentValues values = new ContentValues();
 			values.put("groupnum", group);
 			values.put("name", name);
-			values.put("isdone", done? 1: 0);
+			values.put("isdone", done ? 1 : 0);
 			db.getDatabase().insert("todos", null, values);
 			db.getDatabase().setTransactionSuccessful();
 			return true;
@@ -325,7 +363,7 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public boolean addPriorityType(String name) {
 		if (null == db) {
 			return false;
@@ -344,30 +382,28 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public class TodoState {
 		public int group;
 		public String name;
 		public boolean done;
 	}
-	
+
 	public List<TodoState> getTodoTypes() {
 		if (null == db) {
 			return new ArrayList<TodoState>();
 		}
 		List<TodoState> result = new ArrayList<TodoState>();
 		try {
-			Cursor c = db.getDatabase().query("todos", 
-					new String[] {"groupnum", "name", "isdone"}, 
-					null, 
-					null, 
+			Cursor c = db.getDatabase().query("todos",
+					new String[] { "groupnum", "name", "isdone" }, null, null,
 					null, null, "groupnum, isdone, id");
 			if (c.moveToFirst()) {
 				do {
 					TodoState state = new TodoState();
 					state.group = c.getInt(0);
 					state.name = c.getString(1);
-					state.done = c.getInt(2) == 1? true: false;
+					state.done = c.getInt(2) == 1 ? true : false;
 					result.add(state);
 				} while (c.moveToNext());
 			}
@@ -378,18 +414,15 @@ public class DataController {
 		}
 		return new ArrayList<TodoState>();
 	}
-	
+
 	public List<String> getPrioritiesNG() {
 		if (null == db) {
 			return new ArrayList<String>();
 		}
 		List<String> result = new ArrayList<String>();
 		try {
-			Cursor c = db.getDatabase().query("priorities", 
-					new String[] {"name"}, 
-					null, 
-					null, 
-					null, null, "id");
+			Cursor c = db.getDatabase().query("priorities",
+					new String[] { "name" }, null, null, null, null, "id");
 			if (c.moveToFirst()) {
 				do {
 					result.add(c.getString(0));
@@ -402,11 +435,11 @@ public class DataController {
 		}
 		return new ArrayList<String>();
 	}
-	
+
 	public Integer addData(NoteNG note) {
 		return addData(note, false);
 	}
-	
+
 	public Integer addData(NoteNG note, boolean haveTransaction) {
 		if (null == db) {
 			return null;
@@ -427,7 +460,7 @@ public class DataController {
 			values.put("tags", note.tags);
 			values.put("title", note.title);
 			values.put("type", note.type);
-			values.put("editable", note.editable? 1: 0);
+			values.put("editable", note.editable ? 1 : 0);
 			values.put("level", note.level);
 			int result = (int) db.getDatabase().insert("data", null, values);
 			note.id = result;
@@ -444,7 +477,7 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	public boolean updateData(NoteNG note, String field, Object value) {
 		if (null == db) {
 			return false;
@@ -457,7 +490,8 @@ public class DataController {
 			} else if (value instanceof Number) {
 				values.put(field, (Integer) value);
 			}
-			db.getDatabase().update("data", values, "id=?", new String[] {note.id.toString()});
+			db.getDatabase().update("data", values, "id=?",
+					new String[] { note.id.toString() });
 			db.getDatabase().setTransactionSuccessful();
 			return true;
 		} catch (Exception e) {
@@ -471,7 +505,7 @@ public class DataController {
 	NoteNG cursorToNote(Cursor c) {
 		NoteNG note = new NoteNG();
 		note.id = c.getInt(0);
-//		note.indent = c.getInt(1);
+		// note.indent = c.getInt(1);
 		note.editable = 1 == c.getInt(2);
 		note.noteID = c.getString(3);
 		note.originalID = c.getString(4);
@@ -486,12 +520,11 @@ public class DataController {
 		note.raw = c.getString(13);
 		return note;
 	}
-	
-	static String[] dataFields = new String[] {
-		"id", "indent", "editable", "note_id", "original_id", 
-		"type", "priority", "todo", "title", "tags", "level", 
-		"before","after", "raw"};
-	
+
+	static String[] dataFields = new String[] { "id", "indent", "editable",
+			"note_id", "original_id", "type", "priority", "todo", "title",
+			"tags", "level", "before", "after", "raw" };
+
 	public List<NoteNG> getData(Integer parent) {
 		if (null == db) {
 			return new ArrayList<NoteNG>();
@@ -506,16 +539,16 @@ public class DataController {
 			}
 			whereArgs.add(NoteNG.TYPE_DRAWER);
 			whereArgs.add(NoteNG.TYPE_PROPERTY);
-			Cursor c = db.getDatabase().query("data", 
-					dataFields, 
-					whereStart+" and type<>? and type<>?", 
-					whereArgs.toArray(new String[] {}),//parent == null? null: parent.toString() 
+			Cursor c = db.getDatabase().query("data", dataFields,
+					whereStart + " and type<>? and type<>?",
+					whereArgs.toArray(new String[] {}),// parent == null? null:
+														// parent.toString()
 					null, null, "id");
 			if (c.moveToFirst()) {
 				do {
 					NoteNG note = cursorToNote(c);
-					if (NoteNG.TYPE_TEXT.equals(note.type) 
-							&& null != note.title 
+					if (NoteNG.TYPE_TEXT.equals(note.type)
+							&& null != note.title
 							&& note.title.trim().isEmpty()) {
 						continue;
 					}
@@ -529,14 +562,11 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	public NoteNG findNoteByNoteID(String noteID) {
 		try {
-			Cursor c = db.getDatabase().query("data", 
-					dataFields, 
-					"note_id=?", 
-					new String[] {noteID}, 
-					null, null, "id");
+			Cursor c = db.getDatabase().query("data", dataFields, "note_id=?",
+					new String[] { noteID }, null, null, "id");
 			NoteNG note = null;
 			if (c.moveToFirst()) {
 				note = cursorToNote(c);
@@ -548,17 +578,73 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
+	public int getExpand(String link) {
+		Matcher m = OrgNGParser.noteRefPattern.matcher(link);
+		if (!m.find()) {
+			return 1;
+		}
+		Log.i(TAG, "getExpand: " + m.group(2));
+		if ("a".equals(m.group(2))) {
+			return -1;
+		}
+		if ("e".equals(m.group(2))) {
+			return 1;
+		}
+		if (m.group(2).startsWith("e")) {
+			return Integer.parseInt(m.group(2).substring(1));
+		}
+		return 1;
+	}
+
+	public NoteNG findNoteByLink(String link) {
+		if (null == db) {
+			return null;
+		}
+		Matcher m = OrgNGParser.noteRefPattern.matcher(link);
+		if (!m.find()) {
+			return null;
+		}
+		// OrgNGParser.debugExp(m);
+		String type = m.group(3);
+		if ("id".equals(type)) {
+			return findNoteByNoteID(m.group(4));
+		}
+		String[] parts = m.group(4).split("/");
+		Integer parent = null;
+		NoteNG result = null;
+		for (int i = 0; i < parts.length; i++) {
+			List<NoteNG> notes = getData(parent);
+			result = null;
+			for (int j = 0; j < notes.size(); j++) {
+				if ("index".equals(type)) {
+					if (Integer.toString(j).equals(parts[i])) {
+						result = notes.get(j);
+						break;
+					}
+				}
+				if ("olp".equals(type)) {
+					if (parts[i].equals(notes.get(j).title)) {
+						result = notes.get(j);
+						break;
+					}
+				}
+			}
+			if (null == result) {
+				return null;
+			}
+			parent = result.id;
+		}
+		return result;
+	}
+
 	public NoteNG findNoteByID(Integer id) {
 		try {
 			if (null == id) {
 				return null;
 			}
-			Cursor c = db.getDatabase().query("data", 
-					dataFields, 
-					"id=?", 
-					new String[] {id.toString()}, 
-					null, null, "id");
+			Cursor c = db.getDatabase().query("data", dataFields, "id=?",
+					new String[] { id.toString() }, null, null, "id");
 			NoteNG note = null;
 			if (c.moveToFirst()) {
 				note = cursorToNote(c);
@@ -570,13 +656,14 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	/* Type: body, data, heading, todo, priority, tags */
-	public boolean addChange(Integer noteID, String type, String oldValue, String newValue) {
+	public boolean addChange(Integer noteID, String type, String oldValue,
+			String newValue) {
 		if (null == db) {
 			return false;
 		}
-		Log.i(TAG, "addChange: "+type+", "+oldValue+", "+newValue);
+		Log.i(TAG, "addChange: " + type + ", " + oldValue + ", " + newValue);
 		NoteNG note = findNoteByID(noteID);
 		if (null == note) {
 			return false;
@@ -584,25 +671,26 @@ public class DataController {
 		try {
 			db.getDatabase().beginTransaction();
 			if (!"data".equals(type)) {
-				//Not new item - try to update existing
-				Cursor c = db.getDatabase().query("changes", 
-						new String [] {"id", "type"}, 
-						"(type=? or type=?) and data_id=?", 
-						new String[] {type, "data", noteID.toString()}, 
-						null, null, "id");
+				// Not new item - try to update existing
+				Cursor c = db.getDatabase().query("changes",
+						new String[] { "id", "type" },
+						"(type=? or type=?) and data_id=?",
+						new String[] { type, "data", noteID.toString() }, null,
+						null, "id");
 				if (c.moveToFirst()) {
 					if ("data".equals(c.getString(1))) {
-						//We have data means new outline - don't need to modify
+						// We have data means new outline - don't need to modify
 						Log.i(TAG, "New outline - finish");
 						c.close();
 						db.getDatabase().setTransactionSuccessful();
 						return true;
 					}
-					//Found - update
+					// Found - update
 					ContentValues values = new ContentValues();
 					values.put("new_value", newValue);
 					Log.i(TAG, "Existing - only update");
-					db.getDatabase().update("changes", values, "id=?", new String[] {c.getString(0)});
+					db.getDatabase().update("changes", values, "id=?",
+							new String[] { c.getString(0) });
 					c.close();
 					db.getDatabase().setTransactionSuccessful();
 					return true;
@@ -610,7 +698,7 @@ public class DataController {
 				c.close();
 			}
 			Log.i(TAG, "New change - insert");
-			//Otherwise - insert new entry
+			// Otherwise - insert new entry
 			ContentValues values = new ContentValues();
 			values.put("type", type);
 			values.put("data_id", noteID);
@@ -626,22 +714,23 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public boolean hasChanges() {
 		if (null == db) {
 			return false;
 		}
 		try {
-			Cursor c = db.getDatabase().query("changes", new String[] {"id"}, null, null, null, null, null);
+			Cursor c = db.getDatabase().query("changes", new String[] { "id" },
+					null, null, null, null, null);
 			int result = c.getCount();
 			c.close();
-			return result>0;
+			return result > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
 	}
-	
+
 	public boolean clearChanges() {
 		if (null == db) {
 			return false;
@@ -658,14 +747,15 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public boolean clearCaptured() {
 		if (null == db) {
 			return false;
 		}
 		try {
 			db.getDatabase().beginTransaction();
-			db.getDatabase().delete("data", "file_id=? and type<>?", new String[] {"-1", NoteNG.TYPE_FILE});
+			db.getDatabase().delete("data", "file_id=? and type<>?",
+					new String[] { "-1", NoteNG.TYPE_FILE });
 			db.getDatabase().setTransactionSuccessful();
 			return true;
 		} catch (Exception e) {
@@ -675,12 +765,11 @@ public class DataController {
 		}
 		return false;
 	}
-	
+
 	public String generateNoteID(int size) {
-		char[] chars = {'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a', 
-				's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 
-				'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2', '3', 
-				'4', '5', '6', '7', '8', '9', '0'};
+		char[] chars = { 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'a',
+				's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v',
+				'b', 'n', 'm', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
 		StringBuilder sb = new StringBuilder();
 		Random r = new Random(new Date().getTime());
 		for (int i = 0; i < size; i++) {
@@ -688,7 +777,7 @@ public class DataController {
 		}
 		return sb.toString();
 	}
-	
+
 	public Integer createNewNote(NoteNG note) {
 		if (null == db) {
 			return null;
@@ -696,10 +785,11 @@ public class DataController {
 		try {
 			db.getDatabase().beginTransaction();
 			if (null == note.parentID) {
-				//No parentID - captured note - search for "Captured"
-				Cursor c = db.getDatabase().query("data", 
-						new String[] {"id"}, "file_id=-1 and parent_id is null", 
-						null, null, null, null);
+				// No parentID - captured note - search for "Captured"
+				Cursor c = db.getDatabase().query("data",
+						new String[] { "id" },
+						"file_id=-1 and parent_id is null", null, null, null,
+						null);
 				if (c.moveToFirst()) {
 					Log.i(TAG, "Found parent for note");
 					note.parentID = c.getInt(0);
@@ -712,15 +802,15 @@ public class DataController {
 				c.close();
 			}
 			note.noteID = generateNoteID(12);
-			Integer newNoteID = addData(note, true);//Note created
+			Integer newNoteID = addData(note, true);// Note created
 			if (null == newNoteID) {
 				return null;
 			}
-			//Create 2 notes: properties with ID and text with date created
+			// Create 2 notes: properties with ID and text with date created
 			NoteNG drawerNote = new NoteNG();
 			drawerNote.parentID = note.id;
 			drawerNote.fileID = note.fileID;
-			drawerNote.raw = ":PROPERTIES:\n:ID: "+note.noteID+"\n:END:";
+			drawerNote.raw = ":PROPERTIES:\n:ID: " + note.noteID + "\n:END:";
 			drawerNote.type = NoteNG.TYPE_DRAWER;
 			if (null == addData(drawerNote)) {
 				return null;
@@ -728,14 +818,14 @@ public class DataController {
 			NoteNG dateNote = new NoteNG();
 			dateNote.parentID = note.id;
 			dateNote.fileID = note.fileID;
-			dateNote.raw = "["+dateFormat.format(new Date())+"]";
+			dateNote.raw = "[" + dateFormat.format(new Date()) + "]";
 			dateNote.title = dateNote.raw;
 			dateNote.type = NoteNG.TYPE_TEXT;
 			if (null == addData(dateNote)) {
 				return null;
 			}
 			db.getDatabase().setTransactionSuccessful();
-			Log.i(TAG, "Note created: "+note.noteID+", "+note.title);
+			Log.i(TAG, "Note created: " + note.noteID + ", " + note.title);
 			return note.id;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -744,11 +834,11 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	public boolean removeData(Integer id) {
 		return removeData(id, false);
 	}
-	
+
 	private boolean removeData(Integer id, boolean inTransaction) {
 		if (null == db) {
 			return false;
@@ -757,8 +847,9 @@ public class DataController {
 			if (!inTransaction) {
 				db.getDatabase().beginTransaction();
 			}
-			Cursor c = db.getDatabase().query("data", new String [] {"id"}, 
-					"parent_id=?", new String[] {id.toString()}, null, null, null);
+			Cursor c = db.getDatabase().query("data", new String[] { "id" },
+					"parent_id=?", new String[] { id.toString() }, null, null,
+					null);
 			if (c.moveToFirst()) {
 				do {
 					if (!removeData(c.getInt(0), true)) {
@@ -768,7 +859,8 @@ public class DataController {
 				} while (c.moveToNext());
 			}
 			c.close();
-			db.getDatabase().delete("data", "id=?", new String[] {id.toString()});
+			db.getDatabase().delete("data", "id=?",
+					new String[] { id.toString() });
 			if (!inTransaction) {
 				db.getDatabase().setTransactionSuccessful();
 			}
@@ -789,10 +881,11 @@ public class DataController {
 		}
 		try {
 			db.getDatabase().beginTransaction();
-			Cursor file = db.getDatabase().query("files", 
-					new String[] {"id", "data_id"}, "file=?", new String[] {fileName}, null, null, null);
+			Cursor file = db.getDatabase().query("files",
+					new String[] { "id", "data_id" }, "file=?",
+					new String[] { fileName }, null, null, null);
 			if (!file.moveToFirst()) {
-				Log.e(TAG, "File not found: "+fileName);
+				Log.e(TAG, "File not found: " + fileName);
 				file.close();
 				return null;
 			}
@@ -801,7 +894,8 @@ public class DataController {
 			file.close();
 			NoteNG note = findNoteByID(noteID);
 			note.fileID = fileID;
-			db.getDatabase().delete("data", "file_id=?", new String[] {Integer.toString(fileID)});
+			db.getDatabase().delete("data", "file_id=?",
+					new String[] { Integer.toString(fileID) });
 			db.getDatabase().setTransactionSuccessful();
 			return note;
 		} catch (Exception e) {
@@ -811,9 +905,55 @@ public class DataController {
 		}
 		return null;
 	}
-	
+
 	public Context getContext() {
 		return appContext;
+	}
+
+	public void setListener(ControllerListener listener) {
+		this.listener = listener;
+	}
+
+	public synchronized void setInEdit(boolean inEdit) {
+		if (inEdit) {
+			this.inEdit++;
+		} else {
+			if (this.inEdit > 0) {
+				this.inEdit--;
+			}
+		}
+	}
+
+	public void notifyChangesHaveBeenMade() {
+		if (null != listener) {
+			listener.dataModified();
+		}
+		// App.getInstance().updateWidgets(-1);
+	}
+
+	public boolean updateData(String cfield, String cvalue, String field,
+			Object value) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			if (null == value || value instanceof String) {
+				values.put(field, (String) value);
+			} else if (value instanceof Number) {
+				values.put(field, (Integer) value);
+			}
+			db.getDatabase().update("data", values, cfield + "=?",
+					new String[] { cvalue });
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
 	}
 
 }

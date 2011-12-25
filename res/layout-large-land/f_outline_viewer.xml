@@ -11,6 +11,7 @@
 	    <fragment 
 	        android:id="@+id/viewer_left_pane"
 	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+	    	android:layout_margin="5dp"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent"/>
     </FrameLayout>
@@ -23,6 +24,7 @@
 	    <fragment 
 	        android:id="@+id/viewer_right_pane"
 	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+	    	android:layout_margin="5dp"
 	        android:layout_width="match_parent"
 	        android:layout_height="match_parent"/>
     </FrameLayout>

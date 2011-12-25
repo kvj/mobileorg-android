@@ -15,10 +15,17 @@
         android:stretchColumns="0">
         <TableRow 
             android:gravity="center_vertical">
+            <TextView android:text="Expand:"/>
+            <Spinner 
+                android:id="@+id/select_outline_expand"
+                android:layout_width="match_parent"/>
+        </TableRow>
+        <TableRow 
+            android:gravity="center_vertical">
             <TextView android:text="Reference:"/>
             <Spinner 
                 android:id="@+id/select_outline_type"
                 android:layout_width="match_parent"/>
         </TableRow>
-    </TableLayout>
+        </TableLayout>
 </LinearLayout>

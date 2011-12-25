@@ -2,10 +2,7 @@ package com.matburt.mobileorg.service;
 
 import java.io.BufferedReader;
 import java.io.StringWriter;
-import java.math.MathContext;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -21,52 +18,60 @@ public class OrgNGParser {
 	private static final String TAG = "OrgNGParser";
 	DataController controller;
 	Synchronizer synchronizer;
-	
-	private enum Marker {Unknown, Outline, Drawer, List, Block};
-	private static Pattern outlinePattern = Pattern.compile("^(\\*+\\s+)" +
-			"([A-Z0-9]+\\s+)?" +
-			"(\\[\\#([A-Z])\\]\\s+)?" +
-			"(.+)$");
-	private static Pattern outlineTailPattern = Pattern.compile(
-			"((((\\:[a-z]+)+\\:)|\\:)+)?" +
-			"(<before>(.*)</before>)?"+
-			"(<after>(.*)</after>)?"+
-			"$");
-	
-	public static Pattern dateTimePattern = Pattern.compile("(\\<|\\[)(\\d{4}-\\d{2}-\\d{2}\\s[A-Z][a-z]{2})(\\s\\d{2}\\:\\d{2})?(\\>|\\])");
-	private static Pattern drawerPattern = Pattern.compile("^\\s*:([A-Z_-]+):\\s*(.*)\\s*$");
-	private static Pattern paramPattern = Pattern.compile("^\\s*([A-Z_-]+):\\s*(.*)\\s*$");
-	
-	//***: 1, 2: DONE, 3: [#A], 4: A, 5: title
-	private static Pattern controlPattern = Pattern.compile("^\\#\\+([A-Z_-]+)(\\:\\s(.*))?$");
-	//[[file:main.org][Main]] file: 3, main.org: 4 main.org: Main: 5
-	private static Pattern linkPattern = Pattern.compile("\\[((\\[([a-zA-Z_-]+)\\:(.*)\\]\\[(.+)\\])|(\\[(.*)\\]))\\]");
-	public static Pattern listPattern = Pattern.compile("^(\\s*)(\\+|\\-|\\*|(\\d+\\.))\\s(.+)$", Pattern.DOTALL);
-	
+
+	private enum Marker {
+		Unknown, Outline, Drawer, List, Block
+	};
+
+	private static Pattern outlinePattern = Pattern.compile("^(\\*+\\s+)"
+			+ "([A-Z0-9]+\\s+)?" + "(\\[\\#([A-Z])\\]\\s+)?" + "(.+)$");
+	private static Pattern outlineTailPattern = Pattern
+			.compile("((((\\:[a-z]+)+\\:)|\\:)+)?" + "(<before>(.*)</before>)?"
+					+ "(<after>(.*)</after>)?" + "$");
+	public static Pattern noteRefPattern = Pattern
+			.compile("^((e\\d*|a)\\:\\:)?(index|id|olp)\\:(.+)$");
+	public static Pattern dateTimePattern = Pattern
+			.compile("(\\<|\\[)(\\d{4}-\\d{2}-\\d{2}\\s[A-Z][a-z]{2})(\\s\\d{2}\\:\\d{2})?(\\>|\\])");
+	private static Pattern drawerPattern = Pattern
+			.compile("^\\s*:([A-Z_-]+):\\s*(.*)\\s*$");
+	private static Pattern paramPattern = Pattern
+			.compile("^\\s*([A-Z_-]+):\\s*(.*)\\s*$");
+
+	// ***: 1, 2: DONE, 3: [#A], 4: A, 5: title
+	private static Pattern controlPattern = Pattern
+			.compile("^\\#\\+([A-Z_-]+)(\\:\\s(.*))?$");
+	// [[file:main.org][Main]] file: 3, main.org: 4 main.org: Main: 5
+	private static Pattern linkPattern = Pattern
+			.compile("\\[((\\[([a-zA-Z_-]+)\\:(.*)\\]\\[(.+)\\])|(\\[(.*)\\]))\\]");
+	public static Pattern listPattern = Pattern.compile(
+			"^(\\s*)(\\+|\\-|\\*|(\\d+\\.))\\s(.+)$", Pattern.DOTALL);
+
 	public OrgNGParser(DataController controller, Synchronizer synchronizer) {
 		this.controller = controller;
 		this.synchronizer = synchronizer;
 	}
-	
+
 	interface ItemListener {
-		
+
 		void onSharpLine(String name, String value);
+
 		void onItem(NoteNG note);
 	}
-	
+
 	public static void debugExp(Matcher m) {
 		for (int i = 1; i <= m.groupCount(); i++) {
-			Log.i(TAG, "Matcher "+i+", ["+m.group(i)+"]");
+			Log.i(TAG, "Matcher " + i + ", [" + m.group(i) + "]");
 		}
 	}
-	
+
 	class ParseFileOptions {
 		boolean agenda = false;
 		int todoGroup = 0;
 		boolean sharpOnly = false;
 	}
-	
-	public String parseFile(String name, ItemListener listener, NoteNG _parent, ParseFileOptions options) {
+
+	public String parseFile(String name, ItemListener listener, NoteNG _parent,
+			ParseFileOptions options) {
 		try {
 			BufferedReader reader = synchronizer.fetchOrgFile(name);
 			String line = null;
@@ -85,7 +90,8 @@ public class OrgNGParser {
 					if (m.find()) {
 						if ("END".equals(m.group(1).trim())) {
 							marker = Marker.Outline;
-//							Log.i(TAG, "Drawer OK: "+drawerBuilder+", "+drawerValues);
+							// Log.i(TAG,
+							// "Drawer OK: "+drawerBuilder+", "+drawerValues);
 							NoteNG newNote = new NoteNG();
 							newNote.raw = drawerBuilder.toString();
 							newNote.type = NoteNG.TYPE_DRAWER;
@@ -95,15 +101,18 @@ public class OrgNGParser {
 							controller.addData(newNote);
 							String originalID = drawerValues.get("ORIGINAL_ID");
 							if (null != originalID) {
-								controller.updateData(parent, "original_id", originalID);
+								controller.updateData(parent, "original_id",
+										originalID);
 							}
 							String noteID = drawerValues.get("ID");
 							if (null != noteID) {
-								controller.updateData(parent, "note_id", noteID);
+								controller
+										.updateData(parent, "note_id", noteID);
 							}
 						} else {
 							if (null != m.group(2)) {
-								drawerValues.put(m.group(1).trim(), m.group(2).trim());
+								drawerValues.put(m.group(1).trim(), m.group(2)
+										.trim());
 							}
 						}
 					}
@@ -111,9 +120,9 @@ public class OrgNGParser {
 				}
 				Matcher m = outlinePattern.matcher(line);
 				if (m.find()) {
-//					Log.i(TAG, "Outline: "+line);
+					// Log.i(TAG, "Outline: "+line);
 					marker = Marker.Outline;
-//					debugExp(m);
+					// debugExp(m);
 					NoteNG note = new NoteNG();
 					note.type = NoteNG.TYPE_OUTLINE;
 					if (options.agenda) {
@@ -132,11 +141,11 @@ public class OrgNGParser {
 					}
 					int level = m.group(1).trim().length();
 					note.level = level;
-					if (level<=parent.level) {
-						//Search for parent
-						while(!parents.isEmpty()) {
+					if (level <= parent.level) {
+						// Search for parent
+						while (!parents.isEmpty()) {
 							parent = parents.pop();
-							if (parent.level<level) {
+							if (parent.level < level) {
 								break;
 							}
 						}
@@ -145,8 +154,8 @@ public class OrgNGParser {
 					note.parentID = parent.id;
 					Matcher m2 = outlineTailPattern.matcher(note.title);
 					if (m2.find()) {
-//						debugExp(m2);
-						//before: 6, after: 8
+						// debugExp(m2);
+						// before: 6, after: 8
 						StringBuffer buffer = new StringBuffer();
 						m2.appendReplacement(buffer, "");
 						note.tags = m2.group(1);
@@ -166,7 +175,8 @@ public class OrgNGParser {
 						listNote = null;
 					}
 					listener.onItem(note);
-//					Log.i(TAG, "Note["+note.parentID+"] ["+note.title+"] ["+note.before+"] ["+note.after+"]");
+					// Log.i(TAG,
+					// "Note["+note.parentID+"] ["+note.title+"] ["+note.before+"] ["+note.after+"]");
 					continue;
 				}
 				m = drawerPattern.matcher(line);
@@ -175,7 +185,7 @@ public class OrgNGParser {
 					drawerBuilder = new StringBuilder();
 					drawerValues.clear();
 					drawerBuilder.append(line.trim());
-//					Log.i(TAG, "Start drawer: "+m.group(1));
+					// Log.i(TAG, "Start drawer: "+m.group(1));
 					if (null != listNote) {
 						controller.addData(listNote);
 						listNote = null;
@@ -184,9 +194,9 @@ public class OrgNGParser {
 				}
 				m = controlPattern.matcher(line);
 				if (m.find()) {
-//					Log.i(TAG, "Control: "+m+", "+line);
-					//1 TODO 3 TODO DONE
-					//debugExp(m);
+					// Log.i(TAG, "Control: "+m+", "+line);
+					// 1 TODO 3 TODO DONE
+					// debugExp(m);
 					if (null != listNote) {
 						controller.addData(listNote);
 						listNote = null;
@@ -210,15 +220,16 @@ public class OrgNGParser {
 					controller.addData(n);
 					continue;
 				}
-//				Log.i(TAG, "Unknown line: "+line);
+				// Log.i(TAG, "Unknown line: "+line);
 				m = listPattern.matcher(line);
 				if (m.find()) {
-					//1: spaces 2: -/+/*/1. 4: Text
-					//debugExp(m);
+					// 1: spaces 2: -/+/*/1. 4: Text
+					// debugExp(m);
 					if (null != listNote) {
 						controller.addData(listNote);
 					}
-					int newIndent = m.group(1).replace("\t", "        ").length();
+					int newIndent = m.group(1).replace("\t", "        ")
+							.length();
 					NoteNG n = new NoteNG();
 					n.before = m.group(2);
 					n.editable = true;
@@ -227,11 +238,11 @@ public class OrgNGParser {
 					n.type = NoteNG.TYPE_SUBLIST;
 					n.indent = newIndent;
 					if (null != listNote) {
-						//Item before was sublist
+						// Item before was sublist
 						while (listNote.indent >= newIndent) {
-							//Same level or left
+							// Same level or left
 							if (listParents.isEmpty()) {
-								//No more list parents
+								// No more list parents
 								listNote = parent;
 								break;
 							}
@@ -244,18 +255,19 @@ public class OrgNGParser {
 					}
 					n.fileID = listNote.fileID;
 					n.parentID = listNote.id;
-//					Log.i(TAG, "Next sublist: "+listNote.type+", "+newIndent+", "+
-//							listNote.indent+", "+
-//							n.title+" - "+listNote.title+", "+
-//							listParents.size()+", "+listNote.id);
+					// Log.i(TAG,
+					// "Next sublist: "+listNote.type+", "+newIndent+", "+
+					// listNote.indent+", "+
+					// n.title+" - "+listNote.title+", "+
+					// listParents.size()+", "+listNote.id);
 					if (NoteNG.TYPE_SUBLIST == listNote.type) {
-						//Sub item - save to parents
+						// Sub item - save to parents
 						listParents.push(listNote);
 					}
 					listNote = n;
 				} else {
 					if (options.agenda && "".equals(line)) {
-						//Empty line - step up
+						// Empty line - step up
 						if (null != listNote) {
 							controller.addData(listNote);
 							listNote = null;
@@ -267,7 +279,7 @@ public class OrgNGParser {
 						continue;
 					}
 					if (null != listNote) {
-						listNote.raw += '\n'+line.trim();
+						listNote.raw += '\n' + line.trim();
 					} else {
 						NoteNG n = new NoteNG();
 						n.editable = true;
@@ -293,24 +305,26 @@ public class OrgNGParser {
 		}
 		return null;
 	}
-	
+
 	public String parse() {
 		try {
 			if (controller.hasChanges()) {
 				StringWriter writer = new StringWriter();
 				DataWriter dataWriter = new DataWriter(controller);
-				if(!dataWriter.writeChanges(writer)) {
+				if (!dataWriter.writeChanges(writer)) {
 					return "Problem writing data";
 				}
-				Log.i(TAG, "Controller has changes: "+writer);
-				if (!synchronizer.putFile(true, "mobileorg.org", writer.toString())) {
+				Log.i(TAG, "Controller has changes: " + writer);
+				if (!synchronizer.putFile(true, "mobileorg.org",
+						writer.toString())) {
 					return "Error sending data";
 				}
 				controller.clearChanges();
 			} else {
 				Log.i(TAG, "No changes to send");
 			}
-			String prevSession = controller.appContext.getStringPreference("prevSyncSession", "");
+			String prevSession = controller.appContext.getStringPreference(
+					"prevSyncSession", "");
 			Log.i(TAG, "Start sync");
 			String newSession = synchronizer.getFileHash("checksums.dat");
 			if (null != newSession && newSession.equals(prevSession)) {
@@ -321,10 +335,12 @@ public class OrgNGParser {
 				return "DB error";
 			}
 			String checksums = synchronizer.fetchOrgFileString("checksums.dat");
-			final Map<String, String> sums = synchronizer.getChecksums(checksums);
-			//file1 s1, file2 s2, file3 s3
+			final Map<String, String> sums = synchronizer
+					.getChecksums(checksums);
+			// file1 s1, file2 s2, file3 s3
 			Map<String, String> nowSums = controller.getChecksums();
-			Log.i(TAG, "Comparing["+sums.size()+"] = ["+nowSums.size()+"]: "+sums+" and "+nowSums);
+			Log.i(TAG, "Comparing[" + sums.size() + "] = [" + nowSums.size()
+					+ "]: " + sums + " and " + nowSums);
 			if (sums.size() != nowSums.size()) {
 				Log.i(TAG, "Full sync");
 			} else if (!sums.get("index.org").equals(nowSums.get("index.org"))) {
@@ -337,7 +353,7 @@ public class OrgNGParser {
 						sums.remove(name);
 					}
 				}
-				Log.i(TAG, "Parse only["+sums.size()+"]: "+sums);
+				Log.i(TAG, "Parse only[" + sums.size() + "]: " + sums);
 				for (String fileName : sums.keySet()) {
 					String sum = sums.get(fileName);
 					NoteNG root = controller.findAndRefreshFile(fileName);
@@ -348,7 +364,7 @@ public class OrgNGParser {
 					final boolean isAgenda = "agendas.org".equals(fileName);
 					options.agenda = isAgenda;
 					String error = parseFile(fileName, new ItemListener() {
-						
+
 						@Override
 						public void onItem(NoteNG note) {
 						}
@@ -364,30 +380,32 @@ public class OrgNGParser {
 						return "DB error";
 					}
 				}
-				controller.appContext.setStringPreference("prevSyncSession", newSession);
+				controller.appContext.setStringPreference("prevSyncSession",
+						newSession);
 				return null;
 			}
 			if (!controller.cleanupDB(true)) {
 				return "DB error";
 			}
-			//Next step - parse index.org
+			// Next step - parse index.org
 			NoteNG root = new NoteNG();
-			Integer indexFileID = controller.addFile("index.org", sums.get("index.org"), null);
+			Integer indexFileID = controller.addFile("index.org",
+					sums.get("index.org"), null);
 			root.fileID = indexFileID;
-			if (null ==indexFileID) {
+			if (null == indexFileID) {
 				return "DB error";
 			}
 			final ParseFileOptions indexOptions = new ParseFileOptions();
 			String error = parseFile("index.org", new ItemListener() {
-				
+
 				@Override
 				public void onItem(NoteNG note) {
-//					Log.i(TAG, "See file note: "+note.title);
+					// Log.i(TAG, "See file note: "+note.title);
 					Matcher m = linkPattern.matcher(note.title);
 					if (!m.find()) {
 						return;
 					}
-//					debugExp(m);
+					// debugExp(m);
 					note.title = m.group(5);
 					if (!controller.updateData(note, "type", NoteNG.TYPE_FILE)) {
 						return;
@@ -396,7 +414,8 @@ public class OrgNGParser {
 						return;
 					}
 					String fileName = m.group(4);
-					Integer fileID = controller.addFile(fileName, sums.get(fileName), note.id);
+					Integer fileID = controller.addFile(fileName,
+							sums.get(fileName), note.id);
 					if (null == fileID) {
 						return;
 					}
@@ -410,7 +429,7 @@ public class OrgNGParser {
 					ParseFileOptions options = new ParseFileOptions();
 					options.agenda = isAgenda;
 					String error = parseFile(fileName, new ItemListener() {
-						
+
 						@Override
 						public void onItem(NoteNG note) {
 						}
@@ -420,13 +439,13 @@ public class OrgNGParser {
 						}
 					}, n, options);
 					if (null != error) {
-						Log.e(TAG, "Error parsing: "+error);
+						Log.e(TAG, "Error parsing: " + error);
 					}
 				}
 
 				@Override
 				public void onSharpLine(String name, String value) {
-//					Log.i(TAG, "# line: "+name+", "+value);
+					// Log.i(TAG, "# line: "+name+", "+value);
 					if ("TODO".equals(name)) {
 						String[] items = value.split("\\s");
 						boolean done = false;
@@ -435,7 +454,8 @@ public class OrgNGParser {
 								done = true;
 								continue;
 							}
-							controller.addTodoType(indexOptions.todoGroup, items[i], done);
+							controller.addTodoType(indexOptions.todoGroup,
+									items[i], done);
 						}
 						indexOptions.todoGroup++;
 					}
@@ -455,7 +475,8 @@ public class OrgNGParser {
 			controller.addData(capturedNotes);
 			Log.i(TAG, "Stop sync");
 			if (null == error) {
-				controller.appContext.setStringPreference("prevSyncSession", newSession);
+				controller.appContext.setStringPreference("prevSyncSession",
+						newSession);
 			}
 			return error;
 		} catch (Throwable e) {
