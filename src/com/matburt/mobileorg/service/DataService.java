@@ -24,7 +24,7 @@ public class DataService extends SuperService<DataController, App> implements
 	PendingIntent syncIntent = null;
 
 	public DataService() {
-		super(DataController.class);
+		super(DataController.class, "MobileOrg");
 	}
 
 	@Override
@@ -74,7 +74,11 @@ public class DataService extends SuperService<DataController, App> implements
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "onStartCommand: " + flags);
-		String message = intent.getStringExtra("message");
+		String message = null;
+		try {
+			message = intent.getStringExtra("message");
+		} catch (Exception e) {
+		}
 		Log.i(TAG, "Handle intent: " + message);
 		if (null == message) {
 			return Service.START_STICKY;

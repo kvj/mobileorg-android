@@ -24,7 +24,7 @@ public class OrgNGParser {
 	};
 
 	private static Pattern outlinePattern = Pattern.compile("^(\\*+\\s+)"
-			+ "([A-Z0-9]+\\s+)?" + "(\\[\\#([A-Z])\\]\\s+)?" + "(.+)$");
+			+ "([A-Z][A-Z0-9]*\\s+)?" + "(\\[\\#([A-Z])\\]\\s+)?" + "(.+)$");
 	private static Pattern outlineTailPattern = Pattern
 			.compile("((((\\:[a-z]+)+\\:)|\\:)+)?" + "(<before>(.*)</before>)?"
 					+ "(<after>(.*)</after>)?" + "$");

@@ -2,9 +2,11 @@ package com.matburt.mobileorg.widgets;
 
 import java.util.ArrayList;
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -13,6 +15,7 @@ import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.ui.FOutlineViewer;
 import com.matburt.mobileorg.ui.OutlineViewerAdapter;
 import com.matburt.mobileorg.ui.OutlineViewerAdapter.TextViewParts;
 
@@ -28,7 +31,6 @@ public class OutlineWidget extends AppWidgetProvider {
 					DataController.class);
 			for (int i = 0; i < appWidgetIds.length; i++) {
 				int id = appWidgetIds[i];
-				Log.i(TAG, "Update widget: " + id);
 				SharedPreferences prefs = App.getInstance().getWidgetConfig(id);
 				if (null == prefs) {
 					Log.w(TAG, "No config for " + id);
@@ -36,6 +38,11 @@ public class OutlineWidget extends AppWidgetProvider {
 				}
 				RemoteViews views = new RemoteViews(context.getPackageName(),
 						R.layout.outline_widget);
+				Intent intent = new Intent(context, FOutlineViewer.class);
+				PendingIntent pendingIntent = PendingIntent.getActivity(
+						context, id, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+				views.setOnClickPendingIntent(R.id.outline_widget_root,
+						pendingIntent);
 				views.removeAllViews(R.id.outline_widget_list);
 				int bg = Integer.parseInt(prefs.getString("background", "4"));
 				Log.i(TAG,
@@ -63,7 +70,6 @@ public class OutlineWidget extends AppWidgetProvider {
 							prefs.getBoolean("long", false));
 				}
 				appWidgetManager.updateAppWidget(id, views);
-				Log.i(TAG, "Update widget done");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

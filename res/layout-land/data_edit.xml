@@ -3,7 +3,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-   	<TableLayout 
+    <com.markupartist.android.widget.ActionBar
+        android:id="@+id/actionbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/ActionBar"
+        title="Capture" />
+    <TableLayout 
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
 	    android:layout_weight="1"
@@ -27,12 +33,4 @@
 			    android:layout_weight="1"/>
 	    </TableRow>
 	</TableLayout>
-	<FrameLayout 
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content">
-	    <Button android:text="Save"
-	        android:id="@+id/data_edit_save"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"/>
-	</FrameLayout>
 </LinearLayout>

@@ -24,7 +24,6 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 	protected String title = "Application";
 	private static final int SERVICE_NOTIFY = 100;
 	private static final String TAG = "SuperService";
-	private static final int ALARM_ID = 103;
 	private static final String LOCK_NAME = "SuperService";
 	protected int notificationID = SERVICE_NOTIFY;
 	private Class<? extends AlarmReceiver> alarmBroadcastReceiverClass = null;
@@ -54,9 +53,10 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 		getLock(context).release();
 	}
 
-	public SuperService(Class<T> controllerClass) {
+	public SuperService(Class<T> controllerClass, String title) {
 		this();
 		this.controllerClass = controllerClass;
+		this.title = title;
 	}
 
 	public class LocalBinder extends Binder {

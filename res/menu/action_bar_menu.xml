@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/menu_sync"
+        android:icon="@drawable/sync"
+        android:showAsAction="ifRoom"
+        android:title="Sync"/>
+
+    <item
+        android:id="@+id/menu_capture"
+        android:icon="@drawable/capture"
+        android:showAsAction="ifRoom"
+        android:title="Capture"/>
+
+    <item
+        android:id="@+id/menu_edit"
+        android:enabled="false"
+        android:showAsAction="ifRoom"
+        android:title="Edit"
+        android:icon="@drawable/edit"/>
+
+</menu>

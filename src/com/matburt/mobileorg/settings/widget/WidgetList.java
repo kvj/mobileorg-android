@@ -21,7 +21,7 @@ public class WidgetList extends ListFragment {
 
 	public class WidgetInfo {
 		public int id;
-		String type;
+		public String type;
 
 		@Override
 		public String toString() {
@@ -36,8 +36,6 @@ public class WidgetList extends ListFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		App.getInstance().setWidgetConfig(0, "outline");
-		App.getInstance().setWidgetConfig(1, "outline");
 		reloadData();
 	}
 

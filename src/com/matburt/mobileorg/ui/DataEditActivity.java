@@ -21,6 +21,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
+import com.markupartist.android.widget.ActionBar;
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
@@ -50,21 +51,16 @@ public class DataEditActivity extends FragmentActivity implements
 		// Log.i(TAG,
 		// "onCreate: "+getResources().getConfiguration().screenLayout+", "+getResources().getDisplayMetrics().densityDpi);
 		setContentView(R.layout.data_edit);
+		if (null != findViewById(R.id.actionbar)) {
+			ActionBar bar = (ActionBar) findViewById(R.id.actionbar);
+			bar.setHomeLogo(R.drawable.logo_72);
+			getMenuInflater().inflate(R.menu.editor_menu, bar.asMenu());
+		}
 		edit = (EditText) findViewById(R.id.data_edit_text);
 		edit.setInputType(InputType.TYPE_CLASS_TEXT
 				| InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE
 				| InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 		togglePanel = (ImageButton) findViewById(R.id.data_edit_button);
-		save = (Button) findViewById(R.id.data_edit_save);
-		if (null != save) {
-			save.setOnClickListener(new OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					onSave();
-				}
-			});
-		}
 		panel = (DataEditOptionsPanel) getSupportFragmentManager()
 				.findFragmentById(R.id.data_edit_panel);
 		if (null == savedInstanceState) {
@@ -73,7 +69,6 @@ public class DataEditActivity extends FragmentActivity implements
 				data = new Bundle();
 				data.putString("type", "title");
 			}
-			data.putBoolean("panel", false);
 		} else {
 			data = savedInstanceState;
 		}
@@ -96,6 +91,7 @@ public class DataEditActivity extends FragmentActivity implements
 		conn = new ControllerConnector<App, DataController, DataService>(this,
 				this);
 		conn.connectController(DataService.class);
+		edit.requestFocusFromTouch();
 	}
 
 	@Override
@@ -111,7 +107,7 @@ public class DataEditActivity extends FragmentActivity implements
 		}
 		controller.setInEdit(true);
 		this.controller = controller;
-		Log.i(TAG, "Restoring editor state here " + data.getString("text"));
+		// Log.i(TAG, "Restoring editor state here " + data.getString("text"));
 		if (!"title".equals(data.getString("type"))) {
 			togglePanel.setVisibility(View.GONE);
 			edit.setSingleLine(false);
@@ -119,6 +115,7 @@ public class DataEditActivity extends FragmentActivity implements
 			edit.setSingleLine(true);
 		}
 		edit.setText(data.getString("text"));
+		edit.setSelection(edit.getText().length());
 		panel.getView().setVisibility(
 				data.getBoolean("panel", false) ? View.VISIBLE : View.GONE);
 		panel.loadData(controller, data);

@@ -1,22 +1,27 @@
 package com.matburt.mobileorg.settings.widget;
 
 import org.kvj.bravo7.ControllerConnector;
+import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 
 import com.matburt.mobileorg.App;
-import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 
-public class WidgetConfigActivity extends PreferenceActivity {
-
-	OutlineListPreference itemsPreference = null;
+public class WidgetPreferenceActivity extends PreferenceActivity implements
+		ControllerReceiver<DataController> {
 
 	ControllerConnector<App, DataController, DataService> connector = null;
 	Integer widgetID = null;
+	private String widgetType;
+	private int prefID;
+
+	public WidgetPreferenceActivity(String widgetType, int prefID) {
+		this.widgetType = widgetType;
+		this.prefID = prefID;
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -29,25 +34,15 @@ public class WidgetConfigActivity extends PreferenceActivity {
 			widgetID = getIntent().getExtras().getInt("id");
 		}
 		getPreferenceManager().setSharedPreferencesName("widget_" + widgetID);
-		addPreferencesFromResource(R.xml.widget_preference);
-		itemsPreference = (OutlineListPreference) findPreference("items");
+		addPreferencesFromResource(prefID);
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		if (null != widgetID) {
-			App.getInstance().setWidgetConfig(widgetID, "outline");
+			App.getInstance().setWidgetConfig(widgetID, widgetType);
 			App.getInstance().updateWidgets(widgetID);
-		}
-	}
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		if (RESULT_OK == resultCode
-				&& OutlineListPreference.SELECT_OUTLINE == requestCode) {
-			itemsPreference.itemModified(data.getStringExtra("data"));
 		}
 	}
 
@@ -55,7 +50,7 @@ public class WidgetConfigActivity extends PreferenceActivity {
 	protected void onStart() {
 		super.onStart();
 		connector = new ControllerConnector<App, DataController, DataService>(
-				this, itemsPreference);
+				this, this);
 		connector.connectController(DataService.class);
 	}
 
@@ -63,5 +58,11 @@ public class WidgetConfigActivity extends PreferenceActivity {
 	protected void onStop() {
 		super.onStop();
 		connector.disconnectController();
+	}
+
+	@Override
+	public void onController(DataController controller) {
+		// TODO Auto-generated method stub
+
 	}
 }

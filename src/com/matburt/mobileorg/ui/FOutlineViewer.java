@@ -17,8 +17,8 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Window;
 
+import com.markupartist.android.widget.ActionBar;
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
@@ -57,10 +57,12 @@ public class FOutlineViewer extends FragmentActivity implements
 			}
 		}
 		Log.i(TAG, "We are on: " + android.os.Build.VERSION.SDK_INT);
-		if (android.os.Build.VERSION.SDK_INT < 11) {// <3.0
-			requestWindowFeature(Window.FEATURE_NO_TITLE);
-		}
 		setContentView(R.layout.f_outline_viewer);
+		if (null != findViewById(R.id.actionbar)) {
+			ActionBar bar = (ActionBar) findViewById(R.id.actionbar);
+			bar.setHomeLogo(R.drawable.logo_72);
+			getMenuInflater().inflate(R.menu.action_bar_menu, bar.asMenu());
+		}
 		left = (OutlineViewerFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.viewer_left_pane);
 		right = (OutlineViewerFragment) getSupportFragmentManager()
