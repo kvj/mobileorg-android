@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:layout_marginLeft="200dp"
-    android:layout_marginRight="200dp" 
+    android:layout_marginLeft="@dimen/large_land_padding"
+    android:layout_marginRight="@dimen/large_land_padding" 
     android:background="@drawable/panel_border">
    	<TableLayout 
 	    android:layout_width="match_parent"
@@ -14,7 +14,7 @@
 	    <TableRow>
 		    <EditText 
 		        android:id="@+id/data_edit_text"
-    			android:typeface="monospace"
+	        	style="@style/edit_text_mono_cap"
 		        android:layout_width="match_parent"
 		        android:layout_height="wrap_content"
 		        android:minLines="1"/>

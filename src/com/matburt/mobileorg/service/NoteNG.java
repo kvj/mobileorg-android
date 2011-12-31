@@ -20,6 +20,10 @@ public class NoteNG {
 	public static final int REF_OLP = 1;
 	public static final int REF_INDEX = 2;
 
+	public static final int CBOX_NONE = 0;
+	public static final int CBOX_UNCHECKED = 1;
+	public static final int CBOX_CHECKED = 2;
+
 	public Integer id = null;
 	public Integer parentID = null;
 	public int indent = 0;
@@ -37,6 +41,7 @@ public class NoteNG {
 	public String after = null;
 	public Integer fileID = null;
 	public NoteNG parentNote = null;
+	public int checkboxState = CBOX_NONE;
 
 	public int expanded = EXPAND_COLLAPSED;
 	public int index = 0;
@@ -68,6 +73,6 @@ public class NoteNG {
 			}
 			link = (REF_OLP == refType ? "olp:" : "index:") + sb;
 		}
-		return expand + "::" + link;
+		return (null != expand ? expand + "::" : "") + link;
 	}
 }

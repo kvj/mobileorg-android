@@ -2,6 +2,7 @@ package com.matburt.mobileorg.ui;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.regex.Matcher;
 
 import org.kvj.bravo7.ControllerConnector;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
@@ -25,6 +26,7 @@ import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
+import com.matburt.mobileorg.service.OrgNGParser;
 import com.matburt.mobileorg.settings.SettingsActivity;
 import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
@@ -42,6 +44,7 @@ public class FOutlineViewer extends FragmentActivity implements
 	Menu menu = null;
 	OutlineViewerFragment currentFragment = null;
 	int currentSelectedPosition = -1;
+	ActionBar actionBar = null;
 
 	@Override
 	protected void onCreate(Bundle savedState) {
@@ -56,12 +59,15 @@ public class FOutlineViewer extends FragmentActivity implements
 				data = new Bundle();
 			}
 		}
-		Log.i(TAG, "We are on: " + android.os.Build.VERSION.SDK_INT);
+		// Log.i(TAG, "We are on: " + android.os.Build.VERSION.SDK_INT);
 		setContentView(R.layout.f_outline_viewer);
 		if (null != findViewById(R.id.actionbar)) {
-			ActionBar bar = (ActionBar) findViewById(R.id.actionbar);
-			bar.setHomeLogo(R.drawable.logo_72);
-			getMenuInflater().inflate(R.menu.action_bar_menu, bar.asMenu());
+			actionBar = (ActionBar) findViewById(R.id.actionbar);
+			// actionBar.setHomeLogo(R.drawable.logo_72);
+			getMenuInflater().inflate(R.menu.action_bar_menu,
+					actionBar.asMenu());
+			actionBar.findAction(R.id.menu_sync).setVisible(
+					!data.getBoolean("slave", false));
 		}
 		left = (OutlineViewerFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.viewer_left_pane);
@@ -117,6 +123,14 @@ public class FOutlineViewer extends FragmentActivity implements
 		if (null != right && -1 != data.getInt("right_id", -1)) {
 			right.loadData("right", controller, data);
 		}
+		if (null != getIntent().getExtras()
+				&& null != getIntent().getStringExtra("noteLink")) {
+			NoteNG n = controller.findNoteByLink(getIntent().getStringExtra(
+					"noteLink"));
+			if (null != n) {
+				openNote(n);
+			}
+		}
 	}
 
 	@Override
@@ -155,10 +169,63 @@ public class FOutlineViewer extends FragmentActivity implements
 		}
 	}
 
+	private String changeCheckbox(NoteNG note) {
+		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
+		if (null == nearest || null == nearest.noteID) {
+			return "Outline is readonly";
+		}
+		Matcher m = OrgNGParser.checkboxPattern.matcher(note.title);
+		if (!m.find()) {
+			return "Invalid text";
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append("[");
+		sb.append("X".equals(m.group(1)) ? ' ' : 'X');
+		sb.append("]");
+		sb.append(note.title.substring(m.group().length()));
+		String newText = sb.toString();
+		String changeBody = null;
+		StringWriter sw = new StringWriter();
+		DataWriter dw = new DataWriter(controller);
+		try {
+			dw.writeOutlineWithChildren(nearest, sw, false);
+			changeBody = sw.toString();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		if (!controller.updateData(note, "title", newText)
+				|| !controller.updateData(note, "raw", newText)) {
+			return "DB error";
+		}
+		sw = new StringWriter();
+		try {
+			dw.writeOutlineWithChildren(nearest, sw, false);
+			controller.addChange(nearest.id, "body", changeBody, sw.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error writing";
+		}
+		note.title = newText;
+		note.raw = newText;
+		return null;
+	}
+
 	@Override
 	public void onOpen(OutlineViewerFragment fragment, int position) {
 		NoteNG note = fragment.adapter.data.get(position);
 		if (null != note) {
+			if (note.checkboxState != NoteNG.CBOX_NONE) {
+				// Have checkbox
+				String error = changeCheckbox(note);
+				if (null != error) {
+					SuperActivity.notifyUser(this, error);
+					return;
+				}
+				currentFragment.adapter.notifyChanged();
+				controller.notifyChangesHaveBeenMade();
+				return;
+			}
 			openNote(note);
 		}
 	}
@@ -308,6 +375,7 @@ public class FOutlineViewer extends FragmentActivity implements
 																	// modify
 			if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
 				// Edit outline
+				dispIntent.putExtra("panel", true);
 				dispIntent.putExtra("text", note.title);
 				dispIntent.putExtra("type", "title");
 				dispIntent.putExtra("todo", note.todo);
@@ -386,6 +454,10 @@ public class FOutlineViewer extends FragmentActivity implements
 		menu.findItem(R.id.menu_add_text).setEnabled(canAdd);
 		menu.findItem(R.id.menu_edit).setEnabled(canEdit);
 		menu.findItem(R.id.menu_remove).setEnabled(canRemove);
+		if (null != actionBar) {
+			actionBar.findAction(R.id.menu_add_text).setEnabled(canAdd);
+			actionBar.findAction(R.id.menu_edit).setEnabled(canEdit);
+		}
 	}
 
 	private void refresh(int refreshPos, boolean refreshParent) {

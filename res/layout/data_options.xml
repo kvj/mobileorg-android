@@ -30,6 +30,7 @@
         android:id="@+id/data_panel_tags"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        style="@style/edit_text_mono"
         android:singleLine="true"
         android:layout_gravity="fill_vertical"/>
 </LinearLayout>

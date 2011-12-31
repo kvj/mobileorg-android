@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/large_land_padding"
+    android:layout_marginRight="@dimen/large_land_padding" 
+    android:orientation="vertical" >
+    <FrameLayout 
+        android:background="@drawable/panel_border"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+	    android:layout_weight="1">
+	    <fragment 
+	        android:id="@+id/select_outline_list"
+	        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"/>
+    </FrameLayout>
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:stretchColumns="0">
+        <TableRow 
+            android:gravity="center_vertical">
+            <TextView android:text="Reference:"/>
+            <Spinner 
+                android:id="@+id/select_outline_type"
+                android:layout_width="match_parent"/>
+        </TableRow>
+        </TableLayout>
+</LinearLayout>

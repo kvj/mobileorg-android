@@ -11,16 +11,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
+
     <application
         android:debuggable="true"
         android:icon="@drawable/logo_72"
         android:label="MobileOrg"
-        android:name=".App" 
-        android:theme="@style/Theme.ActionBar">
+        android:name=".App"
+        android:theme="@style/Theme.ActionBar" >
         <service android:name=".service.DataService" />
-        <receiver android:name=".service.DataAlarmReceiver"/>
 
+        <receiver android:name=".service.DataAlarmReceiver" />
         <receiver android:name=".MobileOrgStartupIntentReceiver" >
             <intent-filter >
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -35,7 +35,16 @@
             android:name=".ui.FOutlineViewer" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:label="MobileOrg link"
+            android:name=".ui.OutlineLinkPicker" >
+            <intent-filter >
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity
@@ -108,7 +117,9 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".widgets.OutlineWidget" android:label="MobileOrg outline">
+        <receiver
+            android:label="MobileOrg outline"
+            android:name=".widgets.OutlineWidget" >
             <intent-filter >
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -117,14 +128,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/outline_widget" />
         </receiver>
-        <receiver android:name=".widgets.CaptureWidget" android:label="MobileOrg capture">
+        <receiver
+            android:label="MobileOrg capture"
+            android:name=".widgets.CaptureWidget" >
             <intent-filter >
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/capture_widget" />
         </receiver>
-        </application>
+    </application>
 
 </manifest>

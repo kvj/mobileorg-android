@@ -18,13 +18,15 @@
 	    android:layout_height="match_parent"
 	    android:orientation="horizontal"
 	    android:layout_weight="1">
-	    <EditText 
+
+	    <EditText
 	        android:id="@+id/data_edit_text"
-    		android:typeface="monospace"
+	        style="@style/edit_text_mono_cap"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
-	        android:minLines="1"/>
+	        android:minLines="1" />
+
 	    <ImageButton
 	        android:id="@+id/data_edit_button"
 	        android:layout_width="50dp"

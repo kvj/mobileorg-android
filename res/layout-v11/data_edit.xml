@@ -14,7 +14,7 @@
 	    android:layout_weight="1">
 	    <EditText 
 	        android:id="@+id/data_edit_text"
-    		android:typeface="monospace"
+	        style="@style/edit_text_mono_cap"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"

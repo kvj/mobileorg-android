@@ -31,18 +31,18 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"
+	    style="@style/edit_text_mono"
         android:layout_gravity="fill_vertical"/>
 
     <TextView android:text="Outline:"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
-
     <EditText
         android:id="@+id/data_panel_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="fill_vertical"
-        android:inputType="text|textCapSentences"
+	    style="@style/edit_text_mono_cap"
         android:singleLine="true" />
 
 </LinearLayout>

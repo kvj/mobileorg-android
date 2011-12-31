@@ -30,6 +30,8 @@ public class OrgNGParser {
 					+ "(<after>(.*)</after>)?" + "$");
 	public static Pattern noteRefPattern = Pattern
 			.compile("^((e\\d*|a)\\:\\:)?(index|id|olp)\\:(.+)$");
+	public static Pattern checkboxPattern = Pattern
+			.compile("^\\s*\\[(\\s|X)\\]");
 	public static Pattern dateTimePattern = Pattern
 			.compile("(\\<|\\[)(\\d{4}-\\d{2}-\\d{2}\\s[A-Z][a-z]{2})(\\s\\d{2}\\:\\d{2})?(\\>|\\])");
 	private static Pattern drawerPattern = Pattern

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="edit_text_mono" parent="@android:style/Widget.EditText">
+        <item name="android:typeface">monospace</item>
+        <item name="android:textSize">14dp</item>
+        <item name="android:autoText">true</item>
+        <item name="android:imeOptions">actionNone</item>
+        <item name="android:inputType">text|textAutoCorrect|textLongMessage</item>
+    </style>
+    <style name="edit_text_mono_cap" parent="@style/edit_text_mono">
+        <item name="android:inputType">text|textAutoCorrect|textLongMessage|textCapSentences</item>
+    </style>
+</resources>

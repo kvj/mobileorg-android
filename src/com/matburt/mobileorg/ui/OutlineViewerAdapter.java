@@ -15,6 +15,7 @@ import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
 import android.text.SpannableStringBuilder;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
@@ -60,8 +61,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 	public OutlineViewerAdapter(Context context) {
 		wide = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 		DateTextFormatter dateTextFormatter = new DateTextFormatter();
+		CheckBoxFormatter checkBoxFormatter = new CheckBoxFormatter();
 		textFormatter = new PlainTextFormatter(dateTextFormatter);
-		sublistFormatter = new PlainTextFormatter(dateTextFormatter);
+		sublistFormatter = new PlainTextFormatter(checkBoxFormatter,
+				dateTextFormatter);
 	}
 
 	private static final String TAG = "OutlineView";
@@ -108,20 +111,49 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	interface TextFormatter {
-		Pattern getPattern();
+		Pattern getPattern(NoteNG note, boolean selected);
 
-		void format(SpannableStringBuilder sb, Matcher m, String text);
+		void format(NoteNG note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected);
+	}
+
+	class CheckBoxFormatter implements TextFormatter {
+
+		@Override
+		public Pattern getPattern(NoteNG note, boolean selected) {
+			if (!NoteNG.TYPE_SUBLIST.equals(note.type)) {
+				return null;
+			}
+			return OrgNGParser.checkboxPattern;
+		}
+
+		@Override
+		public void format(NoteNG note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected) {
+			note.checkboxState = "X".equals(m.group(1)) ? NoteNG.CBOX_CHECKED
+					: NoteNG.CBOX_UNCHECKED;
+			// Log.i(TAG, "Ckeckbox detected[" + selected + "]: " + m.group()
+			// + ", " + m.group(1));
+			// if (!selected) {
+			// addSpan(sb, text);
+			// } else {
+			addSpan(sb, text, new BackgroundColorSpan(theme.c7White),
+					new ForegroundColorSpan(theme.cfLWhite));
+			// }
+		}
+
 	}
 
 	class DateTextFormatter implements TextFormatter {
 
 		@Override
-		public Pattern getPattern() {
+		public Pattern getPattern(NoteNG note, boolean selected) {
 			return OrgNGParser.dateTimePattern;
 		}
 
 		@Override
-		public void format(SpannableStringBuilder sb, Matcher m, String text) {
+		public void format(NoteNG note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected) {
 			// OrgNGParser.debugExp(m);
 			StringBuilder builder = new StringBuilder();
 			builder.append(m.group(1));
@@ -157,35 +189,42 @@ public class OutlineViewerAdapter implements ListAdapter {
 			this.formatters = formatters;
 		}
 
-		private void writePlainText(SpannableStringBuilder sb, int defColor,
-				String text, int index) {
+		private void writePlainText(NoteNG note, SpannableStringBuilder sb,
+				int defColor, String text, int index, boolean selected) {
 			if (index >= formatters.length) {
 				addSpan(sb, text, new ForegroundColorSpan(defColor));
 				return;
 			}
 			TextFormatter formatter = formatters[index];
-			Matcher m = formatter.getPattern().matcher(text);
-			if (!m.find()) {
-				writePlainText(sb, defColor, text, index + 1);
+			Matcher m = null;
+			Pattern p = formatter.getPattern(note, selected);
+			if (null != p) {
+				m = p.matcher(text);
+			}
+			if (null == m || !m.find()) {
+				writePlainText(note, sb, defColor, text, index + 1, selected);
 				return;
 			}
 			do {
 				StringBuffer buffer = new StringBuffer();
 				m.appendReplacement(buffer, "");
 				if (0 != buffer.length()) {
-					writePlainText(sb, defColor, buffer.toString(), index + 1);
+					writePlainText(note, sb, defColor, buffer.toString(),
+							index + 1, selected);
 				}
-				formatter.format(sb, m, m.group());
+				formatter.format(note, sb, m, m.group(), selected);
 			} while (m.find());
 			StringBuffer buffer = new StringBuffer();
 			m.appendTail(buffer);
 			if (0 != buffer.length()) {
-				writePlainText(sb, defColor, buffer.toString(), index + 1);
+				writePlainText(note, sb, defColor, buffer.toString(),
+						index + 1, selected);
 			}
 		}
 
-		void writePlainText(SpannableStringBuilder sb, int defColor, String text) {
-			writePlainText(sb, defColor, text, 0);
+		void writePlainText(NoteNG note, SpannableStringBuilder sb,
+				int defColor, String text, boolean selected) {
+			writePlainText(note, sb, defColor, text, 0, selected);
 		}
 
 	}
@@ -265,11 +304,13 @@ public class OutlineViewerAdapter implements ListAdapter {
 				} else {
 					addSpan(sb, '\n' + indent + subListIndent);
 				}
-				sublistFormatter.writePlainText(sb, theme.c7White, lines[i]);
+				sublistFormatter.writePlainText(note, sb, theme.c7White,
+						lines[i], isclicked);
 				// addSpan(sb, lines[i]);
 			}
 		} else {
-			textFormatter.writePlainText(sb, titleColor, note.title);
+			textFormatter.writePlainText(note, sb, titleColor, note.title,
+					isclicked);
 			// addSpan(sb, note.title, new ForegroundColorSpan(
 			// titleColor));
 		}
@@ -570,6 +611,12 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	public void setWide(boolean wide) {
 		this.wide = wide;
+	}
+
+	public void notifyChanged() {
+		if (null != observer) {
+			observer.onChanged();
+		}
 	}
 
 }

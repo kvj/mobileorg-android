@@ -10,7 +10,6 @@ import org.kvj.bravo7.SuperActivity;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -57,9 +56,6 @@ public class DataEditActivity extends FragmentActivity implements
 			getMenuInflater().inflate(R.menu.editor_menu, bar.asMenu());
 		}
 		edit = (EditText) findViewById(R.id.data_edit_text);
-		edit.setInputType(InputType.TYPE_CLASS_TEXT
-				| InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE
-				| InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
 		togglePanel = (ImageButton) findViewById(R.id.data_edit_button);
 		panel = (DataEditOptionsPanel) getSupportFragmentManager()
 				.findFragmentById(R.id.data_edit_panel);
