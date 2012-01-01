@@ -10,8 +10,23 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Template" >
-
-        <com.matburt.mobileorg.settings.widget.CaptureTemplatePreference android:key="template" />
-    </PreferenceCategory>
+		<ListPreference
+		     android:title="TODO state"
+		     android:key="template_todo"
+		     android:defaultValue="" />
+		<ListPreference
+		     android:title="Priority"
+		     android:key="template_priority"
+		     android:defaultValue="" />
+        <EditTextPreference
+            android:dialogTitle="Enter Tags"
+            android:key="template_tags"
+            android:title="Tags" 
+            android:defaultValue=":"/>
+        <EditTextPreference
+            android:dialogTitle="Enter Text"
+            android:key="template"
+            android:title="Text" />
+	</PreferenceCategory>
 
 </PreferenceScreen>

@@ -39,7 +39,7 @@ public class WidgetList extends ListFragment {
 		reloadData();
 	}
 
-	private void reloadData() {
+	public void reloadData() {
 		Map<Integer, String> data = App.getInstance().getWidgetConfigs(null);
 		list = new ArrayList<WidgetList.WidgetInfo>();
 		for (Integer id : data.keySet()) {

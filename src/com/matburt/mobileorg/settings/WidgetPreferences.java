@@ -20,6 +20,12 @@ public class WidgetPreferences extends FragmentActivity implements
 	Fragment editorFragment = null;
 
 	@Override
+	protected void onActivityResult(int arg0, int arg1, Intent arg2) {
+		super.onActivityResult(arg0, arg1, arg2);
+		widgetList.reloadData();
+	}
+
+	@Override
 	protected void onCreate(Bundle arg0) {
 		super.onCreate(arg0);
 		setContentView(R.layout.widgets_config);

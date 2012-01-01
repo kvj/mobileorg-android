@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="widget_margin">12dp</dimen>
+    <dimen name="widget_margin">15dp</dimen>
 	<dimen name="large_land_padding">0dp</dimen>
 </resources>
