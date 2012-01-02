@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="@dimen/large_land_padding"
+    android:layout_marginRight="@dimen/large_land_padding" 
+    android:background="@drawable/panel_border">
+    <ListView 
+        android:id="@+id/search_outline_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</FrameLayout>

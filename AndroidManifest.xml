@@ -18,6 +18,8 @@
         android:label="MobileOrg"
         android:name=".App"
         android:theme="@style/Theme.ActionBar" >
+        <meta-data android:name="android.app.default_searchable"
+               android:value=".ui.SearchActivity" />
         <service android:name=".service.DataService" />
 
         <receiver android:name=".service.DataAlarmReceiver" />
@@ -35,7 +37,6 @@
             android:name=".ui.FOutlineViewer" >
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -78,6 +79,7 @@
             android:name=".settings.WidgetPreferences" >
             <intent-filter >
                 <action android:name=".settings.WidgetPreferences" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -115,6 +117,18 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity 
+            android:label="MobileOrg"
+            android:configChanges="orientation|keyboardHidden"
+            android:name=".ui.SearchActivity" >
+            <intent-filter >
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+        </activity>
 
         <receiver
             android:label="MobileOrg outline"
@@ -138,6 +152,14 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/capture_widget" />
         </receiver>
+        <provider 
+            android:name=".service.SearchProvider"
+            android:authorities="com.matburt.mobileorg.search"
+            android:readPermission="com.matburt.mobileorg.READ_MY_DATA"
+          	android:writePermission="com.matburt.mobileorg.WRITE_MY_DATA">
+			<path-permission android:pathPrefix="/search_suggest_query"
+                   android:readPermission="android.permission.GLOBAL_SEARCH" />            
+        </provider>
     </application>
 
 </manifest>

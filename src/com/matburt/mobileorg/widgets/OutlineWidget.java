@@ -16,8 +16,8 @@ import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.ui.FOutlineViewer;
-import com.matburt.mobileorg.ui.OutlineViewerAdapter;
-import com.matburt.mobileorg.ui.OutlineViewerAdapter.TextViewParts;
+import com.matburt.mobileorg.ui.adapter.OutlineViewerAdapter;
+import com.matburt.mobileorg.ui.adapter.OutlineViewerAdapter.TextViewParts;
 
 public class OutlineWidget extends AppWidgetProvider {
 	private static final String TAG = "OutlineWidget";

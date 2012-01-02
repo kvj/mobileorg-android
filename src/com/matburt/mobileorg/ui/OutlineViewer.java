@@ -23,6 +23,7 @@ import com.matburt.mobileorg.service.DataController;
 import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.settings.SettingsActivity;
+import com.matburt.mobileorg.ui.adapter.OutlineViewerAdapter;
 
 public class OutlineViewer extends SuperActivity<App, DataController, DataService> {
 

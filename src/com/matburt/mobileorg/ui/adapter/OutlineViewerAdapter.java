@@ -1,4 +1,4 @@
-package com.matburt.mobileorg.ui;
+package com.matburt.mobileorg.ui.adapter;
 
 import java.io.StringWriter;
 import java.text.DateFormat;
@@ -230,8 +230,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	public class TextViewParts {
-		public CharSequence leftPart = null;
-		public CharSequence rightPart = null;
+		public SpannableStringBuilder leftPart = null;
+		public SpannableStringBuilder subPart = null;
+		public SpannableStringBuilder rightPart = null;
 	}
 
 	public TextViewParts customizeTextView(NoteNG note, boolean isclicked) {
@@ -314,13 +315,19 @@ public class OutlineViewerAdapter implements ListAdapter {
 			// addSpan(sb, note.title, new ForegroundColorSpan(
 			// titleColor));
 		}
+		if (null != note.subtitle) {
+			SpannableStringBuilder sub = new SpannableStringBuilder();
+			sublistFormatter.writePlainText(note, sub, theme.c7White,
+					note.subtitle, isclicked);
+			result.subPart = sub;
+		}
 		if (null != note.tags) {
 			SpannableStringBuilder tagsText = new SpannableStringBuilder();
 			Integer tagColor = tagMapping.get(titleColor);
 			if (null == tagColor) {
 				tagColor = titleColor;
 			}
-			int size = sb.length();
+			// int size = sb.length();
 			addSpan(tagsText, note.tags, new ForegroundColorSpan(tagColor));
 			result.rightPart = tagsText;
 		}
@@ -352,6 +359,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 		// ? theme.c7White
 		// : theme.c0Black);
 		TextViewParts parts = customizeTextView(note, isclicked);
+		if (null != parts.subPart) {
+			addSpan(parts.leftPart, "\n");
+			parts.leftPart.append(parts.subPart);
+		}
 		title.setText(parts.leftPart, BufferType.SPANNABLE);
 		tags.setText(parts.rightPart == null ? "" : parts.rightPart,
 				BufferType.SPANNABLE);
@@ -406,8 +417,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		return reload(selection);
 	}
 
-	public int reload(List<Integer> selection) {
-		data.clear();
+	private void loadMeta() {
 		todos.clear();
 		List<TodoState> todoStates = controller.getTodoTypes();
 		for (TodoState t : todoStates) {
@@ -418,6 +428,11 @@ public class OutlineViewerAdapter implements ListAdapter {
 		for (int i = 0; i < prList.size(); i++) {
 			priorities.put(prList.get(i), i);
 		}
+	}
+
+	public int reload(List<Integer> selection) {
+		data.clear();
+		loadMeta();
 		NoteNG root = controller.findNoteByID(id);
 		if (null != root) {
 			data.add(root);
@@ -553,7 +568,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	ArrayList<Integer> getSelection() {
+	public ArrayList<Integer> getSelection() {
 		if (clicked == null) {
 			return null;
 		}
@@ -617,6 +632,20 @@ public class OutlineViewerAdapter implements ListAdapter {
 		if (null != observer) {
 			observer.onChanged();
 		}
+	}
+
+	public NoteNG getClicked() {
+		return clicked;
+	}
+
+	public void search(DataController controller, String query) {
+		this.controller = controller;
+		data.clear();
+		loadMeta();
+		List<NoteNG> searchResult = controller.search(query, 0, todos.keySet(),
+				priorities.keySet());
+		data.addAll(searchResult);
+		notifyChanged();
 	}
 
 }

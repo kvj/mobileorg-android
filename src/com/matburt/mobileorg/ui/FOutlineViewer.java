@@ -123,10 +123,16 @@ public class FOutlineViewer extends FragmentActivity implements
 		if (null != right && -1 != data.getInt("right_id", -1)) {
 			right.loadData("right", controller, data);
 		}
-		if (null != getIntent().getExtras()
-				&& null != getIntent().getStringExtra("noteLink")) {
+		if (null != getIntent().getExtras() && getIntent().hasExtra("noteLink")) {
 			NoteNG n = controller.findNoteByLink(getIntent().getStringExtra(
 					"noteLink"));
+			if (null != n) {
+				openNote(n);
+			}
+		}
+		if (null != getIntent().getExtras() && getIntent().hasExtra("noteID")) {
+			NoteNG n = controller.findNoteByID(getIntent().getIntExtra(
+					"noteID", -1));
 			if (null != n) {
 				openNote(n);
 			}
@@ -213,7 +219,7 @@ public class FOutlineViewer extends FragmentActivity implements
 
 	@Override
 	public void onOpen(OutlineViewerFragment fragment, int position) {
-		NoteNG note = fragment.adapter.data.get(position);
+		NoteNG note = fragment.adapter.getItem(position);
 		if (null != note) {
 			if (note.checkboxState != NoteNG.CBOX_NONE) {
 				// Have checkbox
@@ -275,6 +281,9 @@ public class FOutlineViewer extends FragmentActivity implements
 		case R.id.menu_edit:
 			runEditCurrent(null);
 			break;
+		case R.id.menu_search:
+			onSearchRequested();
+			break;
 		case R.id.menu_remove:
 			runRemoveCurrent();
 			break;
@@ -314,11 +323,12 @@ public class FOutlineViewer extends FragmentActivity implements
 	}
 
 	private void runRemoveCurrent() {
-		if (null == currentFragment || null == currentFragment.adapter.clicked) {
+		if (null == currentFragment
+				|| null == currentFragment.adapter.getClicked()) {
 			SuperActivity.notifyUser(this, "No item selected");
 			return;
 		}
-		NoteNG note = currentFragment.adapter.clicked;
+		NoteNG note = currentFragment.adapter.getClicked();
 		// Current selected
 		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
 		if (null == nearest || null == nearest.noteID) {
@@ -336,11 +346,12 @@ public class FOutlineViewer extends FragmentActivity implements
 	private void runEditCurrent(String type) {
 		// Log.i(TAG,
 		// "current: "+currentFragment+", "+currentFragment.adapter.clicked);
-		if (null == currentFragment || null == currentFragment.adapter.clicked) {
+		if (null == currentFragment
+				|| null == currentFragment.adapter.getClicked()) {
 			SuperActivity.notifyUser(this, "No item selected");
 			return;
 		}
-		NoteNG note = currentFragment.adapter.clicked;
+		NoteNG note = currentFragment.adapter.getClicked();
 		// Current selected
 		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
 		// Nearest note with ID - we'll put it's new body to DB

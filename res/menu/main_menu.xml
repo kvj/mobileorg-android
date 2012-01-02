@@ -17,7 +17,7 @@
         android:id="@+id/menu_add_text"
         android:enabled="false"
         android:icon="@drawable/add_text"
-        android:showAsAction="ifRoom|withText"
+        android:showAsAction="ifRoom"
         android:title="Add text note"/>
 
     <item
@@ -38,5 +38,11 @@
         android:id="@+id/menu_options"
         android:title="Options"
         android:icon="@drawable/options"/>
+
+    <item
+        android:id="@+id/menu_search"
+        android:title="Search"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/edit"/>
 
 </menu>

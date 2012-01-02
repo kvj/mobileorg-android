@@ -45,6 +45,7 @@ public class NoteNG {
 
 	public int expanded = EXPAND_COLLAPSED;
 	public int index = 0;
+	public String subtitle = null;
 
 	public boolean isExpandable() {
 		return TYPE_AGENDA.equals(type) || TYPE_AGENDA_OUTLINE.equals(type)

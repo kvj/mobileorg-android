@@ -3,6 +3,7 @@ package com.matburt.mobileorg.service;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.kvj.bravo7.ApplicationContext;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils.InsertHelper;
 import android.util.Log;
 
 import com.matburt.mobileorg.App;
@@ -42,6 +44,7 @@ public class DataController {
 	int inEdit = 0;
 	public static DateFormat timeFormat = new SimpleDateFormat("HH:mm");
 	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
+	InsertHelper dataInsertHelper = null;
 
 	public DataController(ApplicationContext appContext, Context context) {
 		this.appContext = appContext;
@@ -49,6 +52,8 @@ public class DataController {
 		if (!db.open()) {
 			Log.e(TAG, "Error opening DB");
 			db = null;
+		} else {
+			dataInsertHelper = new InsertHelper(db.getDatabase(), "data");
 		}
 	}
 
@@ -462,7 +467,7 @@ public class DataController {
 			values.put("type", note.type);
 			values.put("editable", note.editable ? 1 : 0);
 			values.put("level", note.level);
-			int result = (int) db.getDatabase().insert("data", null, values);
+			int result = (int) dataInsertHelper.insert(values);
 			note.id = result;
 			if (!haveTransaction) {
 				db.getDatabase().setTransactionSuccessful();
@@ -523,7 +528,7 @@ public class DataController {
 
 	static String[] dataFields = new String[] { "id", "indent", "editable",
 			"note_id", "original_id", "type", "priority", "todo", "title",
-			"tags", "level", "before", "after", "raw" };
+			"tags", "level", "before", "after", "raw", "parent_id" };
 
 	public List<NoteNG> getData(Integer parent) {
 		if (null == db) {
@@ -954,6 +959,129 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return false;
+	}
+
+	public List<NoteNG> search(String query, int size,
+			Collection<String> todos, Collection<String> priorities) {
+		if (null == db || null == query || "".equals(query.trim())) {
+			return new ArrayList<NoteNG>();
+		}
+		List<NoteNG> result = new ArrayList<NoteNG>();
+		String[] parts = query.split("\\s");
+		try {
+			StringBuilder where = new StringBuilder();
+			List<String> whereParams = new ArrayList<String>();
+			where.append("type=?");
+			whereParams.add(NoteNG.TYPE_OUTLINE);
+			List<String> titleSearches = new ArrayList<String>();
+			for (int i = 0; i < parts.length; i++) {
+				String part = parts[i];
+				if (todos.contains(part)) {
+					where.append(" and todo=?");
+					whereParams.add(part);
+					continue;
+				}
+				if (part.startsWith("#")
+						&& priorities.contains(part.substring(1))) {
+					where.append(" and priority=?");
+					whereParams.add(part.substring(1));
+					continue;
+				}
+				if (part.startsWith("id:")) {
+					where.append(" and note_id=?");
+					whereParams.add(part.substring(3));
+					continue;
+				}
+				if (part.startsWith(":")) {
+					String[] tags = part.split("\\:");
+					for (int j = 0; j < tags.length; j++) {
+						if ("".equals(tags[j])) {
+							continue;
+						}
+						where.append(" and tags like ?");
+						whereParams.add("%:" + tags[j] + ":%");
+					}
+					continue;
+				}
+				titleSearches.add(part);
+				where.append(" and title like ?");
+				whereParams.add("%" + part + "%");
+			}
+			// Log.i(TAG, "Search: " + where + ", " + whereParams);
+			Cursor c = db.getDatabase().query("data", dataFields,
+					where.toString(), whereParams.toArray(new String[] {}),
+					null, null, "id", size > 0 ? Integer.toString(size) : null);
+			if (c.moveToFirst()) {
+				do {
+					NoteNG note = cursorToNote(c);
+					result.add(note);
+				} while (c.moveToNext());
+			}
+			c.close();
+			if (size > 0 && result.size() >= size) {
+				return result;
+			}
+			if (titleSearches.size() == 0) {
+				return result;
+			}
+			where = new StringBuilder();
+			whereParams.clear();
+			where.append("(type=? or type=?)");
+			whereParams.add(NoteNG.TYPE_TEXT);
+			whereParams.add(NoteNG.TYPE_SUBLIST);
+			for (int i = 0; i < titleSearches.size(); i++) {
+				String part = titleSearches.get(i);
+				where.append(" and raw like ?");
+				whereParams.add("%" + part + "%");
+			}
+			c = db.getDatabase().query("data",
+					new String[] { "parent_id", "raw" }, where.toString(),
+					whereParams.toArray(new String[0]), null, null, "id");
+			// Log.i(TAG,
+			// "Search2: " + where + ", " + whereParams + ", "
+			// + c.getCount() + ", " + size);
+			if (c.moveToFirst()) {
+				do {
+					String parentID = c.getString(0);
+					while (null != parentID) {
+						Cursor c2 = db.getDatabase().query("data", dataFields,
+								"id=?", new String[] { parentID }, null, null,
+								null);
+						if (!c2.moveToFirst()) {
+							// Log.i(TAG, "No parent");
+							c2.close();
+							break;
+						}
+						if (NoteNG.TYPE_OUTLINE.equals(c2.getString(5))) {
+							// Log.i(TAG, "Found parent");
+							NoteNG note = cursorToNote(c2);
+							note.subtitle = c.getString(1);
+							result.add(note);
+							if (size > 0 && result.size() >= size) {
+								c2.close();
+								c.close();
+								return result;
+							}
+							break;
+						}
+						if (NoteNG.TYPE_SUBLIST.equals(c2.getString(5))) {
+							// Log.i(TAG, "Found parent sublist");
+							parentID = c2.getString(14);
+							c2.close();
+							continue;
+						}
+						Log.i(TAG, "Invalid parent");
+						c2.close();
+						break;
+					}
+				} while (c.moveToNext());
+			}
+			c.close();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<NoteNG>();
 	}
 
 }
