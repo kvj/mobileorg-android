@@ -12,6 +12,7 @@ import android.util.Log;
 
 import com.matburt.mobileorg.synchronizers.ReportableError;
 import com.matburt.mobileorg.synchronizers.Synchronizer;
+import com.matburt.mobileorg.synchronizers.Synchronizer.FileInfo;
 
 public class OrgNGParser {
 
@@ -58,6 +59,8 @@ public class OrgNGParser {
 		void onSharpLine(String name, String value);
 
 		void onItem(NoteNG note);
+
+		void onProgress(int total, int pos);
 	}
 
 	public static void debugExp(Matcher m) {
@@ -75,7 +78,8 @@ public class OrgNGParser {
 	public String parseFile(String name, ItemListener listener, NoteNG _parent,
 			ParseFileOptions options) {
 		try {
-			BufferedReader reader = synchronizer.fetchOrgFile(name);
+			FileInfo fileInfo = synchronizer.fetchOrgFile(name);
+			BufferedReader reader = fileInfo.reader;
 			String line = null;
 			Marker marker = Marker.Unknown;
 			Stack<NoteNG> parents = new Stack<NoteNG>();
@@ -84,7 +88,16 @@ public class OrgNGParser {
 			Map<String, String> drawerValues = new HashMap<String, String>();
 			NoteNG listNote = null;
 			Stack<NoteNG> listParents = new Stack<NoteNG>();
+			int totalSize = (int) fileInfo.size;
+			int partSize = totalSize / 10;
+			int lastAnnouncedPart = -1;
+			int bytesRead = 0;
 			while ((line = reader.readLine()) != null) {
+				bytesRead += line.getBytes("utf-8").length + 1;
+				if (lastAnnouncedPart != bytesRead / partSize) {
+					listener.onProgress(totalSize, bytesRead);
+					lastAnnouncedPart = bytesRead / partSize;
+				}
 				if (marker == Marker.Drawer) {
 					drawerBuilder.append('\n');
 					drawerBuilder.append(line.trim());
@@ -308,9 +321,15 @@ public class OrgNGParser {
 		return null;
 	}
 
-	public String parse() {
+	public static interface ParseProgressListener {
+		public void progress(int total, int totalPos, int current,
+				int currentPos, String message);
+	}
+
+	public String parse(final ParseProgressListener listener) {
 		try {
 			if (controller.hasChanges()) {
+				listener.progress(2, 1, 1, 0, "Sending changes...");
 				StringWriter writer = new StringWriter();
 				DataWriter dataWriter = new DataWriter(controller);
 				if (!dataWriter.writeChanges(writer)) {
@@ -328,6 +347,7 @@ public class OrgNGParser {
 			String prevSession = controller.appContext.getStringPreference(
 					"prevSyncSession", "");
 			Log.i(TAG, "Start sync");
+			listener.progress(2, 2, 1, 0, "Getting checksums...");
 			String newSession = synchronizer.getFileHash("checksums.dat");
 			if (null != newSession && newSession.equals(prevSession)) {
 				Log.i(TAG, "No changes detected - exiting");
@@ -356,9 +376,14 @@ public class OrgNGParser {
 					}
 				}
 				Log.i(TAG, "Parse only[" + sums.size() + "]: " + sums);
-				for (String fileName : sums.keySet()) {
+				final int filesTotal = sums.keySet().size();
+				int filesIndex = 1;
+				for (final String fileName : sums.keySet()) {
+					final int fileNo = filesIndex++;
+					listener.progress(filesTotal, fileNo, 1, 0, "Processing "
+							+ fileName + "...");
 					String sum = sums.get(fileName);
-					NoteNG root = controller.findAndRefreshFile(fileName);
+					final NoteNG root = controller.findAndRefreshFile(fileName);
 					if (null == root) {
 						return "DB error";
 					}
@@ -373,6 +398,15 @@ public class OrgNGParser {
 
 						@Override
 						public void onSharpLine(String name, String value) {
+							if ("TITLE".equals(name)) {
+								controller.updateData(root, "title", value);
+							}
+						}
+
+						@Override
+						public void onProgress(int total, int pos) {
+							listener.progress(filesTotal, fileNo, total, pos,
+									"Reading " + fileName + "...");
 						}
 					}, root, options);
 					if (null != error) {
@@ -397,13 +431,16 @@ public class OrgNGParser {
 			if (null == indexFileID) {
 				return "DB error";
 			}
+			final int filesTotal = sums.size() - 1;
 			final ParseFileOptions indexOptions = new ParseFileOptions();
 			String error = parseFile("index.org", new ItemListener() {
+
+				int fileIndex = 0;
 
 				@Override
 				public void onItem(NoteNG note) {
 					// Log.i(TAG, "See file note: "+note.title);
-					Matcher m = linkPattern.matcher(note.title);
+					final Matcher m = linkPattern.matcher(note.title);
 					if (!m.find()) {
 						return;
 					}
@@ -415,13 +452,16 @@ public class OrgNGParser {
 					if (!controller.updateData(note, "title", note.title)) {
 						return;
 					}
+					fileIndex++;
+					listener.progress(filesTotal, fileIndex, 1, 0,
+							"Processing " + m.group(5) + "...");
 					String fileName = m.group(4);
 					Integer fileID = controller.addFile(fileName,
 							sums.get(fileName), note.id);
 					if (null == fileID) {
 						return;
 					}
-					NoteNG n = new NoteNG();
+					final NoteNG n = new NoteNG();
 					n.id = note.id;
 					n.fileID = fileID;
 					final boolean isAgenda = "agendas.org".equals(fileName);
@@ -438,6 +478,15 @@ public class OrgNGParser {
 
 						@Override
 						public void onSharpLine(String name, String value) {
+							if ("TITLE".equals(name)) {
+								controller.updateData(n, "title", value);
+							}
+						}
+
+						@Override
+						public void onProgress(int total, int pos) {
+							listener.progress(filesTotal, fileIndex, total,
+									pos, "Reading " + m.group(5) + "...");
 						}
 					}, n, options);
 					if (null != error) {
@@ -467,6 +516,12 @@ public class OrgNGParser {
 							controller.addPriorityType(items[i]);
 						}
 					}
+				}
+
+				@Override
+				public void onProgress(int total, int pos) {
+					// TODO Auto-generated method stub
+
 				}
 			}, root, indexOptions);
 			NoteNG capturedNotes = new NoteNG();

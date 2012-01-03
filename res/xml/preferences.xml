@@ -42,6 +42,9 @@
         android:defaultValue="internal" />
   </PreferenceCategory>
   <PreferenceCategory android:title="Other">
+    <Preference android:title="Clear DB"
+	    android:key="clearDB"
+	    android:summary="Cleans up DB"/>
     <PreferenceScreen
         android:key="Widgets"
         android:title="Widget Preferences"

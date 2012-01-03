@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 public abstract class SuperService<T, A extends ApplicationContext> extends
 		Service {
@@ -86,6 +87,16 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 				PendingIntent.getActivity(getApplicationContext(), 0,
 						new Intent(getApplicationContext(), received),
 						PendingIntent.FLAG_CANCEL_CURRENT));
+		startForeground(notificationID, notification);
+	}
+
+	public void raiseNotification(int icon, RemoteViews views,
+			Class<? extends Activity> received) {
+		notification.icon = icon;
+		notification.contentView = views;
+		notification.contentIntent = PendingIntent.getActivity(
+				getApplicationContext(), 0, new Intent(getApplicationContext(),
+						received), PendingIntent.FLAG_CANCEL_CURRENT);
 		startForeground(notificationID, notification);
 	}
 

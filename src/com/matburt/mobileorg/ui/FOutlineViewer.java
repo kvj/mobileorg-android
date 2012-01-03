@@ -10,14 +10,20 @@ import org.kvj.bravo7.SuperActivity;
 import org.kvj.bravo7.SuperService;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.markupartist.android.widget.ActionBar;
 import com.matburt.mobileorg.App;
@@ -27,6 +33,7 @@ import com.matburt.mobileorg.service.DataService;
 import com.matburt.mobileorg.service.DataWriter;
 import com.matburt.mobileorg.service.NoteNG;
 import com.matburt.mobileorg.service.OrgNGParser;
+import com.matburt.mobileorg.service.OrgNGParser.ParseProgressListener;
 import com.matburt.mobileorg.settings.SettingsActivity;
 import com.matburt.mobileorg.ui.OutlineViewerFragment.DataListener;
 
@@ -236,21 +243,57 @@ public class FOutlineViewer extends FragmentActivity implements
 		}
 	}
 
+	class ProgressInfo {
+		int progress1Total, progress1Pos, progress2Total, progress2Pos;
+		String message;
+	}
+
 	private void runSynchronizer() {
-		final ProgressDialog dialog = new ProgressDialog(this);
-		dialog.setCancelable(false);
-		dialog.setMessage("Updating...");
-		dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		dialog.show();
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setCancelable(false);
+		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+		View view = inflater.inflate(R.layout.progress_dialog,
+				left.getListView(), false);
+		final ProgressBar progress1 = (ProgressBar) view
+				.findViewById(R.id.progress_bar1);
+		final ProgressBar progress2 = (ProgressBar) view
+				.findViewById(R.id.progress_bar2);
+		final TextView progressText = (TextView) view
+				.findViewById(R.id.progress_text);
+		builder.setView(view);
+		final Dialog dialog = builder.show();
 		SuperService.powerLock(this);
-		new AsyncTask<Void, Void, String>() {
+		new AsyncTask<Void, ProgressInfo, String>() {
 
 			@Override
 			protected String doInBackground(Void... params) {
-				String error = controller.refresh();
+				String error = controller.refresh(new ParseProgressListener() {
+
+					@Override
+					public void progress(int total, int totalPos, int current,
+							int currentPos, String message) {
+						ProgressInfo info = new ProgressInfo();
+						info.progress1Total = total;
+						info.progress1Pos = totalPos;
+						info.progress2Total = current;
+						info.progress2Pos = currentPos;
+						info.message = message;
+						publishProgress(info);
+					}
+				});
 
 				return error;
 			}
+
+			@Override
+			public void onProgressUpdate(ProgressInfo... values) {
+				ProgressInfo info = values[0];
+				progress1.setMax(info.progress1Total);
+				progress1.setProgress(info.progress1Pos);
+				progress2.setMax(info.progress2Total);
+				progress2.setProgress(info.progress2Pos);
+				progressText.setText(info.message);
+			};
 
 			protected void onPostExecute(String result) {
 				dialog.dismiss();

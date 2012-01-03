@@ -11,10 +11,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import com.matburt.mobileorg.App;
 import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController.ControllerListener;
+import com.matburt.mobileorg.service.OrgNGParser.ParseProgressListener;
 import com.matburt.mobileorg.ui.FOutlineViewer;
 
 public class DataService extends SuperService<DataController, App> implements
@@ -87,7 +89,15 @@ public class DataService extends SuperService<DataController, App> implements
 			try {
 				new Thread() {
 					public void run() {
-						String error = controller.refresh();
+						String error = controller
+								.refresh(new ParseProgressListener() {
+
+									@Override
+									public void progress(int total,
+											int totalPos, int current,
+											int currentPos, String message) {
+									}
+								});
 						if (null != error) {
 							SuperActivity.notifyUser(DataService.this, error);
 						}
@@ -137,6 +147,18 @@ public class DataService extends SuperService<DataController, App> implements
 			}
 		}
 		raiseNotification(icon, text, FOutlineViewer.class);
+	}
+
+	@Override
+	public void progress(int total, int totalPos, int current, int currentPos,
+			String message) {
+		RemoteViews views = new RemoteViews(getPackageName(),
+				R.layout.progress_dialog_status);
+		views.setProgressBar(R.id.progress_bar1, total, totalPos, false);
+		views.setProgressBar(R.id.progress_bar2, current, currentPos, false);
+		views.setTextViewText(R.id.progress_text, message);
+		raiseNotification(R.drawable.logo_status_reload, views,
+				FOutlineViewer.class);
 	}
 
 }

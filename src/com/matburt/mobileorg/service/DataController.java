@@ -20,6 +20,7 @@ import android.database.DatabaseUtils.InsertHelper;
 import android.util.Log;
 
 import com.matburt.mobileorg.App;
+import com.matburt.mobileorg.service.OrgNGParser.ParseProgressListener;
 import com.matburt.mobileorg.synchronizers.DropboxSynchronizer;
 import com.matburt.mobileorg.synchronizers.SDCardSynchronizer;
 import com.matburt.mobileorg.synchronizers.Synchronizer;
@@ -27,7 +28,7 @@ import com.matburt.mobileorg.synchronizers.WebDAVSynchronizer;
 
 public class DataController {
 
-	public static interface ControllerListener {
+	public static interface ControllerListener extends ParseProgressListener {
 
 		public void dataModified();
 
@@ -244,7 +245,7 @@ public class DataController {
 		db.getDatabase().update(string, recValues, string2, strings);
 	}
 
-	public String refresh() {
+	public String refresh(final ParseProgressListener parseListener) {
 		if (inSync || inEdit > 0) {
 			return "Sync is in progress";
 		}
@@ -267,7 +268,21 @@ public class DataController {
 				return "No configuration";
 			}
 			OrgNGParser parser = new OrgNGParser(this, appSync);
-			String result = parser.parse();
+			String result = parser.parse(new ParseProgressListener() {
+
+				@Override
+				public void progress(int total, int totalPos, int current,
+						int currentPos, String message) {
+					if (null != listener) {
+						listener.progress(total, totalPos, current, currentPos,
+								message);
+					}
+					if (null != parseListener) {
+						parseListener.progress(total, totalPos, current,
+								currentPos, message);
+					}
+				}
+			});
 			success = result == null;
 			if (success) {
 				// Update all widgets
@@ -294,6 +309,8 @@ public class DataController {
 			if (full) {
 				db.getDatabase().delete("files", null, null);
 				db.getDatabase().delete("data", null, null);
+				db.getDatabase().delete("changes", null, null);
+				appContext.setStringPreference("prevSyncSession", "");
 			}
 			db.getDatabase().delete("todos", null, null);
 			db.getDatabase().delete("priorities", null, null);
