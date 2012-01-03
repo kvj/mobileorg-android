@@ -7,10 +7,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -47,87 +43,6 @@ public class WebDAVSynchronizer extends Synchronizer {
 		this.appSettings = PreferenceManager
 				.getDefaultSharedPreferences(parentContext
 						.getApplicationContext());
-	}
-
-	public void push() throws NotFoundException, ReportableError {
-		String urlActual = this.getRootUrl() + "mobileorg.org";
-		String storageMode = this.appSettings.getString("storageMode", "");
-		BufferedReader reader = this.getReadHandle("mobileorg.org");
-		String fileContents = "";
-		this.pushedStageFile = false;
-		String thisLine = "";
-
-		if (reader == null) {
-			return;
-		}
-
-		try {
-			while ((thisLine = reader.readLine()) != null) {
-				fileContents += thisLine + "\n";
-			}
-		} catch (java.io.IOException e) {
-			throw new ReportableError(r.getString(R.string.error_file_read,
-					"mobileorg.org"), e);
-		}
-
-		DefaultHttpClient httpC = this.createConnection(
-				this.appSettings.getString("webUser", ""),
-				this.appSettings.getString("webPass", ""));
-
-		this.appendUrlFile(urlActual, httpC, fileContents);
-
-		if (this.pushedStageFile) {
-			this.removeFile("mobileorg.org");
-		}
-	}
-
-	public boolean checkReady() {
-		if (this.appSettings.getString("webUrl", "").equals(""))
-			return false;
-		return true;
-	}
-
-	public void pull() throws NotFoundException, ReportableError {
-		Pattern checkUrl = Pattern.compile("http.*\\.(?:org|txt)$");
-		String url = this.appSettings.getString("webUrl", "");
-		if (!checkUrl.matcher(url).find()) {
-			throw new ReportableError(r.getString(R.string.error_bad_url, url),
-					null);
-		}
-
-		// Get the index org file
-		String masterStr = this.fetchOrgFileString(url);
-		if (masterStr.equals("")) {
-			throw new ReportableError(r.getString(
-					R.string.error_file_not_found, url), null);
-		}
-		HashMap<String, String> masterList = this
-				.getOrgFilesFromMaster(masterStr);
-		ArrayList<HashMap<String, Boolean>> todoLists = this
-				.getTodos(masterStr);
-		ArrayList<ArrayList<String>> priorityLists = this
-				.getPriorities(masterStr);
-		controller.setTodoList(todoLists);
-		controller.setPriorityList(priorityLists);
-		String urlActual = this.getRootUrl();
-
-		// Get checksums file
-		masterStr = this.fetchOrgFileString(urlActual + "checksums.dat");
-		Map<String, String> newChecksums = this.getChecksums(masterStr);
-		Map<String, String> oldChecksums = controller.getChecksums();
-
-		// Get other org files
-		for (String key : masterList.keySet()) {
-			if (oldChecksums.containsKey(key) && newChecksums.containsKey(key)
-					&& oldChecksums.get(key).equals(newChecksums.get(key)))
-				continue;
-			Log.d(LT,
-					"Fetching: " + key + ": " + urlActual + masterList.get(key));
-			this.fetchAndSaveOrgFile(urlActual + masterList.get(key),
-					masterList.get(key));
-			controller.addOrUpdateFile(masterList.get(key), key,
-					newChecksums.get(key));
-		}
 	}
 
 	public FileInfo fetchOrgFile(String orgUrl) throws NotFoundException,
