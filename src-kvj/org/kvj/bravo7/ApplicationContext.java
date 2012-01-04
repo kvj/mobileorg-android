@@ -81,6 +81,11 @@ abstract public class ApplicationContext extends Application {
 		return getPreferences().getString(name, defaultValue);
 	}
 
+	public String getStringPreference(int name, int defaultValue) {
+		return getPreferences().getString(getString(name),
+				getString(defaultValue));
+	}
+
 	public void setStringPreference(String name, String value) {
 		getPreferences().edit().putString(name, value).commit();
 	}

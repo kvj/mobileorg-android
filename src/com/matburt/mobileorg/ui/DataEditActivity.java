@@ -8,6 +8,9 @@ import org.kvj.bravo7.ControllerConnector;
 import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import org.kvj.bravo7.SuperActivity;
 
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -32,7 +35,21 @@ import com.matburt.mobileorg.service.OrgNGParser;
 public class DataEditActivity extends FragmentActivity implements
 		ControllerReceiver<DataController> {
 
+	public static final String DECRYPT_AND_RETURN = "org.thialfihar.android.apg.intent.DECRYPT_AND_RETURN";
+	public static final String ENCRYPT_AND_RETURN = "org.thialfihar.android.apg.intent.ENCRYPT_AND_RETURN";
+	public static final int DECRYPT_MESSAGE = 103;
+	public static final int ENCRYPT_MESSAGE = 104;
+
+	public static final String EXTRA_TEXT = "text";
+	public static final String EXTRA_DATA = "data";
+	public static final String EXTRA_DECRYPTED_MESSAGE = "decryptedMessage";
+	public static final String EXTRA_ENCRYPTED_MESSAGE = "encryptedMessage";
+
+	// private static final String mApgPackageName =
+	// "org.thialfihar.android.apg";
+
 	private static final String TAG = "DataEdit";
+	private static final String EXTRA_KEY_IDS = "encryptionKeyIds";
 	EditText edit = null;
 	ImageButton togglePanel = null;
 	Button save = null;
@@ -40,6 +57,7 @@ public class DataEditActivity extends FragmentActivity implements
 	DataController controller = null;
 	ControllerConnector<App, DataController, DataService> conn = null;
 	Bundle data = null;
+	int textIndent = 0;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -96,13 +114,54 @@ public class DataEditActivity extends FragmentActivity implements
 		conn.disconnectController();
 	}
 
+	private void startEncrypt(String text) {
+		Intent intent = new Intent(ENCRYPT_AND_RETURN);
+		intent.setType("text/plain");
+		try {
+			intent.putExtra(EXTRA_TEXT, text);
+			String cryptKey = App.getInstance().getStringPreference(
+					R.string.cryptKey, R.string.cryptKeyDefault);
+			if (!"".equals(cryptKey)) {
+				long keyLong = Long.parseLong(cryptKey, 16);
+				intent.putExtra(EXTRA_KEY_IDS, new long[] { keyLong });
+				// SuperActivity.notifyUser(this, "Key: " + cryptKey + ", "
+				// + keyLong);
+			}
+			startActivityForResult(intent, ENCRYPT_MESSAGE);
+		} catch (ActivityNotFoundException e) {
+			Log.e("MobileOrg", "Error: " + e.getMessage()
+					+ " while launching APG intent");
+		}
+	}
+
+	private boolean startDecrypt() {
+		String text = data.getString("text");
+		if (null == text) {
+			return false;
+		}
+		if (!text.startsWith("-----BEGIN")) {
+			return false;
+		}
+		Intent intent = new Intent(DECRYPT_AND_RETURN);
+		intent.setType("text/plain");
+		try {
+			Log.i(TAG, "Decrypt: " + data.getString("text"));
+			intent.putExtra(EXTRA_TEXT, data.getString("text"));
+			startActivityForResult(intent, DECRYPT_MESSAGE);
+			return true;
+		} catch (ActivityNotFoundException e) {
+			Log.e("MobileOrg", "Error: " + e.getMessage()
+					+ " while launching APG intent");
+		}
+		return false;
+	}
+
 	@Override
 	public void onController(DataController controller) {
 		if (null != this.controller) {
 			return;
 		}
 		controller.setInEdit(true);
-		this.controller = controller;
 		// Log.i(TAG, "Restoring editor state here " + data.getString("text"));
 		if (!"title".equals(data.getString("type"))) {
 			togglePanel.setVisibility(View.GONE);
@@ -110,11 +169,69 @@ public class DataEditActivity extends FragmentActivity implements
 		} else {
 			edit.setSingleLine(true);
 		}
-		edit.setText(data.getString("text"));
-		edit.setSelection(edit.getText().length());
 		panel.getView().setVisibility(
 				data.getBoolean("panel", false) ? View.VISIBLE : View.GONE);
 		panel.loadData(controller, data);
+		if (null == this.controller) {
+			this.controller = controller;
+			if (data.getBoolean("crypt", false)
+					&& !data.getBoolean("decrypted", false)) {
+				data.putBoolean("decrypted", true);
+				if (startDecrypt()) {
+					return;
+				}
+			}
+		}
+		edit.setText(data.getString("text"));
+		edit.setSelection(edit.getText().length());
+	}
+
+	@Override
+	protected void onActivityResult(int req, int res, Intent intent) {
+		super.onActivityResult(req, res, intent);
+		if (res != Activity.RESULT_OK) {
+			return;
+		}
+		if (DECRYPT_MESSAGE == req) {
+			String text = intent.getStringExtra(EXTRA_DECRYPTED_MESSAGE);
+			if (null == text) {
+				edit.setText("");
+				return;
+			}
+			String[] lines = text.split("\\n");
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < lines.length; i++) {
+				if (i == 0) {
+					int spaces = 0;
+					while (spaces < lines[i].length()
+							&& lines[i].charAt(spaces) == ' ') {
+						spaces++;
+					}
+					textIndent = spaces;
+				} else {
+					sb.append('\n');
+				}
+				sb.append(lines[i].trim());
+			}
+			edit.setText(sb.toString());
+			edit.setSelection(edit.getText().length());
+		}
+		if (ENCRYPT_MESSAGE == req) {
+			Log.i(TAG,
+					"Encrypted; "
+							+ intent.getStringExtra(EXTRA_ENCRYPTED_MESSAGE));
+			int noteID = data.getInt("noteID", -1);
+			String error = editEntry(noteID, "*** Encrypted (modified) ***",
+					intent.getStringExtra(EXTRA_ENCRYPTED_MESSAGE));
+			if (null != error) {
+				SuperActivity.notifyUser(this, error);
+				return;
+			}
+			controller.notifyChangesHaveBeenMade();
+			setResult(RESULT_OK);
+			finish();
+		}
+
 	}
 
 	@Override
@@ -247,7 +364,7 @@ public class DataEditActivity extends FragmentActivity implements
 		return true;
 	}
 
-	private String editEntry(int noteID, String text) {
+	private String editEntry(int noteID, String text, String raw) {
 		NoteNG change = controller.findNoteByID(data.getInt("changeID", -1));
 		NoteNG note = controller.findNoteByID(noteID);
 		if (null == note || null == change) {
@@ -318,6 +435,9 @@ public class DataEditActivity extends FragmentActivity implements
 			updateBefore = true;
 		}
 		note.raw = note.title;
+		if (null != raw) {
+			note.raw = raw;
+		}
 		if (!controller.updateData(note, "title", note.title)
 				|| !controller.updateData(note, "raw", note.raw)) {
 			return "DB error";
@@ -350,11 +470,26 @@ public class DataEditActivity extends FragmentActivity implements
 		}
 		int noteID = data.getInt("noteID", -1);
 		String error = null;
+		if (data.getBoolean("crypt", false)) {
+			String[] lines = text.split("\\n");
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < lines.length; i++) {
+				if (i > 0) {
+					sb.append('\n');
+				}
+				for (int j = 0; j < textIndent; j++) {
+					sb.append(' ');
+				}
+				sb.append(lines[i].trim());
+			}
+			startEncrypt(sb.toString());
+			return;
+		}
 		if (-1 == noteID) {
 			// New note - create
 			error = createNewEntry(text);
 		} else {
-			error = editEntry(noteID, text);
+			error = editEntry(noteID, text, null);
 		}
 		if (null != error) {
 			SuperActivity.notifyUser(this, error);

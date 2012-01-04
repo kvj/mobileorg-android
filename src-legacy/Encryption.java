@@ -46,7 +46,6 @@ class Encryption
         }
     }
 
-
     
     public static boolean isAvailable(Context context)
     {

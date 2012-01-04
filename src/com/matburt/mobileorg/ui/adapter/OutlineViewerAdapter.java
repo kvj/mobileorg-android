@@ -296,7 +296,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 				}
 			}
 			String subListIndent = sw.toString();
-			String[] lines = note.raw.split("\\n");
+			String[] lines = note.title.split("\\n");
 			for (int i = 0; i < lines.length; i++) {
 				if (i == 0) {
 					if (null != note.before) {

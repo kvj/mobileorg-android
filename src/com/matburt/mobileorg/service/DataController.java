@@ -20,6 +20,7 @@ import android.database.DatabaseUtils.InsertHelper;
 import android.util.Log;
 
 import com.matburt.mobileorg.App;
+import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.OrgNGParser.ParseProgressListener;
 import com.matburt.mobileorg.synchronizers.DropboxSynchronizer;
 import com.matburt.mobileorg.synchronizers.SDCardSynchronizer;
@@ -540,7 +541,16 @@ public class DataController {
 		note.before = c.getString(11);
 		note.after = c.getString(12);
 		note.raw = c.getString(13);
+		note.parentID = safeInt(c, 14);
 		return note;
+	}
+
+	private Integer safeInt(Cursor c, int index) {
+		try {
+			return Integer.parseInt(c.getString(index));
+		} catch (Exception e) {
+		}
+		return null;
 	}
 
 	static String[] dataFields = new String[] { "id", "indent", "editable",
@@ -1099,6 +1109,59 @@ public class DataController {
 			e.printStackTrace();
 		}
 		return new ArrayList<NoteNG>();
+	}
+
+	public String getCryptTag() {
+		String cryptTag = ":"
+				+ appContext.getStringPreference(R.string.cryptTag,
+						R.string.cryptTagDefault) + ":";
+		return cryptTag;
+	}
+
+	public String getID(NoteNG note) {
+		if (null != note.originalID) {
+			return "id:" + note.originalID;
+		}
+		if (null != note.noteID) {
+			return "id:" + note.noteID;
+		}
+		if (null == db) {
+			return null;
+		}
+		String olp = note.title;
+		Integer parent = note.parentID;
+		// Log.i(TAG, "Start olp: " + olp + ", " + parent);
+		try {
+			while (null != parent) {
+				NoteNG n = findNoteByID(parent);
+				// Log.i(TAG, "Olp: " + olp + ", " + n);
+				if (null == n) {
+					parent = null;
+				} else {
+					if (NoteNG.TYPE_FILE.equals(n.type)) {
+						// Log.i(TAG, "Olp: " + olp + "file");
+						Cursor c = db.getDatabase().query("files",
+								new String[] { "file" }, "data_id=?",
+								new String[] { n.id.toString() }, null, null,
+								null);
+						if (c.moveToFirst()) {
+							olp = c.getString(0) + ":" + olp;
+							// Log.i(TAG, "Olp - file: " + olp);
+						}
+						c.close();
+						parent = null;
+						continue;
+					}
+					olp = n.title + "/" + olp;
+					parent = n.parentID;
+					// Log.i(TAG, "Olp - normal: " + olp + ", " + parent);
+				}
+			}
+			return "olp:" + olp;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }

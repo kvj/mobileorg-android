@@ -41,6 +41,20 @@
         android:entryValues="@array/storageModesVals"
         android:defaultValue="internal" />
   </PreferenceCategory>
+  <PreferenceCategory android:title="Encryption">
+    <EditTextPreference
+        android:name="Crypt tag"
+        android:summary="Enter crypt tag"
+        android:title="Crypt tag"
+        android:key="@string/cryptTag"
+        android:defaultValue="@string/cryptTagDefault"/>
+    <EditTextPreference
+        android:name="Crypt key ID"
+        android:summary="Enter crypt key ID"
+        android:title="Crypt key ID"
+        android:key="@string/cryptKey"
+        android:defaultValue="@string/cryptKeyDefault"/>
+    </PreferenceCategory>
   <PreferenceCategory android:title="Other">
     <Preference android:title="Clear DB"
 	    android:key="clearDB"

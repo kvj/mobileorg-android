@@ -5,7 +5,11 @@
   <string name="autoSyncInterval">autoSyncInterval</string>
   <string name="autoSyncIntervalDefault">3600000</string>
   <string name="doAutoSync">doAutoSync</string>
-  
+  <string name="cryptTag">cryptTag</string>
+  <string name="cryptTagDefault">crypt</string>
+  <string name="cryptKey">cryptKey</string>
+  <string name="cryptKeyDefault"></string>
+      
   <string name="searchLabel">MobileOrg</string>
   <string name="searchHint">Search outline, text</string>
   <string name="searchDesctiption">Outline, text</string>

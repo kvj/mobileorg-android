@@ -1,5 +1,7 @@
 package org.kvj.bravo7;
 
+import java.util.Date;
+
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -83,6 +85,7 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 	public void raiseNotification(int icon, String text,
 			Class<? extends Activity> received) {
 		notification.icon = icon;
+		notification.when = new Date().getTime();
 		notification.setLatestEventInfo(getApplicationContext(), title, text,
 				PendingIntent.getActivity(getApplicationContext(), 0,
 						new Intent(getApplicationContext(), received),
@@ -94,6 +97,7 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 			Class<? extends Activity> received) {
 		notification.icon = icon;
 		notification.contentView = views;
+		notification.when = new Date().getTime();
 		notification.contentIntent = PendingIntent.getActivity(
 				getApplicationContext(), 0, new Intent(getApplicationContext(),
 						received), PendingIntent.FLAG_CANCEL_CURRENT);

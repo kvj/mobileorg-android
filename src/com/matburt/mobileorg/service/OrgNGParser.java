@@ -1,6 +1,7 @@
 package com.matburt.mobileorg.service;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.regex.Pattern;
 
 import android.util.Log;
 
+import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.synchronizers.ReportableError;
 import com.matburt.mobileorg.synchronizers.Synchronizer;
 import com.matburt.mobileorg.synchronizers.Synchronizer.FileInfo;
@@ -75,32 +77,56 @@ public class OrgNGParser {
 		boolean sharpOnly = false;
 	}
 
+	private String readLine(BufferedReader reader) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		int ch = -1;
+		boolean hasChars = false;
+		while ((ch = reader.read()) != -1) {
+			hasChars = true;
+			if (0xd == ch) {
+				continue;
+			}
+			if (0xa == ch) {
+				return sb.toString();
+			}
+			sb.append((char) ch);
+		}
+		if (!hasChars) {
+			return null;
+		}
+		return sb.toString();
+	}
+
 	public String parseFile(String name, ItemListener listener, NoteNG _parent,
 			ParseFileOptions options) {
 		try {
+			String cryptTag = ":"
+					+ controller.appContext.getStringPreference(
+							R.string.cryptTag, R.string.cryptTagDefault) + ":";
 			FileInfo fileInfo = synchronizer.fetchOrgFile(name);
 			BufferedReader reader = fileInfo.reader;
 			String line = null;
 			Marker marker = Marker.Unknown;
 			Stack<NoteNG> parents = new Stack<NoteNG>();
 			NoteNG parent = _parent;
-			StringBuilder drawerBuilder = new StringBuilder();
+			StringBuilder textBuffer = new StringBuilder();
 			Map<String, String> drawerValues = new HashMap<String, String>();
-			NoteNG listNote = null;
+			NoteNG pendingNote = null;
 			Stack<NoteNG> listParents = new Stack<NoteNG>();
 			int totalSize = (int) fileInfo.size;
 			int partSize = totalSize / 10;
 			int lastAnnouncedPart = -1;
 			int bytesRead = 0;
-			while ((line = reader.readLine()) != null) {
+			boolean encrypted = false;
+			while ((line = readLine(reader)) != null) {
 				bytesRead += line.getBytes("utf-8").length + 1;
 				if (lastAnnouncedPart != bytesRead / partSize) {
 					listener.onProgress(totalSize, bytesRead);
 					lastAnnouncedPart = bytesRead / partSize;
 				}
 				if (marker == Marker.Drawer) {
-					drawerBuilder.append('\n');
-					drawerBuilder.append(line.trim());
+					textBuffer.append('\n');
+					textBuffer.append(line.trim());
 					Matcher m = drawerPattern.matcher(line);
 					if (m.find()) {
 						if ("END".equals(m.group(1).trim())) {
@@ -108,7 +134,7 @@ public class OrgNGParser {
 							// Log.i(TAG,
 							// "Drawer OK: "+drawerBuilder+", "+drawerValues);
 							NoteNG newNote = new NoteNG();
-							newNote.raw = drawerBuilder.toString();
+							newNote.raw = textBuffer.toString();
 							newNote.type = NoteNG.TYPE_DRAWER;
 							newNote.fileID = parent.fileID;
 							newNote.parentID = parent.id;
@@ -135,6 +161,7 @@ public class OrgNGParser {
 				}
 				Matcher m = outlinePattern.matcher(line);
 				if (m.find()) {
+					encrypted = false;
 					// Log.i(TAG, "Outline: "+line);
 					marker = Marker.Outline;
 					// debugExp(m);
@@ -182,28 +209,44 @@ public class OrgNGParser {
 						note.before = m2.group(6);
 						note.after = m2.group(8);
 					}
+					note.raw = note.title;
 					controller.addData(note);
 					parents.push(parent);
 					parent = note;
-					if (null != listNote) {
-						controller.addData(listNote);
-						listNote = null;
+					if (null != pendingNote) {
+						controller.addData(pendingNote);
+						pendingNote = null;
 					}
 					listener.onItem(note);
+					if (NoteNG.TYPE_OUTLINE.equals(note.type)
+							&& null != note.tags
+							&& note.tags.contains(cryptTag)) {
+						encrypted = true;
+						pendingNote = new NoteNG();
+						pendingNote.fileID = parent.fileID;
+						pendingNote.parentID = parent.id;
+						pendingNote.raw = "";
+						pendingNote.title = "*** Encrypted ***";
+						pendingNote.type = NoteNG.TYPE_TEXT;
+					}
 					// Log.i(TAG,
 					// "Note["+note.parentID+"] ["+note.title+"] ["+note.before+"] ["+note.after+"]");
+					continue;
+				}
+				if (encrypted) {
+					pendingNote.raw += line + '\n';
 					continue;
 				}
 				m = drawerPattern.matcher(line);
 				if (m.find()) {
 					marker = Marker.Drawer;
-					drawerBuilder = new StringBuilder();
+					textBuffer = new StringBuilder();
 					drawerValues.clear();
-					drawerBuilder.append(line.trim());
+					textBuffer.append(line.trim());
 					// Log.i(TAG, "Start drawer: "+m.group(1));
-					if (null != listNote) {
-						controller.addData(listNote);
-						listNote = null;
+					if (null != pendingNote) {
+						controller.addData(pendingNote);
+						pendingNote = null;
 					}
 					continue;
 				}
@@ -212,18 +255,18 @@ public class OrgNGParser {
 					// Log.i(TAG, "Control: "+m+", "+line);
 					// 1 TODO 3 TODO DONE
 					// debugExp(m);
-					if (null != listNote) {
-						controller.addData(listNote);
-						listNote = null;
+					if (null != pendingNote) {
+						controller.addData(pendingNote);
+						pendingNote = null;
 					}
 					listener.onSharpLine(m.group(1), m.group(3));
 					continue;
 				}
 				m = paramPattern.matcher(line);
 				if (m.find()) {
-					if (null != listNote) {
-						controller.addData(listNote);
-						listNote = null;
+					if (null != pendingNote) {
+						controller.addData(pendingNote);
+						pendingNote = null;
 					}
 					NoteNG n = new NoteNG();
 					n.editable = false;
@@ -240,8 +283,8 @@ public class OrgNGParser {
 				if (m.find()) {
 					// 1: spaces 2: -/+/*/1. 4: Text
 					// debugExp(m);
-					if (null != listNote) {
-						controller.addData(listNote);
+					if (null != pendingNote) {
+						controller.addData(pendingNote);
 					}
 					int newIndent = m.group(1).replace("\t", "        ")
 							.length();
@@ -252,40 +295,40 @@ public class OrgNGParser {
 					n.title = m.group(4).trim();
 					n.type = NoteNG.TYPE_SUBLIST;
 					n.indent = newIndent;
-					if (null != listNote) {
+					if (null != pendingNote) {
 						// Item before was sublist
-						while (listNote.indent >= newIndent) {
+						while (pendingNote.indent >= newIndent) {
 							// Same level or left
 							if (listParents.isEmpty()) {
 								// No more list parents
-								listNote = parent;
+								pendingNote = parent;
 								break;
 							}
-							listNote = listParents.pop();
+							pendingNote = listParents.pop();
 						}
 					} else {
 						listParents.clear();
 						// First list item in outline
-						listNote = parent;
+						pendingNote = parent;
 					}
-					n.fileID = listNote.fileID;
-					n.parentID = listNote.id;
+					n.fileID = pendingNote.fileID;
+					n.parentID = pendingNote.id;
 					// Log.i(TAG,
 					// "Next sublist: "+listNote.type+", "+newIndent+", "+
 					// listNote.indent+", "+
 					// n.title+" - "+listNote.title+", "+
 					// listParents.size()+", "+listNote.id);
-					if (NoteNG.TYPE_SUBLIST == listNote.type) {
+					if (NoteNG.TYPE_SUBLIST == pendingNote.type) {
 						// Sub item - save to parents
-						listParents.push(listNote);
+						listParents.push(pendingNote);
 					}
-					listNote = n;
+					pendingNote = n;
 				} else {
 					if (options.agenda && "".equals(line)) {
 						// Empty line - step up
-						if (null != listNote) {
-							controller.addData(listNote);
-							listNote = null;
+						if (null != pendingNote) {
+							controller.addData(pendingNote);
+							pendingNote = null;
 						}
 						if (!parents.empty()) {
 							parent = parents.pop();
@@ -293,8 +336,9 @@ public class OrgNGParser {
 						marker = Marker.Outline;
 						continue;
 					}
-					if (null != listNote) {
-						listNote.raw += '\n' + line.trim();
+					if (null != pendingNote) {
+						pendingNote.raw += '\n' + line.trim();
+						pendingNote.title += '\n' + line.trim();
 					} else {
 						NoteNG n = new NoteNG();
 						n.editable = true;
@@ -307,9 +351,9 @@ public class OrgNGParser {
 					}
 				}
 			}
-			if (null != listNote) {
-				controller.addData(listNote);
-				listNote = null;
+			if (null != pendingNote) {
+				controller.addData(pendingNote);
+				pendingNote = null;
 			}
 		} catch (Exception e) {
 			Log.e(TAG, "Error parsing file:", e);

@@ -184,7 +184,7 @@ public class FOutlineViewer extends FragmentActivity implements
 
 	private String changeCheckbox(NoteNG note) {
 		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
-		if (null == nearest || null == nearest.noteID) {
+		if (null == nearest) {
 			return "Outline is readonly";
 		}
 		Matcher m = OrgNGParser.checkboxPattern.matcher(note.title);
@@ -374,7 +374,7 @@ public class FOutlineViewer extends FragmentActivity implements
 		NoteNG note = currentFragment.adapter.getClicked();
 		// Current selected
 		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
-		if (null == nearest || null == nearest.noteID) {
+		if (null == nearest) {
 			SuperActivity.notifyUser(this, "Outline is readonly");
 			return;
 		}
@@ -413,10 +413,10 @@ public class FOutlineViewer extends FragmentActivity implements
 			SuperActivity.notifyUser(this, "Selected item is readonly");
 			return;
 		}
-		if (null == nearest.noteID) {
-			SuperActivity.notifyUser(this, "Selected item is readonly");
-			return;
-		}
+		// if (null == nearest.noteID) {
+		// SuperActivity.notifyUser(this, "Selected item is readonly");
+		// return;
+		// }
 		Intent dispIntent = new Intent(this, DataEditActivity.class);
 		int editType = ADD_NOTE;
 		if (null == type) {
@@ -442,6 +442,10 @@ public class FOutlineViewer extends FragmentActivity implements
 				dispIntent.putExtra("before", note.before);
 			}
 			if (NoteNG.TYPE_TEXT.equals(note.type)) {
+				if (null != nearest.tags
+						&& nearest.tags.contains(controller.getCryptTag())) {
+					dispIntent.putExtra("crypt", true);
+				}
 				dispIntent.putExtra("text", note.raw);
 				dispIntent.putExtra("type", "text");
 			}
@@ -495,6 +499,10 @@ public class FOutlineViewer extends FragmentActivity implements
 					canAdd = true;
 					canEdit = true;
 					canRemove = false;
+					if (null != current.tags
+							&& current.tags.contains(controller.getCryptTag())) {
+						canAdd = false;
+					}
 					if (NoteNG.TYPE_TEXT.equals(current.type)
 							|| NoteNG.TYPE_SUBLIST.equals(current.type)) {
 						canRemove = true;
@@ -547,6 +555,9 @@ public class FOutlineViewer extends FragmentActivity implements
 	@Override
 	protected void onActivityResult(int req, int res, Intent intent) {
 		super.onActivityResult(req, res, intent);
+		if (null == currentFragment) {
+			return;
+		}
 		Log.i(TAG, "onActivityResult: " + req + ", " + res + ", "
 				+ currentFragment.getSelectedItemPosition());
 		if (res != Activity.RESULT_OK) {
