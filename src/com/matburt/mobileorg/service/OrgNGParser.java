@@ -45,9 +45,9 @@ public class OrgNGParser {
 	// ***: 1, 2: DONE, 3: [#A], 4: A, 5: title
 	private static Pattern controlPattern = Pattern
 			.compile("^\\#\\+([A-Z_-]+)(\\:\\s(.*))?$");
-	// [[file:main.org][Main]] file: 3, main.org: 4 main.org: Main: 5
-	private static Pattern linkPattern = Pattern
-			.compile("\\[((\\[([a-zA-Z_-]+)\\:(.*)\\]\\[(.+)\\])|(\\[(.*)\\]))\\]");
+	// [[file:main.org][Main]] file: 2, main.org: 3 main.org: Main: 5
+	public static Pattern linkPattern = Pattern
+			.compile("\\[\\[((([a-zA-Z_-]+)\\:)?(.+?))\\](\\[(.+)\\])?\\]");// ((\\[(.*)\\]\\[(.+)\\])|(\\[(.*)\\]))
 	public static Pattern listPattern = Pattern.compile(
 			"^(\\s*)(\\+|\\-|\\*|(\\d+\\.))\\s(.+)$", Pattern.DOTALL);
 
@@ -489,7 +489,7 @@ public class OrgNGParser {
 						return;
 					}
 					// debugExp(m);
-					note.title = m.group(5);
+					note.title = m.group(6);
 					if (!controller.updateData(note, "type", NoteNG.TYPE_FILE)) {
 						return;
 					}
@@ -498,7 +498,7 @@ public class OrgNGParser {
 					}
 					fileIndex++;
 					listener.progress(filesTotal, fileIndex, 1, 0,
-							"Processing " + m.group(5) + "...");
+							"Processing " + m.group(6) + "...");
 					String fileName = m.group(4);
 					Integer fileID = controller.addFile(fileName,
 							sums.get(fileName), note.id);

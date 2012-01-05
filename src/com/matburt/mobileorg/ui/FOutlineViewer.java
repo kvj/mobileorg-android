@@ -2,6 +2,8 @@ package com.matburt.mobileorg.ui;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 
 import org.kvj.bravo7.ControllerConnector;
@@ -14,10 +16,13 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -51,7 +56,13 @@ public class FOutlineViewer extends FragmentActivity implements
 	Menu menu = null;
 	OutlineViewerFragment currentFragment = null;
 	int currentSelectedPosition = -1;
+	int currentMenuPosition = -1;
 	ActionBar actionBar = null;
+	List<MenuItemInfo> contextMenu = new ArrayList<MenuItemInfo>();
+
+	private static final int MENU_LINK = 0;
+	private static final int MENU_OPEN = 1;
+	private static final int MENU_CHECKBOX = 2;
 
 	@Override
 	protected void onCreate(Bundle savedState) {
@@ -157,6 +168,7 @@ public class FOutlineViewer extends FragmentActivity implements
 	}
 
 	private void openNote(NoteNG note) {
+		Log.i(TAG, "Open note: " + note.title);
 		if (null != note.originalID) {
 			NoteNG n = controller.findNoteByNoteID(note.originalID);
 			if (null != n) {
@@ -164,7 +176,9 @@ public class FOutlineViewer extends FragmentActivity implements
 			}
 		}
 		if (null == note.noteID) {
-			if (!NoteNG.TYPE_AGENDA.equals(note.type)) {
+			if (NoteNG.TYPE_TEXT.equals(note.type)
+					|| NoteNG.TYPE_SUBLIST.equals(note.type)) {
+				// runEditCurrent(null, note);
 				SuperActivity.notifyUser(this, "Invalid outline");
 				return;
 			}
@@ -224,22 +238,103 @@ public class FOutlineViewer extends FragmentActivity implements
 		return null;
 	}
 
+	class MenuItemInfo {
+		int type = 0;
+		String title = "";
+		Object data = null;
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		menu.clear();
+		for (int i = 0; i < contextMenu.size(); i++) {
+			MenuItemInfo info = contextMenu.get(i);
+			menu.add(0, i, i, info.title);
+		}
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		Log.i(TAG, "Clicked on " + item.getItemId());
+		if (item.getItemId() < contextMenu.size()) {
+			onContextMenu(contextMenu.get(item.getItemId()));
+		}
+		return true;
+	}
+
+	private void onContextMenu(MenuItemInfo item) {
+		if (null == currentFragment) {
+			return;
+		}
+		NoteNG note = currentFragment.adapter.getItem(currentMenuPosition);
+		if (null == note) {
+			return;
+		}
+		switch (item.type) {
+		case MENU_OPEN:
+			openNote(note);
+			break;
+		case MENU_CHECKBOX:
+			String error = changeCheckbox(note);
+			if (null != error) {
+				SuperActivity.notifyUser(this, error);
+				break;
+			}
+			currentFragment.adapter.notifyChanged();
+			controller.notifyChangesHaveBeenMade();
+			break;
+		case MENU_LINK:
+			openLink((String) item.data);
+			break;
+		}
+	}
+
+	private void openLink(String link) {
+		if (!link.startsWith("http://") && !link.startsWith("https://")) {
+			link = "http://" + link;
+		}
+		Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+		startActivity(browserIntent);
+	}
+
 	@Override
 	public void onOpen(OutlineViewerFragment fragment, int position) {
+		currentFragment = fragment;
+		currentMenuPosition = position;
 		NoteNG note = fragment.adapter.getItem(position);
+		contextMenu.clear();
 		if (null != note) {
+			Matcher m = OrgNGParser.linkPattern.matcher(note.title);
+			while (m.find()) {
+				// OrgNGParser.debugExp(m);
+				MenuItemInfo menu = new MenuItemInfo();
+				menu.type = MENU_LINK;
+				menu.title = "Open " + m.group(1);
+				menu.data = m.group(1);
+				contextMenu.add(menu);
+			}
 			if (note.checkboxState != NoteNG.CBOX_NONE) {
 				// Have checkbox
-				String error = changeCheckbox(note);
-				if (null != error) {
-					SuperActivity.notifyUser(this, error);
-					return;
-				}
-				currentFragment.adapter.notifyChanged();
-				controller.notifyChangesHaveBeenMade();
-				return;
+				MenuItemInfo menu = new MenuItemInfo();
+				menu.type = MENU_CHECKBOX;
+				menu.title = "Change checkbox state";
+				contextMenu.add(menu);
+			} else {
+				MenuItemInfo menu = new MenuItemInfo();
+				menu.type = MENU_OPEN;
+				menu.title = "Open outline";
+				contextMenu.add(menu);
+				// openNote(note);
 			}
-			openNote(note);
+			if (1 == contextMenu.size()) {
+				onContextMenu(contextMenu.get(0));
+			}
+			if (contextMenu.size() > 1) {// Show menu
+				registerForContextMenu(fragment.getListView());
+				openContextMenu(fragment.getListView());
+				unregisterForContextMenu(fragment.getListView());
+			}
 		}
 	}
 
@@ -295,6 +390,7 @@ public class FOutlineViewer extends FragmentActivity implements
 				progressText.setText(info.message);
 			};
 
+			@Override
 			protected void onPostExecute(String result) {
 				dialog.dismiss();
 				if (null != result) {
@@ -319,10 +415,10 @@ public class FOutlineViewer extends FragmentActivity implements
 			runSynchronizer();
 			break;
 		case R.id.menu_add_text:
-			runEditCurrent(NoteNG.TYPE_TEXT);
+			runEditCurrent(NoteNG.TYPE_TEXT, null);
 			break;
 		case R.id.menu_edit:
-			runEditCurrent(null);
+			runEditCurrent(null, null);
 			break;
 		case R.id.menu_search:
 			onSearchRequested();
@@ -386,15 +482,20 @@ public class FOutlineViewer extends FragmentActivity implements
 		refresh(currentFragment.adapter.findItem(note.parentNote.id), false);
 	}
 
-	private void runEditCurrent(String type) {
+	private void runEditCurrent(String type, NoteNG note) {
 		// Log.i(TAG,
 		// "current: "+currentFragment+", "+currentFragment.adapter.clicked);
-		if (null == currentFragment
-				|| null == currentFragment.adapter.getClicked()) {
+		if (null == currentFragment) {
 			SuperActivity.notifyUser(this, "No item selected");
 			return;
 		}
-		NoteNG note = currentFragment.adapter.getClicked();
+		if (null == note) {
+			if (null == currentFragment.adapter.getClicked()) {
+				SuperActivity.notifyUser(this, "No item selected");
+				return;
+			}
+			note = currentFragment.adapter.getClicked();
+		}
 		// Current selected
 		NoteNG nearest = currentFragment.adapter.findNearestNote(note);
 		// Nearest note with ID - we'll put it's new body to DB
@@ -410,6 +511,11 @@ public class FOutlineViewer extends FragmentActivity implements
 		Log.i(TAG, "Add/Edit: " + note.title + ", " + note.noteID + ", "
 				+ nearest);
 		if (null == nearest) {
+			SuperActivity.notifyUser(this, "Selected item is readonly");
+			return;
+		}
+		if (NoteNG.TYPE_AGENDA.equals(nearest.type)
+				|| NoteNG.TYPE_FILE.equals(nearest.type)) {
 			SuperActivity.notifyUser(this, "Selected item is readonly");
 			return;
 		}

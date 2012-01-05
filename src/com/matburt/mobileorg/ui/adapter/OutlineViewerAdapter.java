@@ -62,9 +62,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 		wide = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 		DateTextFormatter dateTextFormatter = new DateTextFormatter();
 		CheckBoxFormatter checkBoxFormatter = new CheckBoxFormatter();
-		textFormatter = new PlainTextFormatter(dateTextFormatter);
+		LinkFormatter linkFormatter = new LinkFormatter();
+		textFormatter = new PlainTextFormatter(dateTextFormatter, linkFormatter);
 		sublistFormatter = new PlainTextFormatter(checkBoxFormatter,
-				dateTextFormatter);
+				dateTextFormatter, linkFormatter);
 	}
 
 	private static final String TAG = "OutlineView";
@@ -97,6 +98,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	public static void addSpan(SpannableStringBuilder buffer, String text,
 			Object... span) {
+		if (null == text) {
+			return;
+		}
 		int start = buffer.length();
 		int end = start + text.length();
 		buffer.append(text);
@@ -115,6 +119,26 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 		void format(NoteNG note, SpannableStringBuilder sb, Matcher m,
 				String text, boolean selected);
+	}
+
+	class LinkFormatter implements TextFormatter {
+
+		@Override
+		public Pattern getPattern(NoteNG note, boolean selected) {
+			return OrgNGParser.linkPattern;
+		}
+
+		@Override
+		public void format(NoteNG note, SpannableStringBuilder sb, Matcher m,
+				String text, boolean selected) {
+			String title = m.group(6);
+			if (null == title) {
+				title = m.group(1);
+			}
+			addSpan(sb, title, new ForegroundColorSpan(theme.cdLPurple),
+					new UnderlineSpan());
+		}
+
 	}
 
 	class CheckBoxFormatter implements TextFormatter {
@@ -191,7 +215,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 		private void writePlainText(NoteNG note, SpannableStringBuilder sb,
 				int defColor, String text, int index, boolean selected) {
-			if (index >= formatters.length) {
+			if (index >= formatters.length || null == text) {
 				addSpan(sb, text, new ForegroundColorSpan(defColor));
 				return;
 			}
