@@ -35,14 +35,16 @@
         android:icon="@drawable/remove"/>
 
     <item
+        android:id="@+id/menu_search"
+        android:title="Search"
+        android:showAsAction="ifRoom|collapseActionView"
+        android:actionViewClass="android.widget.SearchView"
+        android:icon="@drawable/search"/>
+
+    <item
         android:id="@+id/menu_options"
         android:title="Options"
         android:icon="@drawable/options"/>
 
-    <item
-        android:id="@+id/menu_search"
-        android:title="Search"
-        android:showAsAction="ifRoom"
-        android:icon="@drawable/edit"/>
 
 </menu>

@@ -1058,11 +1058,11 @@ public class DataController {
 			whereParams.add(NoteNG.TYPE_SUBLIST);
 			for (int i = 0; i < titleSearches.size(); i++) {
 				String part = titleSearches.get(i);
-				where.append(" and raw like ?");
+				where.append(" and title like ?");
 				whereParams.add("%" + part + "%");
 			}
 			c = db.getDatabase().query("data",
-					new String[] { "parent_id", "raw" }, where.toString(),
+					new String[] { "parent_id", "title" }, where.toString(),
 					whereParams.toArray(new String[0]), null, null, "id");
 			// Log.i(TAG,
 			// "Search2: " + where + ", " + whereParams + ", "

@@ -114,7 +114,7 @@ public class DataEditActivity extends FragmentActivity implements
 		conn.disconnectController();
 	}
 
-	private void startEncrypt(String text) {
+	private boolean startEncrypt(String text) {
 		Intent intent = new Intent(ENCRYPT_AND_RETURN);
 		intent.setType("text/plain");
 		try {
@@ -128,10 +128,12 @@ public class DataEditActivity extends FragmentActivity implements
 				// + keyLong);
 			}
 			startActivityForResult(intent, ENCRYPT_MESSAGE);
+			return true;
 		} catch (ActivityNotFoundException e) {
 			Log.e("MobileOrg", "Error: " + e.getMessage()
 					+ " while launching APG intent");
 		}
+		return false;
 	}
 
 	private boolean startDecrypt() {
@@ -482,8 +484,9 @@ public class DataEditActivity extends FragmentActivity implements
 				}
 				sb.append(lines[i].trim());
 			}
-			startEncrypt(sb.toString());
-			return;
+			if (startEncrypt(sb.toString())) {
+				return;
+			}
 		}
 		if (-1 == noteID) {
 			// New note - create
