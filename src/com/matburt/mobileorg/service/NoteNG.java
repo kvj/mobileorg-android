@@ -40,6 +40,7 @@ public class NoteNG {
 	public String before = null;
 	public String after = null;
 	public Integer fileID = null;
+	public String habit = null;
 	public NoteNG parentNote = null;
 	public int checkboxState = CBOX_NONE;
 

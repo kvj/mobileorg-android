@@ -14,12 +14,12 @@
                 android:title="Custom Preference" />
 	 <CheckBoxPreference
 		 android:key="@string/doAutoSync"
-		 android:title="@string/title_do_auto_sync"
-		 android:summary="@string/summary_do_auto_sync" />
+		 android:title="Auto sync"
+		 android:summary="Auto sync MobileOrg files" />
 	 <ListPreference
 		 android:key="@string/autoSyncInterval"
-		 android:title="@string/title_auto_sync_interval"
-		 android:summary="@string/summary_auto_sync_interval"
+		 android:title="Auto sync interval"
+		 android:summary="How often auto sync"
 		 android:entries="@array/syncIntervals"
 		 android:entryValues="@array/syncIntervalsVals"
 		 android:defaultValue="@string/autoSyncIntervalDefault"

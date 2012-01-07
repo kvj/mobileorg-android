@@ -20,7 +20,12 @@
         android:theme="@style/Theme.ActionBar" >
         <meta-data android:name="android.app.default_searchable"
                android:value=".ui.SearchActivity" />
-        <service android:name=".service.DataService" />
+        <service android:name=".service.DataService" 
+            android:exported="true">
+            <intent-filter>
+        		<action android:name="com.matburt.mobileorg.SYNC" />
+      		</intent-filter>
+        </service>
 
         <receiver android:name=".service.DataAlarmReceiver" />
         <receiver android:name=".MobileOrgStartupIntentReceiver" >

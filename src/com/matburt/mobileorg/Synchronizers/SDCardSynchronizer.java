@@ -12,7 +12,6 @@ import android.content.res.Resources.NotFoundException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 
 public class SDCardSynchronizer extends Synchronizer {
@@ -38,8 +37,7 @@ public class SDCardSynchronizer extends Synchronizer {
 			fWriter.flush();
 			fWriter.close();
 		} catch (java.io.IOException e) {
-			throw new ReportableError(r.getString(R.string.error_file_write,
-					path), e);
+			throw new ReportableError("Error writing file", e);
 
 		}
 	}
@@ -63,8 +61,7 @@ public class SDCardSynchronizer extends Synchronizer {
 				fileBuffer += fileLine + "\n";
 			}
 		} catch (java.io.IOException e) {
-			throw new ReportableError(r.getString(R.string.error_file_read,
-					filePath), e);
+			throw new ReportableError("Error reading file", e);
 		}
 		return fileBuffer;
 	}

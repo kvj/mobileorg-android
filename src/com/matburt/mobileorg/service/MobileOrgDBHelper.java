@@ -5,10 +5,10 @@ import org.kvj.bravo7.DBHelper;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
-public class MobileOrgDBHelper extends DBHelper{
+public class MobileOrgDBHelper extends DBHelper {
 
 	public MobileOrgDBHelper(Context context, String path) {
-		super(context, path, 6);
+		super(context, path, 7);
 	}
 
 	@Override
@@ -16,22 +16,19 @@ public class MobileOrgDBHelper extends DBHelper{
 		switch (version) {
 		case 1:
 			db.execSQL("CREATE TABLE IF NOT EXISTS files"
-                    + " (file VARCHAR, name VARCHAR,"
-                    + " checksum VARCHAR)");
+					+ " (file VARCHAR, name VARCHAR," + " checksum VARCHAR)");
 			db.execSQL("CREATE TABLE IF NOT EXISTS todos"
-                    + " (tdgroup int, name VARCHAR,"
-                    + " isdone INT)");
+					+ " (tdgroup int, name VARCHAR," + " isdone INT)");
 			db.execSQL("CREATE TABLE IF NOT EXISTS priorities"
-                    + " (tdgroup int, name VARCHAR,"
-                    + " isdone INT)");
+					+ " (tdgroup int, name VARCHAR," + " isdone INT)");
 			break;
 		case 2:
 			db.execSQL("drop table if exists files");
 			db.execSQL("create table if not exists files (id integer primary key autoincrement, file text, checksum text)");
-			db.execSQL("create table if not exists data (id integer primary key autoincrement, parent_id integer, " +
-					"indent integer default 0, editable integer default 0, note_id text, original_id text, " +
-					"type text, priority text, todo text, title text, raw text, tags text, " +
-					"level integer default 0, before text, after text)");
+			db.execSQL("create table if not exists data (id integer primary key autoincrement, parent_id integer, "
+					+ "indent integer default 0, editable integer default 0, note_id text, original_id text, "
+					+ "type text, priority text, todo text, title text, raw text, tags text, "
+					+ "level integer default 0, before text, after text)");
 			break;
 		case 3:
 			db.execSQL("alter table data add file_id integer");
@@ -47,6 +44,9 @@ public class MobileOrgDBHelper extends DBHelper{
 			break;
 		case 6:
 			db.execSQL("alter table files add data_id integer");
+			break;
+		case 7:
+			db.execSQL("alter table data add habit text");
 			break;
 		}
 	}

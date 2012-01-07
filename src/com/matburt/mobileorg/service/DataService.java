@@ -82,12 +82,11 @@ public class DataService extends SuperService<DataController, App> implements
 		} catch (Exception e) {
 		}
 		Log.i(TAG, "Handle intent: " + message);
-		if (null == message) {
-			return Service.START_STICKY;
-		}
-		if ("sync".equals(message)) {
+		if ("sync".equals(message)
+				|| "com.matburt.mobileorg.SYNC".equals(intent.getAction())) {
 			try {
 				new Thread() {
+					@Override
 					public void run() {
 						String error = controller
 								.refresh(new ParseProgressListener() {
@@ -105,7 +104,7 @@ public class DataService extends SuperService<DataController, App> implements
 					};
 				}.start();
 			} catch (Exception e) {
-				// TODO: handle exception
+				e.printStackTrace();
 			}
 		}
 		return Service.START_STICKY;

@@ -10,7 +10,6 @@ import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
 import android.text.TextUtils;
 
-import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 
 abstract public class Synchronizer {
@@ -48,8 +47,7 @@ abstract public class Synchronizer {
 				fileContents += thisLine + "\n";
 			}
 		} catch (java.io.IOException e) {
-			throw new ReportableError(r.getString(R.string.error_file_read,
-					orgPath), e);
+			throw new ReportableError("Error reading file", e);
 		}
 		return fileContents;
 	}

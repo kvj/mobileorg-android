@@ -485,6 +485,7 @@ public class DataController {
 			values.put("type", note.type);
 			values.put("editable", note.editable ? 1 : 0);
 			values.put("level", note.level);
+			values.put("habit", note.habit);
 			int result = (int) dataInsertHelper.insert(values);
 			note.id = result;
 			if (!haveTransaction) {
@@ -542,6 +543,7 @@ public class DataController {
 		note.after = c.getString(12);
 		note.raw = c.getString(13);
 		note.parentID = safeInt(c, 14);
+		note.habit = c.getString(15);
 		return note;
 	}
 
@@ -555,7 +557,7 @@ public class DataController {
 
 	static String[] dataFields = new String[] { "id", "indent", "editable",
 			"note_id", "original_id", "type", "priority", "todo", "title",
-			"tags", "level", "before", "after", "raw", "parent_id" };
+			"tags", "level", "before", "after", "raw", "parent_id", "habit" };
 
 	public List<NoteNG> getData(Integer parent) {
 		if (null == db) {

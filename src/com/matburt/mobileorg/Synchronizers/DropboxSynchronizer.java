@@ -15,7 +15,6 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.DropboxInputStream;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 
 public class DropboxSynchronizer extends Synchronizer {
@@ -47,6 +46,7 @@ public class DropboxSynchronizer extends Synchronizer {
 		return "/" + _indexPath;
 	}
 
+	@Override
 	public FileInfo fetchOrgFile(String orgPath) throws NotFoundException,
 			ReportableError {
 		Log.i(LT, "Downloading " + orgPath);
@@ -54,12 +54,10 @@ public class DropboxSynchronizer extends Synchronizer {
 		try {
 			fd = api.getFileStream(getPath() + orgPath, null);
 		} catch (Exception e) {
-			throw new ReportableError(r.getString(R.string.dropbox_fetch_error,
-					orgPath, e.toString()), null);
+			throw new ReportableError("Error downloading file", null);
 		}
 		if (fd == null) {
-			throw new ReportableError(r.getString(R.string.dropbox_fetch_error,
-					orgPath, "Error downloading file"), null);
+			throw new ReportableError("Error downloading file", null);
 		}
 		BufferedReader reader = new BufferedReader(new InputStreamReader(fd),
 				20000);

@@ -29,8 +29,9 @@ public class OrgNGParser {
 	private static Pattern outlinePattern = Pattern.compile("^(\\*+\\s+)"
 			+ "([A-Z][A-Z0-9]*\\s+)?" + "(\\[\\#([A-Z])\\]\\s+)?" + "(.+)$");
 	private static Pattern outlineTailPattern = Pattern
-			.compile("((((\\:\\w+)+\\:)|\\:)+)?" + "(<before>(.*)</before>)?"
-					+ "(<after>(.*)</after>)?" + "$");
+			.compile("(\\s[\\s\\!\\*]+)?" + "((((\\:\\w+)+\\:)|\\:)+)?"
+					+ "(<before>(.*)</before>)?" + "(<after>(.*)</after>)?"
+					+ "$");
 	public static Pattern noteRefPattern = Pattern
 			.compile("^((e\\d*|a)\\:\\:)?(index|id|olp)\\:(.+)$");
 	public static Pattern checkboxPattern = Pattern
@@ -200,14 +201,18 @@ public class OrgNGParser {
 						// before: 6, after: 8
 						StringBuffer buffer = new StringBuffer();
 						m2.appendReplacement(buffer, "");
-						note.tags = m2.group(1);
+						if (null != m2.group(1)) {
+							String habit = m2.group(1).trim();
+							note.habit = habit;
+						}
+						note.tags = m2.group(2);
 						if (":".equals(note.tags)) {
 							note.tags = null;
 							buffer.append(":");
 						}
 						note.title = buffer.toString().trim();
-						note.before = m2.group(6);
-						note.after = m2.group(8);
+						note.before = m2.group(7);
+						note.after = m2.group(9);
 					}
 					note.raw = note.title;
 					controller.addData(note);
@@ -340,14 +345,13 @@ public class OrgNGParser {
 						pendingNote.raw += '\n' + line.trim();
 						pendingNote.title += '\n' + line.trim();
 					} else {
-						NoteNG n = new NoteNG();
-						n.editable = true;
-						n.fileID = parent.fileID;
-						n.parentID = parent.id;
-						n.raw = line.trim();
-						n.title = line.trim();
-						n.type = NoteNG.TYPE_TEXT;
-						controller.addData(n);
+						pendingNote = new NoteNG();
+						pendingNote.editable = true;
+						pendingNote.fileID = parent.fileID;
+						pendingNote.parentID = parent.id;
+						pendingNote.raw = line.trim();
+						pendingNote.title = line.trim();
+						pendingNote.type = NoteNG.TYPE_TEXT;
 					}
 				}
 			}
@@ -530,7 +534,7 @@ public class OrgNGParser {
 						@Override
 						public void onProgress(int total, int pos) {
 							listener.progress(filesTotal, fileIndex, total,
-									pos, "Reading " + m.group(5) + "...");
+									pos, "Reading " + m.group(6) + "...");
 						}
 					}, n, options);
 					if (null != error) {

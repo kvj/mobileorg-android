@@ -30,7 +30,6 @@ import android.content.res.Resources.NotFoundException;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.matburt.mobileorg.R;
 import com.matburt.mobileorg.service.DataController;
 
 public class WebDAVSynchronizer extends Synchronizer {
@@ -45,6 +44,7 @@ public class WebDAVSynchronizer extends Synchronizer {
 						.getApplicationContext());
 	}
 
+	@Override
 	public FileInfo fetchOrgFile(String orgUrl) throws NotFoundException,
 			ReportableError {
 		DefaultHttpClient httpC = this.createConnection(
@@ -54,8 +54,7 @@ public class WebDAVSynchronizer extends Synchronizer {
 		try {
 			mainFile = this.getUrlStream(orgUrl, httpC);
 		} catch (IllegalArgumentException e) {
-			throw new ReportableError(r.getString(R.string.error_invalid_url,
-					orgUrl), e);
+			throw new ReportableError("Invalid URL", e);
 		}
 		if (mainFile == null) {
 			return null;
@@ -68,8 +67,7 @@ public class WebDAVSynchronizer extends Synchronizer {
 		try {
 			manageUrl = new URL(this.appSettings.getString("webUrl", ""));
 		} catch (MalformedURLException e) {
-			throw new ReportableError(r.getString(R.string.error_bad_url,
-					(manageUrl == null) ? "" : manageUrl.toString()), e);
+			throw new ReportableError("Invalid URL", e);
 		}
 
 		String urlPath = manageUrl.getPath();
@@ -119,25 +117,21 @@ public class WebDAVSynchronizer extends Synchronizer {
 			HttpResponse res = httpClient.execute(new HttpGet(url));
 			StatusLine status = res.getStatusLine();
 			if (status.getStatusCode() == 401) {
-				throw new ReportableError(r.getString(
-						R.string.error_url_fetch_detail, url,
-						"Invalid username or password"), null);
+				throw new ReportableError("Invalid username or password", null);
 			}
 			if (status.getStatusCode() == 404) {
 				return null;
 			}
 
 			if (status.getStatusCode() < 200 || status.getStatusCode() > 299) {
-				throw new ReportableError(r.getString(
-						R.string.error_url_fetch_detail, url,
-						status.getReasonPhrase()), null);
+				throw new ReportableError("Error: " + status.getReasonPhrase(),
+						null);
 			}
 			return res.getEntity().getContent();
 		} catch (IOException e) {
 			Log.e(LT, e.toString());
 			Log.w(LT, "Failed to get URL");
-			throw new ReportableError(r.getString(
-					R.string.error_url_fetch_detail, url, e.getMessage()), e);
+			throw new ReportableError("Error downloading file", e);
 		}
 	}
 
@@ -151,21 +145,17 @@ public class WebDAVSynchronizer extends Synchronizer {
 			int statCode = statResp.getStatusCode();
 			if (statCode >= 400) {
 				this.pushedStageFile = false;
-				throw new ReportableError(r.getString(
-						R.string.error_url_put_detail, url,
-						"Server returned code: " + Integer.toString(statCode)),
-						null);
+				throw new ReportableError("Server returned code: "
+						+ Integer.toString(statCode), null);
 			} else {
 				this.pushedStageFile = true;
 			}
 
 			httpClient.getConnectionManager().shutdown();
 		} catch (UnsupportedEncodingException e) {
-			throw new ReportableError(r.getString(
-					R.string.error_unsupported_encoding, "mobileorg.org"), e);
+			throw new ReportableError("Unsupported encoding", e);
 		} catch (IOException e) {
-			throw new ReportableError(r.getString(R.string.error_url_put, url),
-					e);
+			throw new ReportableError("IO error", e);
 		}
 	}
 
