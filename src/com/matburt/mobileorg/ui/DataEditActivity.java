@@ -11,6 +11,7 @@ import org.kvj.bravo7.SuperActivity;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.Intent.ShortcutIconResource;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -58,6 +59,7 @@ public class DataEditActivity extends FragmentActivity implements
 	ControllerConnector<App, DataController, DataService> conn = null;
 	Bundle data = null;
 	int textIndent = 0;
+	boolean createShortcut = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -78,10 +80,17 @@ public class DataEditActivity extends FragmentActivity implements
 		panel = (DataEditOptionsPanel) getSupportFragmentManager()
 				.findFragmentById(R.id.data_edit_panel);
 		if (null == savedInstanceState) {
+			// Log.i(TAG, "Edit activity: " + getIntent().getAction() + ", "
+			// + getIntent().getData() + ", " + getIntent().getExtras());
 			data = getIntent().getExtras();
+			if ("android.intent.action.CREATE_SHORTCUT".equals(getIntent()
+					.getAction())) {
+				createShortcut = true;
+			}
 			if (null == data) {
 				data = new Bundle();
 				data.putString("type", "title");
+				data.putBoolean("panel", createShortcut);
 			}
 		} else {
 			data = savedInstanceState;
@@ -465,7 +474,37 @@ public class DataEditActivity extends FragmentActivity implements
 	private void onSave() {
 		panel.saveData(data);
 		String text = edit.getText().toString().trim();
-		Log.i(TAG, "onSave [" + text + "] [" + edit.getText() + "]");
+		// Log.i(TAG, "onSave [" + text + "] [" + edit.getText() + "]");
+		if (createShortcut) {
+			String title = null;
+			if (null == title) {
+				title = data.getString("todo");
+			}
+			if (null == title && !":".equals(data.getString("tags"))) {
+				title = data.getString("tags");
+			}
+			if (null == title && !"".equals(text)) {
+				title = text;
+			}
+			if (null == title) {
+				title = "Untitled";
+			}
+			Intent intent = new Intent();
+
+			Intent launchIntent = new Intent(this, DataEditActivity.class);
+			launchIntent.putExtras(data);
+			launchIntent.putExtra("panel", true);
+
+			intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
+			intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
+			ShortcutIconResource icon = Intent.ShortcutIconResource
+					.fromContext(this, R.drawable.widget_capture);
+			intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, icon);
+
+			setResult(RESULT_OK, intent);
+			finish();
+			return;
+		}
 		if ("".equals(text)) {
 			SuperActivity.notifyUser(this, "Text is empty");
 			return;
