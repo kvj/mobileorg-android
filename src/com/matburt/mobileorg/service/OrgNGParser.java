@@ -300,7 +300,8 @@ public class OrgNGParser {
 					n.title = m.group(4).trim();
 					n.type = NoteNG.TYPE_SUBLIST;
 					n.indent = newIndent;
-					if (null != pendingNote) {
+					if (null != pendingNote
+							&& NoteNG.TYPE_SUBLIST.equals(pendingNote.type)) {
 						// Item before was sublist
 						while (pendingNote.indent >= newIndent) {
 							// Same level or left

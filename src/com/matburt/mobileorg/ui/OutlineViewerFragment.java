@@ -22,6 +22,8 @@ public class OutlineViewerFragment extends ListFragment {
 
 		public void onSelect(OutlineViewerFragment fragment, int position);
 
+		public boolean onKeyPress(int keyCode, OutlineViewerFragment fragment,
+				int position);
 	}
 
 	private static final String TAG = null;
@@ -81,15 +83,14 @@ public class OutlineViewerFragment extends ListFragment {
 			return false;
 		}
 		int pos = getSelectedItemPosition();
-		// if (KeyEvent.KEYCODE_SPACE == keyCode && -1 != pos) {
-		// adapter.collapseExpand(pos, true);
-		// return true;
-		// }
 		if (KeyEvent.KEYCODE_SPACE == keyCode && -1 != pos) {
 			if (null != dataListener) {
 				dataListener.onOpen(this, pos);
 				return true;
 			}
+		}
+		if (null != dataListener && -1 != pos) {
+			return dataListener.onKeyPress(keyCode, this, pos);
 		}
 		return false;
 	}

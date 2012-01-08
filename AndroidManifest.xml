@@ -39,7 +39,8 @@
         <activity
             android:configChanges="keyboardHidden"
             android:label="MobileOrg"
-            android:name=".ui.FOutlineViewer" >
+            android:name=".ui.FOutlineViewer"
+            android:uiOptions="splitActionBarWhenNarrow">
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

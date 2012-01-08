@@ -16,6 +16,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,6 +24,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -344,6 +346,7 @@ public class FOutlineViewer extends FragmentActivity implements
 	}
 
 	private void runSynchronizer() {
+		setRequestedOrientation(getResources().getConfiguration().orientation);
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setCancelable(false);
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -403,6 +406,7 @@ public class FOutlineViewer extends FragmentActivity implements
 				if (null != right) {
 					right.reload();
 				}
+				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 			};
 
 		}.execute();
@@ -675,5 +679,40 @@ public class FOutlineViewer extends FragmentActivity implements
 		if (EDIT_NOTE == req) {
 			refresh(currentSelectedPosition, true);
 		}
+	}
+
+	@Override
+	public boolean onKeyPress(int keyCode, OutlineViewerFragment fragment,
+			int position) {
+		if (KeyEvent.KEYCODE_C == keyCode) {
+			fragment.setSelected(position);
+			runCapture();
+			return true;
+		}
+		if (KeyEvent.KEYCODE_Z == keyCode) {
+			fragment.setSelected(position);
+			runEditCurrent(NoteNG.TYPE_SUBLIST, null);
+			return true;
+		}
+		if (KeyEvent.KEYCODE_T == keyCode) {
+			fragment.setSelected(position);
+			runEditCurrent(NoteNG.TYPE_TEXT, null);
+			return true;
+		}
+		if (KeyEvent.KEYCODE_R == keyCode) {
+			fragment.setSelected(position);
+			runRemoveCurrent();
+			return true;
+		}
+		if (KeyEvent.KEYCODE_E == keyCode) {
+			fragment.setSelected(position);
+			runEditCurrent(null, null);
+			return true;
+		}
+		if (KeyEvent.KEYCODE_S == keyCode) {
+			runSynchronizer();
+			return true;
+		}
+		return false;
 	}
 }

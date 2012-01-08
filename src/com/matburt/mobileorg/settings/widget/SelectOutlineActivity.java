@@ -107,4 +107,10 @@ public class SelectOutlineActivity extends FragmentActivity implements
 	@Override
 	public void onSelect(OutlineViewerFragment fragment, int position) {
 	}
+
+	@Override
+	public boolean onKeyPress(int keyCode, OutlineViewerFragment fragment,
+			int position) {
+		return false;
+	}
 }

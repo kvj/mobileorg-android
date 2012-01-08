@@ -43,7 +43,7 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 
 			lockStatic = mgr.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
 					LOCK_NAME);
-			lockStatic.setReferenceCounted(true);
+			lockStatic.setReferenceCounted(false);
 		}
 		return (lockStatic);
 	}

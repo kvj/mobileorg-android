@@ -85,6 +85,7 @@ public class DataService extends SuperService<DataController, App> implements
 		if ("sync".equals(message)
 				|| "com.matburt.mobileorg.SYNC".equals(intent.getAction())) {
 			try {
+				powerLock(this);
 				new Thread() {
 					@Override
 					public void run() {

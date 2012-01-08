@@ -9,12 +9,15 @@ import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import org.kvj.bravo7.SuperActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Intent.ShortcutIconResource;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -92,6 +95,10 @@ public class DataEditActivity extends FragmentActivity implements
 				data.putString("type", "title");
 				data.putBoolean("panel", createShortcut);
 			}
+			data.putString("_text", data.getString("text"));
+			data.putString("_todo", data.getString("todo"));
+			data.putString("_priority", data.getString("priority"));
+			data.putString("_tags", data.getString("tags"));
 		} else {
 			data = savedInstanceState;
 		}
@@ -224,6 +231,7 @@ public class DataEditActivity extends FragmentActivity implements
 				}
 				sb.append(lines[i].trim());
 			}
+			data.putString("_text", sb.toString());
 			edit.setText(sb.toString());
 			edit.setSelection(edit.getText().length());
 		}
@@ -365,11 +373,20 @@ public class DataEditActivity extends FragmentActivity implements
 		return true;
 	}
 
-	private boolean stringChanged(String s1, String s2) {
-		if (null == s1 && null == s2) {
+	private boolean stringChanged(String s1, String s2, String... emptyStrings) {
+		boolean s1empty = s1 == null || "".equals(s1.trim());
+		boolean s2empty = s2 == null || "".equals(s2.trim());
+		if (s1empty && s2empty) {
 			return false;
 		}
-		if (null != s1 && null != s2) {
+		if (s1empty && !s2empty && null != emptyStrings) {
+			for (int i = 0; i < emptyStrings.length; i++) {
+				if (emptyStrings[i].equals(s2.trim())) {
+					return false;
+				}
+			}
+		}
+		if (!s1empty && !s2empty) {
 			return !s1.trim().equals(s2.trim());
 		}
 		return true;
@@ -556,5 +573,39 @@ public class DataEditActivity extends FragmentActivity implements
 			break;
 		}
 		return true;
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+			panel.saveData(data);
+			String text = edit.getText().toString().trim();
+			boolean changed = false;
+			changed |= stringChanged(data.getString("_text"), text);
+			changed |= stringChanged(data.getString("_todo"),
+					data.getString("todo"));
+			changed |= stringChanged(data.getString("_priority"),
+					data.getString("priority"));
+			changed |= stringChanged(data.getString("_tags"),
+					data.getString("tags"), ":");
+			if (changed) {
+				new AlertDialog.Builder(this)
+						.setIcon(android.R.drawable.ic_dialog_alert)
+						.setTitle("Discard changes?")
+						.setMessage("Are you sure want to discard changes?")
+						.setPositiveButton("Yes",
+								new DialogInterface.OnClickListener() {
+
+									@Override
+									public void onClick(DialogInterface dialog,
+											int which) {
+										DataEditActivity.this.finish();
+									}
+
+								}).setNegativeButton("No", null).show();
+				return true;
+			}
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 }
