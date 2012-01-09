@@ -31,5 +31,5 @@ Features:
 
 Screenshots:
 
-![Main window](src-img/ss/main.png)
-![Capture window](src-img/ss/capture.png)
+![Main window](mobileorg-android/raw/master/src-img/ss/main.png)
+![Capture window](mobileorg-android/raw/master/src-img/ss/capture.png)
