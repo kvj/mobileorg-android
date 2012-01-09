@@ -2,11 +2,13 @@
 
 Originally based on [MobileOrg](https://github.com/matburt/mobileorg-android), the source code is 90% new.
 
-<a href="http://market.android.com/details?id=com.matburt.mobileorg.ng">
+<a href="http://market.android.com/details?id=com.matburt.mobileorg.ng" style="cursor: pointer;">
   <img src="http://www.android.com/images/brand/60_avail_market_logo2.png"
        alt="Available in Android Market" />
 </a>
 
+<link href="https://plus.google.com/101518077347551839865" rel="publisher" />
+<a href="https://plus.google.com/101518077347551839865?prsrc=3" style="text-decoration:none;">Project's page on Google+ <img src="https://ssl.gstatic.com/images/icons/gplus-16.png" alt="" style="border:0;width:16px;height:16px; align: left;"/></a>
 Supported platforms: Android 1.6 - 4.0
 
 Features:
