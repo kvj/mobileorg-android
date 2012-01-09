@@ -9,6 +9,7 @@ Originally based on [MobileOrg](https://github.com/matburt/mobileorg-android), t
 
 <link href="https://plus.google.com/101518077347551839865" rel="publisher" />
 <a href="https://plus.google.com/101518077347551839865?prsrc=3" style="text-decoration:none;">Project's page on Google+ <img src="https://ssl.gstatic.com/images/icons/gplus-16.png" alt="" style="border:0;width:16px;height:16px; align: left;"/></a>
+<br/>
 Supported platforms: Android 1.6 - 4.0
 
 Features:
