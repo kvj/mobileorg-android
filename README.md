@@ -1,6 +1,6 @@
 ## Another implementation of MobileOrg client for Android ##
 
-Originally based on [[https://github.com/matburt/mobileorg-android]], the source code is 90% new.
+Originally based on [MobileOrg](https://github.com/matburt/mobileorg-android), the source code is 90% new.
 
 Supported platforms: Android 1.6 - 4.0
 
@@ -31,5 +31,13 @@ Features:
 
 Screenshots:
 
-![Main window](mobileorg-android/raw/master/src-img/ss/main.png)
-![Capture window](mobileorg-android/raw/master/src-img/ss/capture.png)
+![Main window](mobileorg-android/raw/master/src-img/ss-small/main.png)![Capture window](mobileorg-android/raw/master/src-img/ss-small/capture.png)
+![Sync progress](mobileorg-android/raw/master/src-img/ss-small/sync.png)![Search](mobileorg-android/raw/master/src-img/ss-small/search.png)
+![Widget preferences](mobileorg-android/raw/master/src-img/ss-small/widget-pref.png)![Outline widget](mobileorg-android/raw/master/src-img/ss-small/widget.png)
+![Tablet](mobileorg-android/raw/master/src-img/ss-small/tablet.png)
+
+Limitation!
+
+Currently only Dropbox sync has been tested, if you want/need support of other sync types, you are welcome to help
+
+License remains same, GPLv2
