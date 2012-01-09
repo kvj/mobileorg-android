@@ -3,6 +3,6 @@
     android:minWidth="180dp"
     android:minHeight="180dp"
     android:updatePeriodMillis="0"
-    android:configure="com.matburt.mobileorg.settings.widget.OutlineWidgetConfig"
+    android:configure="com.matburt.mobileorg.ng.settings.widget.OutlineWidgetConfig"
     android:initialLayout="@layout/outline_widget"
     android:resizeMode="horizontal|vertical"/>

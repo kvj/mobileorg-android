@@ -23,7 +23,7 @@
         android:title="Use long format"/>
     <PreferenceCategory android:title="Outlines to display" >
 
-        <com.matburt.mobileorg.settings.widget.OutlineListPreference android:key="items" />
+        <com.matburt.mobileorg.ng.settings.widget.OutlineListPreference android:key="items" />
     </PreferenceCategory>
 
 </PreferenceScreen>

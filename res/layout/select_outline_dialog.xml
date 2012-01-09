@@ -5,7 +5,7 @@
     android:orientation="vertical" >
     <fragment 
         android:id="@+id/select_outline_list"
-        class="com.matburt.mobileorg.ui.OutlineViewerFragment"
+        class="com.matburt.mobileorg.ng.ui.OutlineViewerFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"/>

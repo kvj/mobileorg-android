@@ -3,5 +3,5 @@
     android:minWidth="40dp"
     android:minHeight="40dp"
     android:updatePeriodMillis="0"
-    android:configure="com.matburt.mobileorg.settings.widget.CaptureWidgetConfig"
+    android:configure="com.matburt.mobileorg.ng.settings.widget.CaptureWidgetConfig"
     android:initialLayout="@layout/capture_widget"/>

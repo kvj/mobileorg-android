@@ -20,7 +20,7 @@
 		        android:layout_width="50dp"
 		        android:layout_height="50dp"
 		        android:src="@drawable/more"/>
-			<fragment class="com.matburt.mobileorg.ui.DataEditOptionsPanel"
+			<fragment class="com.matburt.mobileorg.ng.ui.DataEditOptionsPanel"
 			    android:id="@+id/data_edit_panel"
 			    android:layout_width="300dp"
 			    android:layout_height="wrap_content"

@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-    <fragment class="com.matburt.mobileorg.ui.DataEditOptionsPanel"
+    <fragment class="com.matburt.mobileorg.ng.ui.DataEditOptionsPanel"
 	    android:id="@+id/data_edit_panel"
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"/>
