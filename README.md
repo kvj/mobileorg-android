@@ -31,9 +31,12 @@ Features:
 
 Screenshots:
 
-![Main window](mobileorg-android/raw/master/src-img/ss-small/main.png)![Capture window](mobileorg-android/raw/master/src-img/ss-small/capture.png)
-![Sync progress](mobileorg-android/raw/master/src-img/ss-small/sync.png)![Search](mobileorg-android/raw/master/src-img/ss-small/search.png)
-![Widget preferences](mobileorg-android/raw/master/src-img/ss-small/widget-pref.png)![Outline widget](mobileorg-android/raw/master/src-img/ss-small/widget.png)
+![Main window](mobileorg-android/raw/master/src-img/ss-small/main.png) 
+![Capture window](mobileorg-android/raw/master/src-img/ss-small/capture.png) 
+![Sync progress](mobileorg-android/raw/master/src-img/ss-small/sync.png) 
+![Search](mobileorg-android/raw/master/src-img/ss-small/search.png) 
+![Widget preferences](mobileorg-android/raw/master/src-img/ss-small/widget_pref.png) 
+![Outline widget](mobileorg-android/raw/master/src-img/ss-small/widget.png) 
 ![Tablet](mobileorg-android/raw/master/src-img/ss-small/tablet.png)
 
 Limitation!
