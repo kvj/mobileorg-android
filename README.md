@@ -2,6 +2,11 @@
 
 Originally based on [MobileOrg](https://github.com/matburt/mobileorg-android), the source code is 90% new.
 
+<a href="http://market.android.com/details?id=com.matburt.mobileorg.ng">
+  <img src="http://www.android.com/images/brand/60_avail_market_logo2.png"
+       alt="Available in Android Market" />
+</a>
+
 Supported platforms: Android 1.6 - 4.0
 
 Features:
