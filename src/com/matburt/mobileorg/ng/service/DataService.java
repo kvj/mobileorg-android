@@ -83,7 +83,8 @@ public class DataService extends SuperService<DataController, App> implements
 		}
 		Log.i(TAG, "Handle intent: " + message);
 		if ("sync".equals(message)
-				|| "com.matburt.mobileorg.ng.SYNC".equals(intent.getAction())) {
+				|| (null != intent && "com.matburt.mobileorg.ng.SYNC"
+						.equals(intent.getAction()))) {
 			try {
 				powerLock(this);
 				new Thread() {
