@@ -1,5 +1,6 @@
 package com.matburt.mobileorg.ng.settings;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.kvj.bravo7.ControllerConnector;
@@ -7,7 +8,6 @@ import org.kvj.bravo7.ControllerConnector.ControllerReceiver;
 import org.kvj.bravo7.SuperActivity;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageItemInfo;
@@ -24,6 +24,8 @@ import com.matburt.mobileorg.ng.service.DataService;
 
 public class SettingsActivity extends PreferenceActivity implements
 		ControllerReceiver<DataController> {
+
+	private HashMap<String, Intent> syncIntents = new HashMap<String, Intent>();
 
 	ControllerConnector<App, DataController, DataService> cc = null;
 	private DataController controller = null;
@@ -68,6 +70,23 @@ public class SettingsActivity extends PreferenceActivity implements
 						return false;
 					}
 				});
+		findPreference("syncConfig").setOnPreferenceClickListener(
+				new OnPreferenceClickListener() {
+
+					@Override
+					public boolean onPreferenceClick(Preference preference) {
+						String synchroMode = getPreferenceManager()
+								.getSharedPreferences().getString("syncSource",
+										"");
+						if (syncIntents.containsKey(synchroMode)) {
+							startActivity(syncIntents.get(synchroMode));
+						} else {
+							SuperActivity.notifyUser(SettingsActivity.this,
+									"No synchronizer set");
+						}
+						return true;
+					}
+				});
 	}
 
 	@Override
@@ -85,8 +104,9 @@ public class SettingsActivity extends PreferenceActivity implements
 	}
 
 	protected void populateSyncSources() {
+		syncIntents.clear();
 		List<PackageItemInfo> synchronizers = App
-				.discoverSynchronizerPlugins((Context) this);
+				.discoverSynchronizerPlugins(this);
 
 		ListPreference syncSource = (ListPreference) findPreference("syncSource");
 
@@ -108,20 +128,19 @@ public class SettingsActivity extends PreferenceActivity implements
 			entries[offset] = info.nonLocalizedLabel;
 			values[offset] = info.packageName;
 			Intent syncIntent = new Intent(this, SettingsActivity.class);
-			SynchronizerPreferences.syncIntents.put(info.packageName,
-					syncIntent);
+			syncIntents.put(info.packageName, syncIntent);
 			offset++;
 		}
 
 		// fill in the Intents for built-in synchronizers
 		Intent synchroIntent = new Intent(this, WebDAVSettingsActivity.class);
-		SynchronizerPreferences.syncIntents.put("webdav", synchroIntent);
+		syncIntents.put("webdav", synchroIntent);
 
 		synchroIntent = new Intent(this, SDCardSettingsActivity.class);
-		SynchronizerPreferences.syncIntents.put("sdcard", synchroIntent);
+		syncIntents.put("sdcard", synchroIntent);
 
 		synchroIntent = new Intent(this, DropboxSettingsActivity.class);
-		SynchronizerPreferences.syncIntents.put("dropbox", synchroIntent);
+		syncIntents.put("dropbox", synchroIntent);
 
 		// populate the sync source list with updated data
 		syncSource.setEntries(entries);

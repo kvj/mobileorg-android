@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.matburt.mobileorg.ng"
-    android:versionCode="2"
-    android:versionName="0.0.1" >
+    android:versionCode="3"
+    android:versionName="0.0.2" >
 
     <uses-sdk
         android:minSdkVersion="4"
-        android:targetSdkVersion="14" />
+        android:targetSdkVersion="15" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -139,7 +139,9 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-
+        <activity android:label="File Dialog" android:name="com.lamerman.FileDialog">
+        </activity>
+            
         <receiver
             android:label="MobileOrg outline"
 			android:name=".widgets.OutlineWidget" >

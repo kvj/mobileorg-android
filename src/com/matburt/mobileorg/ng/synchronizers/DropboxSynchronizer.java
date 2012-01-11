@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources.NotFoundException;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.DropboxInputStream;
@@ -18,28 +17,18 @@ import com.dropbox.client2.android.AndroidAuthSession;
 import com.matburt.mobileorg.ng.service.DataController;
 
 public class DropboxSynchronizer extends Synchronizer {
-	private boolean hasToken = false;
 
 	private AndroidAuthSession session = null;
 	private DropboxAPI<AndroidAuthSession> api = null;
 
 	public DropboxSynchronizer(Context parentContext, DataController controller) {
+		super(parentContext, controller);
 		session = DropboxAuthActivity.createSession(parentContext);
 		api = new DropboxAPI<AndroidAuthSession>(session);
-		this.rootContext = parentContext;
-		this.controller = controller;
-		this.appSettings = PreferenceManager
-				.getDefaultSharedPreferences(parentContext
-						.getApplicationContext());
-		r = parentContext.getResources();
 	}
 
 	private String getPath() {
-		String _indexPath = appSettings.getString("dropboxPath", "");
-		if (_indexPath.indexOf("/") != -1) {
-			_indexPath = _indexPath.substring(0,
-					_indexPath.lastIndexOf("/") + 1);
-		}
+		String _indexPath = pathFromSettings();
 		if (_indexPath.startsWith("/")) {
 			_indexPath = _indexPath.substring(1);
 		}
@@ -49,22 +38,22 @@ public class DropboxSynchronizer extends Synchronizer {
 	@Override
 	public FileInfo fetchOrgFile(String orgPath) throws NotFoundException,
 			ReportableError {
-		Log.i(LT, "Downloading " + orgPath);
+		// Log.i(LT, "Downloading " + orgPath);
 		DropboxInputStream fd;
 		try {
 			fd = api.getFileStream(getPath() + orgPath, null);
 		} catch (Exception e) {
-			throw new ReportableError("Error downloading file", null);
+			throw new ReportableError("Error downloading file", e);
 		}
 		if (fd == null) {
 			throw new ReportableError("Error downloading file", null);
 		}
 		BufferedReader reader = new BufferedReader(new InputStreamReader(fd),
-				20000);
+				BUFFER_SIZE);
 		FileInfo result = new FileInfo(reader);
 		result.size = fd.getFileInfo().getContentLength();
-		Log.i(LT, "Finished downloading: "
-				+ fd.getFileInfo().getContentLength());
+		// Log.i(LT, "Finished downloading: "
+		// + fd.getFileInfo().getContentLength());
 		return result;
 	}
 
@@ -131,5 +120,10 @@ public class DropboxSynchronizer extends Synchronizer {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	@Override
+	public String getIndexPath() {
+		return appSettings.getString("dropboxPath", "");
 	}
 }

@@ -1,75 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  <PreferenceCategory android:title="Synchronization">
-    <ListPreference
-        android:title="Synchronization Mode"
-        android:summary="Where to sync Org files from"
-        android:key="syncSource"
-        android:entries="@array/fileSources"
-        android:entryValues="@array/fileSourcesVals"
-        android:defaultValue="webdav" />
-     <com.matburt.mobileorg.ng.settings.SynchronizerPreferences
-                android:key="syncPref"
-                android:defaultValue="32"
-                android:title="Custom Preference" />
-	 <CheckBoxPreference
-		 android:key="@string/doAutoSync"
-		 android:title="Auto sync"
-		 android:summary="Auto sync MobileOrg files" />
-	 <ListPreference
-		 android:key="@string/autoSyncInterval"
-		 android:title="Auto sync interval"
-		 android:summary="How often auto sync"
-		 android:entries="@array/syncIntervals"
-		 android:entryValues="@array/syncIntervalsVals"
-		 android:defaultValue="@string/autoSyncIntervalDefault"
-		 android:dependency="@string/doAutoSync" />
-	 <ListPreference
-		 android:key="@string/autoSend"
-		 android:title="Auto send interval"
-		 android:summary="Auto send changes"
-		 android:entries="@array/sendIntervals"
-		 android:entryValues="@array/sendIntervalsVals"
-		 android:defaultValue="@string/autoSendDefault"/>
-  </PreferenceCategory>
-  <PreferenceCategory android:title="Storage">
-    <ListPreference
-        android:title="Storage Mode"
-        android:summary="Where to store the org files"
-        android:key="storageMode"
-        android:entries="@array/storageModes"
-        android:entryValues="@array/storageModesVals"
-        android:defaultValue="internal" />
-  </PreferenceCategory>
-  <PreferenceCategory android:title="Encryption">
-    <EditTextPreference
-        android:name="Crypt tag"
-        android:summary="Enter crypt tag"
-        android:title="Crypt tag"
-        android:key="@string/cryptTag"
-        android:defaultValue="@string/cryptTagDefault"/>
-    <EditTextPreference
-        android:name="Crypt key ID"
-        android:summary="Enter crypt key ID"
-        android:title="Crypt key ID"
-        android:key="@string/cryptKey"
-        android:defaultValue="@string/cryptKeyDefault"/>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <PreferenceCategory android:title="Synchronization" >
+
+        <ListPreference
+            android:defaultValue="webdav"
+            android:entries="@array/fileSources"
+            android:entryValues="@array/fileSourcesVals"
+            android:key="syncSource"
+            android:summary="Where to sync Org files from"
+            android:title="Synchronization Mode" />
+
+        <Preference
+            android:key="syncConfig"
+            android:summary="Configure Synchronizer Settings"
+            android:title="Synchronizer Settings" />
+
+        <CheckBoxPreference
+            android:key="@string/doAutoSync"
+            android:summary="Auto sync MobileOrg files"
+            android:title="Auto sync" />
+
+        <ListPreference
+            android:defaultValue="@string/autoSyncIntervalDefault"
+            android:dependency="@string/doAutoSync"
+            android:entries="@array/syncIntervals"
+            android:entryValues="@array/syncIntervalsVals"
+            android:key="@string/autoSyncInterval"
+            android:summary="How often auto sync"
+            android:title="Auto sync interval" />
+
+        <ListPreference
+            android:defaultValue="@string/autoSendDefault"
+            android:entries="@array/sendIntervals"
+            android:entryValues="@array/sendIntervalsVals"
+            android:key="@string/autoSend"
+            android:summary="Auto send changes"
+            android:title="Auto send interval" />
     </PreferenceCategory>
-  <PreferenceCategory android:title="Other">
-    <Preference android:title="Clear DB"
-	    android:key="clearDB"
-	    android:summary="Cleans up DB"/>
-    <PreferenceScreen
-        android:key="Widgets"
-        android:title="Widget Preferences"
-        android:summary="Preferences for a Widgets">
-        <intent android:action=".settings.WidgetPreferences">
-        </intent>
-    </PreferenceScreen>
-    <PreferenceScreen
-        android:key="VersionDisp"
-        android:title="Version"
-        android:summary="0.0.1">
-    </PreferenceScreen>
-  </PreferenceCategory>
+
+    <PreferenceCategory android:title="Storage" >
+
+        <ListPreference
+            android:defaultValue="internal"
+            android:entries="@array/storageModes"
+            android:entryValues="@array/storageModesVals"
+            android:key="storageMode"
+            android:summary="Where to store the org files"
+            android:title="Storage Mode" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Encryption" >
+
+        <EditTextPreference
+            android:defaultValue="@string/cryptTagDefault"
+            android:key="@string/cryptTag"
+            android:name="Crypt tag"
+            android:summary="Enter crypt tag"
+            android:title="Crypt tag" />
+
+        <EditTextPreference
+            android:defaultValue="@string/cryptKeyDefault"
+            android:key="@string/cryptKey"
+            android:name="Crypt key ID"
+            android:summary="Enter crypt key ID"
+            android:title="Crypt key ID" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Other" >
+
+        <Preference
+            android:key="clearDB"
+            android:summary="Cleans up DB"
+            android:title="Clear DB" />
+
+        <PreferenceScreen
+            android:key="Widgets"
+            android:summary="Preferences for a Widgets"
+            android:title="Widget Preferences" >
+
+            <intent android:action=".settings.WidgetPreferences" >
+            </intent>
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:key="VersionDisp"
+            android:summary="0.0.1"
+            android:title="Version" >
+        </PreferenceScreen>
+    </PreferenceCategory>
+
 </PreferenceScreen>

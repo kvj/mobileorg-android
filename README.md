@@ -10,6 +10,7 @@ Originally based on [MobileOrg](https://github.com/matburt/mobileorg-android), t
 <link href="https://plus.google.com/101518077347551839865" rel="publisher" />
 <a href="https://plus.google.com/101518077347551839865?prsrc=3" style="text-decoration:none;">Project's page on Google+ <img src="https://ssl.gstatic.com/images/icons/gplus-16.png" alt="" style="border:0;width:16px;height:16px; align: left;"/></a>
 <br/>
+<br/>
 Supported platforms: Android 1.6 - 4.0
 
 Features:
@@ -46,9 +47,5 @@ Screenshots:
 ![Widget preferences](mobileorg-android/raw/master/src-img/ss-small/widget_pref.png) 
 ![Outline widget](mobileorg-android/raw/master/src-img/ss-small/widget.png) 
 ![Tablet](mobileorg-android/raw/master/src-img/ss-small/tablet.png)
-
-Limitation!
-
-Currently only Dropbox sync has been tested, if you want/need support of other sync types, you are welcome to help
 
 License remains same, GPLv2

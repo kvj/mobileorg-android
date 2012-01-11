@@ -1,68 +1,67 @@
 package com.matburt.mobileorg.ng.synchronizers;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 
 import android.content.Context;
 import android.content.res.Resources.NotFoundException;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.matburt.mobileorg.ng.service.DataController;
 
 public class SDCardSynchronizer extends Synchronizer {
 
 	public SDCardSynchronizer(Context parentContext, DataController controller) {
-		this.rootContext = parentContext;
-		this.r = this.rootContext.getResources();
-		this.controller = controller;
-		this.appSettings = PreferenceManager
-				.getDefaultSharedPreferences(parentContext
-						.getApplicationContext());
+		super(parentContext, controller);
 	}
 
-	private void putFile(String path, String content) throws NotFoundException,
+	@Override
+	public FileInfo fetchOrgFile(String orgPath) throws NotFoundException,
 			ReportableError {
-		Log.d(LT, "Writing to mobileorg.org file at: " + path);
-		BufferedWriter fWriter;
 		try {
-			File fMobileOrgFile = new File(path);
-			FileWriter orgFWriter = new FileWriter(fMobileOrgFile, true);
-			fWriter = new BufferedWriter(orgFWriter);
-			fWriter.write(content);
-			fWriter.flush();
-			fWriter.close();
-		} catch (java.io.IOException e) {
-			throw new ReportableError("Error writing file", e);
-
+			File file = new File(pathFromSettings() + orgPath);
+			FileInfo info = new FileInfo(new BufferedReader(
+					new InputStreamReader(new FileInputStream(file), "utf-8"),
+					BUFFER_SIZE));
+			info.size = file.length();
+			return info;
+		} catch (Exception e) {
+			throw new NotFoundException("Not found: " + orgPath);
 		}
 	}
 
-	private String readFile(String filePath) throws ReportableError,
-			java.io.FileNotFoundException {
-		FileInputStream readerIS;
-		BufferedReader fReader;
-		File inpfile = new File(filePath);
+	@Override
+	public String getFileHash(String name) throws ReportableError {
 		try {
-			readerIS = new FileInputStream(inpfile);
-			fReader = new BufferedReader(new InputStreamReader(readerIS));
-		} catch (java.io.FileNotFoundException e) {
-			Log.d(LT, "Could not locate file " + filePath);
-			throw e;
-		}
-		String fileBuffer = "";
-		String fileLine = "";
-		try {
-			while ((fileLine = fReader.readLine()) != null) {
-				fileBuffer += fileLine + "\n";
+			File file = new File(pathFromSettings() + name);
+			if (file.exists()) {
+				return Long.toString(file.lastModified());
 			}
-		} catch (java.io.IOException e) {
-			throw new ReportableError("Error reading file", e);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return fileBuffer;
+		return null;
+	}
+
+	@Override
+	public boolean putFile(boolean append, String fileName, String data) {
+		try {
+			File file = new File(pathFromSettings() + fileName);
+			FileOutputStream stream = new FileOutputStream(file, append);
+			stream.write(data.getBytes("utf-8"));
+			stream.flush();
+			stream.close();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	@Override
+	public String getIndexPath() {
+		return appSettings.getString("indexFilePath", "");
 	}
 }

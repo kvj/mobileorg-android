@@ -395,15 +395,21 @@ public class OrgNGParser {
 			}
 			String prevSession = controller.appContext.getStringPreference(
 					"prevSyncSession", "");
-			Log.i(TAG, "Start sync");
+			String indexOrg = synchronizer.getIndexFileName();
+			Log.i(TAG, "Start sync: " + indexOrg);
 			listener.progress(2, 2, 1, 0, "Getting checksums...");
 			String newSession = synchronizer.getFileHash("checksums.dat");
+			Log.i(TAG, "Compare revisions: " + prevSession + " and "
+					+ newSession);
 			if (null != newSession && newSession.equals(prevSession)) {
 				Log.i(TAG, "No changes detected - exiting");
 				return null;
 			}
 			if (!controller.clearCaptured()) {
 				return "DB error";
+			}
+			if (null == indexOrg || indexOrg.equals("")) {
+				return "Invalid index.org file provided";
 			}
 			String checksums = synchronizer.fetchOrgFileString("checksums.dat");
 			final Map<String, String> sums = synchronizer
@@ -414,7 +420,7 @@ public class OrgNGParser {
 					+ "]: " + sums + " and " + nowSums);
 			if (sums.size() != nowSums.size()) {
 				Log.i(TAG, "Full sync");
-			} else if (!sums.get("index.org").equals(nowSums.get("index.org"))) {
+			} else if (!sums.get(indexOrg).equals(nowSums.get(indexOrg))) {
 				Log.i(TAG, "Index changed - full sync");
 			} else {
 				for (String name : nowSums.keySet()) {
@@ -474,15 +480,15 @@ public class OrgNGParser {
 			}
 			// Next step - parse index.org
 			NoteNG root = new NoteNG();
-			Integer indexFileID = controller.addFile("index.org",
-					sums.get("index.org"), null);
+			Integer indexFileID = controller.addFile(indexOrg,
+					sums.get(indexOrg), null);
 			root.fileID = indexFileID;
 			if (null == indexFileID) {
 				return "DB error";
 			}
 			final int filesTotal = sums.size() - 1;
 			final ParseFileOptions indexOptions = new ParseFileOptions();
-			String error = parseFile("index.org", new ItemListener() {
+			String error = parseFile(indexOrg, new ItemListener() {
 
 				int fileIndex = 0;
 

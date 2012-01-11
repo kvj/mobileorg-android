@@ -1,9 +1,6 @@
 package com.matburt.mobileorg.ng.settings;
 
-import java.util.HashMap;
-
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.preference.Preference;
@@ -16,8 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class SynchronizerPreferences extends Preference {
-
-	public static HashMap<String, Intent> syncIntents = new HashMap<String, Intent>();
 
 	public SynchronizerPreferences(Context context) {
 		super(context);
@@ -64,14 +59,6 @@ public class SynchronizerPreferences extends Preference {
 				SharedPreferences appSettings = PreferenceManager
 						.getDefaultSharedPreferences(getContext());
 				String synchroMode = appSettings.getString("syncSource", "");
-				if (syncIntents.containsKey(synchroMode)) {
-
-					getContext().startActivity(syncIntents.get(synchroMode));
-				} else {
-					// throw new
-					// ReportableError(R.string.error_synchronizer_type_unknown,
-					// synchroMode);
-				}
 				return true;
 			}
 		});

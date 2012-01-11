@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import com.matburt.mobileorg.ng.service.DataController;
@@ -18,7 +19,32 @@ abstract public class Synchronizer {
 	public Context rootContext = null;
 	public static final String LT = "MobileOrg";
 	public Resources r;
-	final private int BUFFER_SIZE = 23 * 1024;
+	final protected int BUFFER_SIZE = 23 * 1024;
+
+	public Synchronizer(Context parentContext, DataController controller) {
+		this.rootContext = parentContext;
+		this.controller = controller;
+		this.appSettings = PreferenceManager
+				.getDefaultSharedPreferences(parentContext
+						.getApplicationContext());
+		r = parentContext.getResources();
+	}
+
+	public String getIndexFileName() {
+		String _indexPath = getIndexPath().trim();
+		if (_indexPath.indexOf("/") != -1) {
+			return _indexPath.substring(_indexPath.lastIndexOf("/") + 1);
+		}
+		return _indexPath;
+	}
+
+	protected String pathFromSettings() {
+		String _indexPath = getIndexPath().trim();
+		if (_indexPath.indexOf("/") != -1) {
+			return _indexPath.substring(0, _indexPath.lastIndexOf("/") + 1);
+		}
+		return "/";
+	}
 
 	public static class FileInfo {
 
@@ -30,10 +56,8 @@ abstract public class Synchronizer {
 		public long size = -1;
 	}
 
-	public FileInfo fetchOrgFile(String orgPath) throws NotFoundException,
-			ReportableError {
-		return null;
-	}
+	abstract public FileInfo fetchOrgFile(String orgPath)
+			throws NotFoundException, ReportableError;
 
 	public String fetchOrgFileString(String orgPath) throws ReportableError {
 		BufferedReader reader = this.fetchOrgFile(orgPath).reader;
@@ -69,11 +93,9 @@ abstract public class Synchronizer {
 	}
 
 	/* Use this to detect changes */
-	public String getFileHash(String name) throws ReportableError {
-		return null;
-	}
+	abstract public String getFileHash(String name) throws ReportableError;
 
-	public boolean putFile(boolean append, String fileName, String data) {
-		return false;
-	}
+	abstract public boolean putFile(boolean append, String fileName, String data);
+
+	abstract public String getIndexPath();
 }
