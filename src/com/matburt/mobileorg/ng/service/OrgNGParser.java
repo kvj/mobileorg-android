@@ -346,6 +346,9 @@ public class OrgNGParser {
 						pendingNote.raw += '\n' + line.trim();
 						pendingNote.title += '\n' + line.trim();
 					} else {
+						if (NoteNG.TYPE_AGENDA.equals(parent.type)) {
+							continue;
+						}
 						pendingNote = new NoteNG();
 						pendingNote.editable = true;
 						pendingNote.fileID = parent.fileID;
