@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -45,7 +46,8 @@ public class DataController {
 	boolean inSync = false;
 	int inEdit = 0;
 	public static DateFormat timeFormat = new SimpleDateFormat("HH:mm");
-	public static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd EEE");
+	public static DateFormat dateFormat = new SimpleDateFormat(
+			"yyyy-MM-dd EEE", Locale.ENGLISH);
 	InsertHelper dataInsertHelper = null;
 
 	public DataController(ApplicationContext appContext, Context context) {
@@ -583,7 +585,7 @@ public class DataController {
 					NoteNG note = cursorToNote(c);
 					if (NoteNG.TYPE_TEXT.equals(note.type)
 							&& null != note.title
-							&& note.title.trim().isEmpty()) {
+							&& "".equals(note.title.trim())) {
 						continue;
 					}
 					result.add(note);
