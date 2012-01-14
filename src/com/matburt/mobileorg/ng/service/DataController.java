@@ -249,12 +249,12 @@ public class DataController {
 	}
 
 	public String refresh(final ParseProgressListener parseListener) {
-		if (inSync || inEdit > 0) {
-			return "Sync is in progress";
-		}
-		inSync = true;
 		boolean success = false;
 		try {
+			if (inSync || inEdit > 0) {
+				return "Sync is in progress";
+			}
+			inSync = true;
 			if (null != listener) {
 				listener.syncStarted();
 			}

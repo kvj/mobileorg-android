@@ -1,5 +1,7 @@
 package com.matburt.mobileorg.ng.ui;
 
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -10,6 +12,8 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListView;
 
+import com.matburt.mobileorg.ng.App;
+import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.NoteNG;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
@@ -27,6 +31,7 @@ public class OutlineViewerFragment extends ListFragment {
 	}
 
 	private static final String TAG = null;
+	private boolean canExpandAll = true;
 
 	OutlineViewerAdapter adapter = null;
 	String name;
@@ -75,6 +80,27 @@ public class OutlineViewerFragment extends ListFragment {
 				return keyListener(keyCode, event);
 			}
 		});
+		App.getInstance()
+				.getPreferences()
+				.registerOnSharedPreferenceChangeListener(
+						new OnSharedPreferenceChangeListener() {
+
+							@Override
+							public void onSharedPreferenceChanged(
+									SharedPreferences sharedPreferences,
+									String key) {
+								Log.i(TAG, "Pref. changed: " + key);
+								if (getString(R.string.canExpandAll)
+										.equals(key)) {
+									canExpandAll = App
+											.getInstance()
+											.getBooleanPreference(
+													R.string.canExpandAll, true);
+								}
+							}
+						});
+		canExpandAll = App.getInstance().getBooleanPreference(
+				R.string.canExpandAll, true);
 	}
 
 	public boolean keyListener(int keyCode, KeyEvent event) {
@@ -120,7 +146,7 @@ public class OutlineViewerFragment extends ListFragment {
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		adapter.collapseExpand(position, true);
+		adapter.collapseExpand(position, true, canExpandAll);
 		if (null != dataListener) {
 			dataListener.onSelect(OutlineViewerFragment.this, position);
 		}

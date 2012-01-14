@@ -284,4 +284,8 @@ abstract public class ApplicationContext extends Application {
 			activity.setResult(Activity.RESULT_OK, resultValue);
 		}
 	}
+
+	public boolean getBooleanPreference(int name, boolean def) {
+		return getPreferences().getBoolean(getString(name), def);
+	}
 }

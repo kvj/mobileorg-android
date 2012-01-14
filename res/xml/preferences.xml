@@ -39,17 +39,6 @@
             android:title="Auto send interval" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Storage" >
-
-        <ListPreference
-            android:defaultValue="internal"
-            android:entries="@array/storageModes"
-            android:entryValues="@array/storageModesVals"
-            android:key="storageMode"
-            android:summary="Where to store the org files"
-            android:title="Storage Mode" />
-    </PreferenceCategory>
-
     <PreferenceCategory android:title="Encryption" >
 
         <EditTextPreference
@@ -65,6 +54,14 @@
             android:name="Crypt key ID"
             android:summary="Enter crypt key ID"
             android:title="Crypt key ID" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="User interface" >
+        <CheckBoxPreference
+            android:key="@string/canExpandAll"
+            android:summary="Expand All in outline viewer (for new panes)"
+            android:title="Expand All feature" 
+            android:defaultValue="true"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Other" >

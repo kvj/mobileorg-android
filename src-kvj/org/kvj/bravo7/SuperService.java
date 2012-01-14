@@ -27,7 +27,7 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 	protected String title = "Application";
 	private static final int SERVICE_NOTIFY = 100;
 	private static final String TAG = "SuperService";
-	private static final String LOCK_NAME = "SuperService";
+	protected static String LOCK_NAME = "SuperService";
 	protected int notificationID = SERVICE_NOTIFY;
 	private Class<? extends AlarmReceiver> alarmBroadcastReceiverClass = null;
 	static WakeLock lockStatic = null;

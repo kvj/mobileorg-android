@@ -512,8 +512,8 @@ public class FOutlineViewer extends FragmentActivity implements
 			nearest = note;
 			// nearestNote = note;
 		}
-		Log.i(TAG, "Add/Edit: " + note.title + ", " + note.noteID + ", "
-				+ nearest);
+		// Log.i(TAG, "Add/Edit: " + note.title + ", " + note.noteID + ", "
+		// + nearest);
 		if (null == nearest) {
 			SuperActivity.notifyUser(this, "Selected item is readonly");
 			return;

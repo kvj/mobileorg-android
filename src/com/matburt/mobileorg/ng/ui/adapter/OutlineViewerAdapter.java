@@ -513,7 +513,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	public void collapseExpand(int position, boolean notify) {
+	public void collapseExpand(int position, boolean notify,
+			boolean canExpandAll) {
 		NoteNG note = getItem(position);
 		if (!note.isExpandable()) {
 			clicked = note;
@@ -526,7 +527,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 			expandNote(note, position, false);
 		} else {
 			if (null != clicked && clicked.id.equals(note.id)) {
-				if (note.expanded == NoteNG.EXPAND_ONE) {
+				if (note.expanded == NoteNG.EXPAND_ONE && canExpandAll) {
 					collapseNote(note, position);
 					expandNote(note, position, true);
 				} else {

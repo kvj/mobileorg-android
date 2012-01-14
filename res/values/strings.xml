@@ -13,4 +13,5 @@
   <string name="searchLabel">MobileOrg</string>
   <string name="searchHint">Search outline, text</string>
   <string name="searchDesctiption">Outline, text</string>
+  <string name="canExpandAll">canExpandAll</string>
 </resources>

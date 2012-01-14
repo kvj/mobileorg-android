@@ -10,6 +10,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -70,6 +71,7 @@ public class DataService extends SuperService<DataController, App> implements
 
 	@Override
 	public void syncFinished(boolean success) {
+		// Log.i(TAG, "Sync finished: " + success);
 		reschedule(controller.hasChanges(), success);
 	}
 
@@ -87,24 +89,27 @@ public class DataService extends SuperService<DataController, App> implements
 						.equals(intent.getAction()))) {
 			try {
 				powerLock(this);
-				new Thread() {
-					@Override
-					public void run() {
-						String error = controller
-								.refresh(new ParseProgressListener() {
+				new AsyncTask<Void, Void, String>() {
 
-									@Override
-									public void progress(int total,
-											int totalPos, int current,
-											int currentPos, String message) {
-									}
-								});
+					@Override
+					protected String doInBackground(Void... params) {
+						return controller.refresh(new ParseProgressListener() {
+
+							@Override
+							public void progress(int total, int totalPos,
+									int current, int currentPos, String message) {
+							}
+						});
+					}
+
+					protected void onPostExecute(String error) {
 						if (null != error) {
 							SuperActivity.notifyUser(DataService.this, error);
 						}
 						SuperService.powerUnlock(DataService.this);
 					};
-				}.start();
+
+				}.execute();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
