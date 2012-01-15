@@ -24,7 +24,8 @@
             android:exported="true">
             <intent-filter>
         		<action android:name="com.matburt.mobileorg.ng.SYNC" />
-      		</intent-filter>
+        		<action android:name="com.matburt.mobileorg.ng.CREATE" />
+        	</intent-filter>
         </service>
 
         <receiver android:name=".service.DataAlarmReceiver" />

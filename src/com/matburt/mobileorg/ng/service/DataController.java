@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -18,6 +19,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils.InsertHelper;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.matburt.mobileorg.ng.App;
@@ -479,10 +481,16 @@ public class DataController {
 			values.put("parent_id", note.parentID);
 			values.put("note_id", note.noteID);
 			values.put("file_id", note.fileID);
-			values.put("priority", note.priority);
-			values.put("todo", note.todo);
+			if (!TextUtils.isEmpty(note.priority)) {
+				values.put("priority", note.priority);
+			}
+			if (!TextUtils.isEmpty(note.tags)) {
+				values.put("tags", note.tags);
+			}
+			if (!TextUtils.isEmpty(note.todo)) {
+				values.put("todo", note.todo);
+			}
 			values.put("raw", note.raw);
-			values.put("tags", note.tags);
 			values.put("title", note.title);
 			values.put("type", note.type);
 			values.put("editable", note.editable ? 1 : 0);
@@ -814,7 +822,12 @@ public class DataController {
 		return sb.toString();
 	}
 
-	public Integer createNewNote(NoteNG note) {
+	public static class NewNoteData {
+		public final Map<String, String> properties = new LinkedHashMap<String, String>();
+		public final List<NoteNG> children = new ArrayList<NoteNG>();
+	}
+
+	public Integer createNewNote(NoteNG note, NewNoteData newNoteData) {
 		if (null == db) {
 			return null;
 		}
@@ -838,6 +851,7 @@ public class DataController {
 				c.close();
 			}
 			note.noteID = generateNoteID(12);
+			note.level = 1;
 			Integer newNoteID = addData(note, true);// Note created
 			if (null == newNoteID) {
 				return null;
@@ -846,10 +860,24 @@ public class DataController {
 			NoteNG drawerNote = new NoteNG();
 			drawerNote.parentID = note.id;
 			drawerNote.fileID = note.fileID;
-			drawerNote.raw = ":PROPERTIES:\n:ID: " + note.noteID + "\n:END:";
+			StringBuilder propertiesText = new StringBuilder(":PROPERTIES:\n");
+			propertiesText.append(":ID: " + note.noteID + "\n");
+			for (String key : newNoteData.properties.keySet()) {
+				String value = newNoteData.properties.get(key);
+				propertiesText.append(":" + key + ": " + value + "\n");
+			}
+			propertiesText.append(":END:");
+			drawerNote.raw = propertiesText.toString();
+			drawerNote.title = drawerNote.raw;
 			drawerNote.type = NoteNG.TYPE_DRAWER;
 			if (null == addData(drawerNote)) {
 				return null;
+			}
+			for (int i = 0; i < newNoteData.children.size(); i++) {
+				NoteNG n = newNoteData.children.get(i);
+				n.parentID = note.id;
+				n.fileID = note.fileID;
+				addData(n);
 			}
 			NoteNG dateNote = new NoteNG();
 			dateNote.parentID = note.id;

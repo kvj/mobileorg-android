@@ -293,7 +293,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 			titleColor = theme.ccLBlue;
 		}
 		if (NoteNG.TYPE_OUTLINE.equals(note.type)) {
-			titleColor = levelColors[(note.level - 1) % levelColors.length];
+			titleColor = levelColors[Math.abs((note.level - 1)
+					% levelColors.length)];
 		}
 		if (null != note.priority) {
 			Integer priority = priorities.get(note.priority);

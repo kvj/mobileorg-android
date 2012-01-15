@@ -1,6 +1,7 @@
 package com.matburt.mobileorg.ng.service;
 
 import java.util.Calendar;
+import java.util.List;
 
 import org.kvj.bravo7.SuperActivity;
 import org.kvj.bravo7.SuperService;
@@ -11,12 +12,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.AsyncTask;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.matburt.mobileorg.ng.App;
 import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController.ControllerListener;
+import com.matburt.mobileorg.ng.service.DataController.NewNoteData;
 import com.matburt.mobileorg.ng.service.OrgNGParser.ParseProgressListener;
 import com.matburt.mobileorg.ng.ui.FOutlineViewer;
 
@@ -24,6 +27,9 @@ public class DataService extends SuperService<DataController, App> implements
 		ControllerListener {
 
 	private static final String TAG = "DataService";
+	private static final String INTENT_SYNC = "com.matburt.mobileorg.ng.SYNC";
+	private static final String INTENT_CREATE = "com.matburt.mobileorg.ng.CREATE";
+	private static final String BROADCAST_CREATED = "com.matburt.mobileorg.ng.CREATED";
 	PendingIntent syncIntent = null;
 
 	public DataService() {
@@ -84,9 +90,11 @@ public class DataService extends SuperService<DataController, App> implements
 		} catch (Exception e) {
 		}
 		Log.i(TAG, "Handle intent: " + message);
+		if (null != intent && INTENT_CREATE.equals(intent.getAction())) {
+			createData(intent);
+		}
 		if ("sync".equals(message)
-				|| (null != intent && "com.matburt.mobileorg.ng.SYNC"
-						.equals(intent.getAction()))) {
+				|| (null != intent && INTENT_SYNC.equals(intent.getAction()))) {
 			try {
 				powerLock(this);
 				new AsyncTask<Void, Void, String>() {
@@ -115,6 +123,43 @@ public class DataService extends SuperService<DataController, App> implements
 			}
 		}
 		return Service.START_STICKY;
+	}
+
+	private void createData(Intent intent) {
+		NoteNG note = new NoteNG();
+		note.title = intent.getStringExtra("text");
+		note.raw = note.title;
+		note.priority = intent.getStringExtra("priority");
+		note.tags = intent.getStringExtra("tags");
+		if (!TextUtils.isEmpty(note.tags)) {
+			if (!note.tags.startsWith(":")) {
+				note.tags = ":" + note.tags;
+			}
+			if (!note.tags.endsWith(":")) {
+				note.tags += ":";
+			}
+		}
+		note.todo = intent.getStringExtra("todo");
+		note.type = NoteNG.TYPE_OUTLINE;
+		note.fileID = -1;
+		NewNoteData data = new NewNoteData();
+		List<String> params = intent
+				.getStringArrayListExtra("properties_names");
+		List<String> param_values = intent
+				.getStringArrayListExtra("properties_values");
+		if (null != params && null != param_values
+				&& params.size() == param_values.size()) {
+			for (int i = 0; i < params.size(); i++) {
+				data.properties.put(params.get(i), param_values.get(i));
+			}
+		}
+		if (null == controller.createNewNote(note, data)) {
+			return;
+		}
+		controller.addChange(note.id, "data", null, null);
+		Intent bcastIntent = new Intent(BROADCAST_CREATED);
+		bcastIntent.putExtra("callback", intent.getIntExtra("callback", -1));
+		sendBroadcast(bcastIntent);
 	}
 
 	private void reschedule(boolean changed, boolean success) {

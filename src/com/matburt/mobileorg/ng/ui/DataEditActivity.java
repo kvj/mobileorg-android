@@ -31,6 +31,7 @@ import com.markupartist.android.widget.ActionBar;
 import com.matburt.mobileorg.ng.App;
 import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
+import com.matburt.mobileorg.ng.service.DataController.NewNoteData;
 import com.matburt.mobileorg.ng.service.DataService;
 import com.matburt.mobileorg.ng.service.DataWriter;
 import com.matburt.mobileorg.ng.service.NoteNG;
@@ -287,7 +288,7 @@ public class DataEditActivity extends FragmentActivity implements
 			note.todo = data.getString("todo");
 			note.type = NoteNG.TYPE_OUTLINE;
 			note.fileID = -1;
-			if (null == controller.createNewNote(note)) {
+			if (null == controller.createNewNote(note, new NewNoteData())) {
 				return "DB error";
 			}
 			controller.addChange(note.id, "data", null, null);
