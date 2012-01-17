@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 public class MobileOrgDBHelper extends DBHelper {
 
 	public MobileOrgDBHelper(Context context, String path) {
-		super(context, path, 8);
+		super(context, path, 9);
 	}
 
 	@Override
@@ -51,6 +51,10 @@ public class MobileOrgDBHelper extends DBHelper {
 		case 8:
 			db.execSQL("create index if not exists data_parent_id_type on data (parent_id, type)");
 			db.execSQL("create index if not exists data_note_id on data (note_id)");
+			break;
+		case 9:
+			db.execSQL("drop index if exists data_parent_id_type");
+			db.execSQL("drop index if exists data_note_id");
 			break;
 		}
 	}

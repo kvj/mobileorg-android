@@ -48,8 +48,8 @@ public class SearchProvider extends ContentProvider {
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
 		String query = uri.getLastPathSegment();
-		Log.i(TAG, "query: " + uri + ", " + projection + ", " + selection
-				+ ", " + selectionArgs + ", " + sortOrder + ", " + query);
+		// Log.i(TAG, "query: " + uri + ", " + projection + ", " + selection
+		// + ", " + selectionArgs + ", " + sortOrder + ", " + query);
 		DataController controller = App.getInstance().getBean(
 				DataController.class);
 		MatrixCursor cursor = new MatrixCursor(new String[] { BaseColumns._ID,
@@ -72,7 +72,7 @@ public class SearchProvider extends ContentProvider {
 			List<NoteNG> result = controller.search(query, limit, todos,
 					priorities);
 			OutlineViewerAdapter adapter = new OutlineViewerAdapter(
-					getContext());
+					getContext(), null);
 			adapter.setController(-2, controller, null);
 			for (int i = 0; i < result.size(); i++) {
 				NoteNG note = result.get(i);

@@ -113,4 +113,16 @@ public class SelectOutlineActivity extends FragmentActivity implements
 			int position) {
 		return false;
 	}
+
+	@Override
+	public void loadStarted() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void loadFinished() {
+		// TODO Auto-generated method stub
+
+	}
 }

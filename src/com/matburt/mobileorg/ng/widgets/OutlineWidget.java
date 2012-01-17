@@ -94,7 +94,7 @@ public class OutlineWidget extends AppWidgetProvider {
 			addText(context, views, "Error!", null);
 			return;
 		}
-		OutlineViewerAdapter adapter = new OutlineViewerAdapter(context);
+		OutlineViewerAdapter adapter = new OutlineViewerAdapter(context, null);
 		adapter.setWide(longFormat);
 		adapter.setController(note.id, controller, new ArrayList<Integer>());
 		adapter.expandNote(adapter.getItem(0), 0, expand == -1 ? true : false);

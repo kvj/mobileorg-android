@@ -55,7 +55,7 @@ public class SearchActivity extends
 		}
 		setContentView(R.layout.search_outline);
 		listView = (ListView) findViewById(R.id.search_outline_list);
-		adapter = new OutlineViewerAdapter(this);
+		adapter = new OutlineViewerAdapter(this, null);
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {
 

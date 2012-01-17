@@ -17,10 +17,11 @@ import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.NoteNG;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
+import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter.OutlineViewerAdapterListener;
 
 public class OutlineViewerFragment extends ListFragment {
 
-	public interface DataListener {
+	public interface DataListener extends OutlineViewerAdapterListener {
 
 		public void onOpen(OutlineViewerFragment fragment, int position);
 
@@ -42,7 +43,7 @@ public class OutlineViewerFragment extends ListFragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		adapter = new OutlineViewerAdapter(getActivity());
+		adapter = new OutlineViewerAdapter(getActivity(), null);
 		setListAdapter(adapter);
 		getListView().setOnItemLongClickListener(new OnItemLongClickListener() {
 

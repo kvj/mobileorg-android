@@ -29,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -69,6 +70,7 @@ public class FOutlineViewer extends FragmentActivity implements
 	@Override
 	protected void onCreate(Bundle savedState) {
 		super.onCreate(savedState);
+		requestWindowFeature(Window.FEATURE_PROGRESS);
 		Intent serviceIntent = new Intent(this, DataService.class);
 		startService(serviceIntent);
 		if (null != savedState) {
@@ -714,5 +716,21 @@ public class FOutlineViewer extends FragmentActivity implements
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void loadStarted() {
+		setProgressBarIndeterminateVisibility(true);
+		if (null != actionBar) {
+			actionBar.setProgressBarVisibility(View.VISIBLE);
+		}
+	}
+
+	@Override
+	public void loadFinished() {
+		setProgressBarIndeterminateVisibility(false);
+		if (null != actionBar) {
+			actionBar.setProgressBarVisibility(View.GONE);
+		}
 	}
 }

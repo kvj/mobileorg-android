@@ -27,6 +27,7 @@ public class OutlineLinkPicker extends FragmentActivity implements
 	OutlineViewerFragment fragment = null;
 	Spinner type = null;
 
+	@Override
 	protected void onCreate(Bundle arg0) {
 		super.onCreate(arg0);
 		setContentView(R.layout.outline_link_picker);
@@ -108,5 +109,17 @@ public class OutlineLinkPicker extends FragmentActivity implements
 	public boolean onKeyPress(int keyCode, OutlineViewerFragment fragment,
 			int position) {
 		return false;
+	}
+
+	@Override
+	public void loadStarted() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void loadFinished() {
+		// TODO Auto-generated method stub
+
 	}
 }

@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
@@ -58,8 +59,17 @@ public class OutlineViewerAdapter implements ListAdapter {
 		tagMapping.put(theme.c7White, theme.cfLWhite);
 	}
 
-	public OutlineViewerAdapter(Context context) {
+	public static interface OutlineViewerAdapterListener {
+
+		public void loadStarted();
+
+		public void loadFinished();
+	}
+
+	public OutlineViewerAdapter(Context context,
+			OutlineViewerAdapterListener listener) {
 		wide = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+		this.listener = listener;
 		DateTextFormatter dateTextFormatter = new DateTextFormatter();
 		CheckBoxFormatter checkBoxFormatter = new CheckBoxFormatter();
 		LinkFormatter linkFormatter = new LinkFormatter();
@@ -68,6 +78,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 				dateTextFormatter, linkFormatter);
 	}
 
+	private OutlineViewerAdapterListener listener = null;
 	private static final String TAG = "OutlineView";
 	List<NoteNG> data = new ArrayList<NoteNG>();
 	DataSetObserver observer = null;
@@ -514,9 +525,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	public void collapseExpand(int position, boolean notify,
-			boolean canExpandAll) {
-		NoteNG note = getItem(position);
+	public void collapseExpand(final int position, final boolean notify,
+			final boolean canExpandAll) {
+		final NoteNG note = getItem(position);
 		if (!note.isExpandable()) {
 			clicked = note;
 			if (notify && null != observer) {
@@ -524,22 +535,40 @@ public class OutlineViewerAdapter implements ListAdapter {
 			}
 			return;
 		}
-		if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
-			expandNote(note, position, false);
-		} else {
-			if (null != clicked && clicked.id.equals(note.id)) {
-				if (note.expanded == NoteNG.EXPAND_ONE && canExpandAll) {
-					collapseNote(note, position);
-					expandNote(note, position, true);
+		if (null != listener) {
+			listener.loadStarted();
+		}
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+				if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
+					expandNote(note, position, false);
 				} else {
-					collapseNote(note, position);
+					if (null != clicked && clicked.id.equals(note.id)) {
+						if (note.expanded == NoteNG.EXPAND_ONE && canExpandAll) {
+							collapseNote(note, position);
+							expandNote(note, position, true);
+						} else {
+							collapseNote(note, position);
+						}
+					}
 				}
+				clicked = note;
+				return null;
 			}
-		}
-		clicked = note;
-		if (notify && null != observer) {
-			observer.onChanged();
-		}
+
+			@Override
+			protected void onPostExecute(Void result) {
+				if (null != listener) {
+					listener.loadFinished();
+				}
+				if (notify && null != observer) {
+					observer.onChanged();
+				}
+			};
+
+		}.execute();
 	}
 
 	private void collapseNote(NoteNG note, int position) {
@@ -672,6 +701,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 				priorities.keySet());
 		data.addAll(searchResult);
 		notifyChanged();
+	}
+
+	public void setListener(OutlineViewerAdapterListener listener) {
+		this.listener = listener;
 	}
 
 }
