@@ -77,7 +77,7 @@ public class OutlineWidget extends AppWidgetProvider {
 
 	}
 
-	private void addText(Context context, RemoteViews views,
+	private RemoteViews addText(Context context, RemoteViews views,
 			CharSequence sequence, CharSequence rightPart) {
 		RemoteViews text = new RemoteViews(context.getPackageName(),
 				R.layout.outline_widget_item);
@@ -86,6 +86,7 @@ public class OutlineWidget extends AppWidgetProvider {
 			text.setTextViewText(R.id.outline_widget_item_tags, rightPart);
 		}
 		views.addView(R.id.outline_widget_list, text);
+		return text;
 	}
 
 	private void putOutline(int expand, boolean longFormat, NoteNG note,
@@ -109,9 +110,16 @@ public class OutlineWidget extends AppWidgetProvider {
 		}
 		// Log.i(TAG, "Number of items: " + adapter.getCount());
 		for (int i = 0; i < adapter.getCount(); i++) {
-			TextViewParts parts = adapter.customizeTextView(adapter.getItem(i),
-					false);
-			addText(context, views, parts.leftPart, parts.rightPart);
+			NoteNG n = adapter.getItem(i);
+			TextViewParts parts = adapter.customizeTextView(n, false);
+			RemoteViews item = addText(context, views, parts.leftPart,
+					parts.rightPart);
+			Intent intent = new Intent(context, FOutlineViewer.class);
+			intent.putExtra("noteID", n.id);
+			PendingIntent pendingIntent = PendingIntent.getActivity(context,
+					n.id, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+			item.setOnClickPendingIntent(R.id.outline_widget_item_root,
+					pendingIntent);
 		}
 	}
 
