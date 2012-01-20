@@ -46,6 +46,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 	PlainTextFormatter textFormatter = null;
 	PlainTextFormatter sublistFormatter = null;
 
+	private static final int MAX_DATA_SIZE = 200;
+	private static final int MAX_EXPAND_ALL_DEPTH = 3;
+
 	static {
 		levelColors = new int[] { theme.ccLBlue, theme.c3Yellow, theme.ceLCyan,
 				theme.c1Red, theme.c2Green, theme.c5Purple, theme.ccLBlue,
@@ -64,6 +67,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		public void loadStarted();
 
 		public void loadFinished();
+
+		public void reportError(String message);
 	}
 
 	public OutlineViewerAdapter(Context context,
@@ -94,6 +99,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	@Override
 	public NoteNG getItem(int position) {
+		if (position >= data.size()) {
+			return null;
+		}
 		return data.get(position);
 	}
 
@@ -383,6 +391,9 @@ public class OutlineViewerAdapter implements ListAdapter {
 					parent, false);
 		}
 		NoteNG note = getItem(position);
+		if (null == note) {
+			return null;
+		}
 		// boolean isselected = selected == note.id;
 		boolean isclicked = null != clicked && clicked.id.equals(note.id);
 		TextView title = (TextView) convertView
@@ -497,7 +508,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 						clicked = n;
 						selectedPos = j;
 						start = j + 1;
-						end = expandNote(n, j, false) + start;
+						end = expandNote(n, j, false, -1, false) + start;
 						found = true;
 						break;
 					}
@@ -521,7 +532,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 		collapseNote(note, position);
 		if (NoteNG.EXPAND_COLLAPSED != state) {
 			expandNote(note, position, NoteNG.EXPAND_MANY == state ? true
-					: false);
+					: false, -1, false);
 		}
 	}
 
@@ -543,12 +554,24 @@ public class OutlineViewerAdapter implements ListAdapter {
 			@Override
 			protected Void doInBackground(Void... params) {
 				if (note.expanded == NoteNG.EXPAND_COLLAPSED) {
-					expandNote(note, position, false);
+					if (data.size() >= MAX_DATA_SIZE) {
+						if (null != listener) {
+							listener.reportError("Max number of visible elements reached");
+						}
+					} else {
+						expandNote(note, position, false, -1, true);
+					}
 				} else {
 					if (null != clicked && clicked.id.equals(note.id)) {
 						if (note.expanded == NoteNG.EXPAND_ONE && canExpandAll) {
 							collapseNote(note, position);
-							expandNote(note, position, true);
+							if (data.size() >= MAX_DATA_SIZE) {
+								if (null != listener) {
+									listener.reportError("Max number of visible elements reached");
+								}
+							} else {
+								expandNote(note, position, true, 0, true);
+							}
 						} else {
 							collapseNote(note, position);
 						}
@@ -583,13 +606,21 @@ public class OutlineViewerAdapter implements ListAdapter {
 		}
 	}
 
-	public int expandNote(NoteNG note, int position, boolean expandAll) {
+	public int expandNote(NoteNG note, int position, boolean expandAll,
+			int expandLevel, boolean limitSize) {
+		if (expandLevel > MAX_EXPAND_ALL_DEPTH) {
+			// if (null != listener) {
+			// listener.reportError("Max expand level reached");
+			// }
+			return 0;
+		}
 		note.expanded = expandAll ? NoteNG.EXPAND_MANY : NoteNG.EXPAND_ONE;
 		List<NoteNG> list = controller.getData(note.id);
 		if (null == list) {
 			return 0;
 		}
 		int pos = 0;
+		boolean canExpand = true;
 		for (int i = 0; i < list.size(); i++) {
 			NoteNG n = list.get(i);
 			n.parentNote = note;
@@ -597,8 +628,13 @@ public class OutlineViewerAdapter implements ListAdapter {
 			n.indent = note.indent + 1;
 			pos++;
 			data.add(position + pos, n);
-			if (expandAll) {
-				pos += expandNote(n, position + pos, expandAll);
+			if (expandAll && canExpand) {
+				if (limitSize && data.size() > MAX_DATA_SIZE) {
+					canExpand = false;
+				} else {
+					pos += expandNote(n, position + pos, expandAll,
+							expandLevel == -1 ? -1 : expandLevel + 1, limitSize);
+				}
 			}
 		}
 		return pos;

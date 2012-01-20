@@ -53,7 +53,6 @@ public class MobileOrgDBHelper extends DBHelper {
 			db.execSQL("create index if not exists data_note_id on data (note_id)");
 			break;
 		case 9:
-			db.execSQL("drop index if exists data_parent_id_type");
 			db.execSQL("drop index if exists data_note_id");
 			break;
 		}

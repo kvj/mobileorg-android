@@ -45,6 +45,7 @@ public class OutlineViewerFragment extends ListFragment {
 		super.onActivityCreated(savedInstanceState);
 		adapter = new OutlineViewerAdapter(getActivity(), null);
 		setListAdapter(adapter);
+		adapter.setListener(dataListener);
 		getListView().setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
@@ -155,6 +156,9 @@ public class OutlineViewerFragment extends ListFragment {
 
 	public void setDataListener(DataListener dataListener) {
 		this.dataListener = dataListener;
+		if (null != adapter) {
+			adapter.setListener(dataListener);
+		}
 	}
 
 	public void reload() {

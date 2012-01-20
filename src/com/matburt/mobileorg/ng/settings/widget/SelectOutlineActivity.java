@@ -125,4 +125,10 @@ public class SelectOutlineActivity extends FragmentActivity implements
 		// TODO Auto-generated method stub
 
 	}
+
+	@Override
+	public void reportError(String message) {
+		// TODO Auto-generated method stub
+
+	}
 }

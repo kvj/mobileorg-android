@@ -97,13 +97,14 @@ public class OutlineWidget extends AppWidgetProvider {
 		OutlineViewerAdapter adapter = new OutlineViewerAdapter(context, null);
 		adapter.setWide(longFormat);
 		adapter.setController(note.id, controller, new ArrayList<Integer>());
-		adapter.expandNote(adapter.getItem(0), 0, expand == -1 ? true : false);
+		adapter.expandNote(adapter.getItem(0), 0, expand == -1 ? true : false,
+				-1, false);
 		if (expand == 2) {
 			int pos = 0;
 			int size = adapter.getCount();
 			for (int i = 1; i < size; i++) {
 				pos += adapter.expandNote(adapter.getItem(i + pos), i + pos,
-						false);
+						false, -1, false);
 			}
 		}
 		// Log.i(TAG, "Number of items: " + adapter.getCount());

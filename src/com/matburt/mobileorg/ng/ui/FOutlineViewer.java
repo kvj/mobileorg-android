@@ -70,7 +70,7 @@ public class FOutlineViewer extends FragmentActivity implements
 	@Override
 	protected void onCreate(Bundle savedState) {
 		super.onCreate(savedState);
-		requestWindowFeature(Window.FEATURE_PROGRESS);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		Intent serviceIntent = new Intent(this, DataService.class);
 		startService(serviceIntent);
 		if (null != savedState) {
@@ -104,6 +104,7 @@ public class FOutlineViewer extends FragmentActivity implements
 		if (null != right) {
 			right.setDataListener(this);
 		}
+		loadFinished();
 	}
 
 	@Override
@@ -720,6 +721,7 @@ public class FOutlineViewer extends FragmentActivity implements
 
 	@Override
 	public void loadStarted() {
+		Log.i(TAG, "Start load");
 		setProgressBarIndeterminateVisibility(true);
 		if (null != actionBar) {
 			actionBar.setProgressBarVisibility(View.VISIBLE);
@@ -728,9 +730,21 @@ public class FOutlineViewer extends FragmentActivity implements
 
 	@Override
 	public void loadFinished() {
+		Log.i(TAG, "Finish load");
 		setProgressBarIndeterminateVisibility(false);
 		if (null != actionBar) {
 			actionBar.setProgressBarVisibility(View.GONE);
 		}
+	}
+
+	@Override
+	public void reportError(final String message) {
+		runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				SuperActivity.notifyUser(FOutlineViewer.this, message);
+			}
+		});
 	}
 }
