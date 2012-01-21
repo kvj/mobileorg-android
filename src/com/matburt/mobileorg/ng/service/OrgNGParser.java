@@ -3,7 +3,9 @@ package com.matburt.mobileorg.ng.service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
@@ -12,6 +14,7 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 import com.matburt.mobileorg.ng.R;
+import com.matburt.mobileorg.ng.service.DataController.TodoState;
 import com.matburt.mobileorg.ng.synchronizers.ReportableError;
 import com.matburt.mobileorg.ng.synchronizers.Synchronizer;
 import com.matburt.mobileorg.ng.synchronizers.Synchronizer.FileInfo;
@@ -56,6 +59,8 @@ public class OrgNGParser {
 		this.controller = controller;
 		this.synchronizer = synchronizer;
 	}
+
+	private List<String> todos = new ArrayList<String>();
 
 	interface ItemListener {
 
@@ -177,6 +182,10 @@ public class OrgNGParser {
 					note.todo = m.group(2);
 					if (null != note.todo) {
 						note.todo = note.todo.trim();
+						if (!todos.contains(note.todo)) {
+							note.title = m.group(2) + note.title;
+							note.todo = null;
+						}
 					} else {
 						if (options.agenda) {
 							note.type = NoteNG.TYPE_AGENDA;
@@ -421,6 +430,7 @@ public class OrgNGParser {
 			Map<String, String> nowSums = controller.getChecksums();
 			Log.i(TAG, "Comparing[" + sums.size() + "] = [" + nowSums.size()
 					+ "]: " + sums + " and " + nowSums);
+			todos.clear();
 			if (sums.size() != nowSums.size()) {
 				Log.i(TAG, "Full sync");
 			} else if (!sums.get(indexOrg).equals(nowSums.get(indexOrg))) {
@@ -436,6 +446,10 @@ public class OrgNGParser {
 				Log.i(TAG, "Parse only[" + sums.size() + "]: " + sums);
 				final int filesTotal = sums.keySet().size();
 				int filesIndex = 1;
+				List<TodoState> todoTypes = controller.getTodoTypes();
+				for (TodoState todoState : todoTypes) {
+					todos.add(todoState.name);
+				}
 				for (final String fileName : sums.keySet()) {
 					final int fileNo = filesIndex++;
 					listener.progress(filesTotal, fileNo, 1, 0, "Processing "
@@ -563,6 +577,7 @@ public class OrgNGParser {
 								done = true;
 								continue;
 							}
+							todos.add(items[i]);
 							controller.addTodoType(indexOptions.todoGroup,
 									items[i], done);
 						}
