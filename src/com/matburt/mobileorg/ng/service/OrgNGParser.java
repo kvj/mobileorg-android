@@ -124,6 +124,7 @@ public class OrgNGParser {
 			int lastAnnouncedPart = -1;
 			int bytesRead = 0;
 			boolean encrypted = false;
+			boolean agendaNoteHasChildren = false;
 			while ((line = readLine(reader)) != null) {
 				bytesRead += line.getBytes("utf-8").length + 1;
 				if (lastAnnouncedPart != bytesRead / partSize) {
@@ -173,6 +174,7 @@ public class OrgNGParser {
 					// debugExp(m);
 					NoteNG note = new NoteNG();
 					note.type = NoteNG.TYPE_OUTLINE;
+					agendaNoteHasChildren = false;
 					if (options.agenda) {
 						note.type = NoteNG.TYPE_AGENDA_OUTLINE;
 					}
@@ -253,6 +255,7 @@ public class OrgNGParser {
 				}
 				m = drawerPattern.matcher(line);
 				if (m.find()) {
+					agendaNoteHasChildren = true;
 					marker = Marker.Drawer;
 					textBuffer = new StringBuilder();
 					drawerValues.clear();
@@ -278,6 +281,7 @@ public class OrgNGParser {
 				}
 				m = paramPattern.matcher(line);
 				if (m.find()) {
+					agendaNoteHasChildren = true;
 					if (null != pendingNote) {
 						controller.addData(pendingNote);
 						pendingNote = null;
@@ -295,6 +299,7 @@ public class OrgNGParser {
 				// Log.i(TAG, "Unknown line: "+line);
 				m = listPattern.matcher(line);
 				if (m.find()) {
+					agendaNoteHasChildren = true;
 					// 1: spaces 2: -/+/*/1. 4: Text
 					// debugExp(m);
 					if (null != pendingNote) {
@@ -339,7 +344,8 @@ public class OrgNGParser {
 					}
 					pendingNote = n;
 				} else {
-					if (options.agenda && "".equals(line)) {
+					if (options.agenda && "".equals(line)
+							&& agendaNoteHasChildren) {
 						// Empty line - step up
 						if (null != pendingNote) {
 							controller.addData(pendingNote);
@@ -351,6 +357,7 @@ public class OrgNGParser {
 						marker = Marker.Outline;
 						continue;
 					}
+					agendaNoteHasChildren = true;
 					if (null != pendingNote) {
 						pendingNote.raw += '\n' + line.trim();
 						pendingNote.title += '\n' + line.trim();
