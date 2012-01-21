@@ -1,7 +1,5 @@
 package com.matburt.mobileorg.ng.ui;
 
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -82,25 +80,6 @@ public class OutlineViewerFragment extends ListFragment {
 				return keyListener(keyCode, event);
 			}
 		});
-		App.getInstance()
-				.getPreferences()
-				.registerOnSharedPreferenceChangeListener(
-						new OnSharedPreferenceChangeListener() {
-
-							@Override
-							public void onSharedPreferenceChanged(
-									SharedPreferences sharedPreferences,
-									String key) {
-								Log.i(TAG, "Pref. changed: " + key);
-								if (getString(R.string.canExpandAll)
-										.equals(key)) {
-									canExpandAll = App
-											.getInstance()
-											.getBooleanPreference(
-													R.string.canExpandAll, true);
-								}
-							}
-						});
 		canExpandAll = App.getInstance().getBooleanPreference(
 				R.string.canExpandAll, true);
 	}
