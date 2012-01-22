@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import android.content.Context;
@@ -63,5 +64,11 @@ public class SDCardSynchronizer extends Synchronizer {
 	@Override
 	public String getIndexPath() {
 		return appSettings.getString("indexFilePath", "");
+	}
+
+	@Override
+	public boolean putAttachment(String fileName, InputStream stream, long size) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

@@ -11,5 +11,10 @@
         android:summary="Dropbox path to index.org file"
         android:title="Path"
         android:key="dropboxPath"/>
-  </PreferenceCategory>
+    <EditTextPreference
+        android:name="Attachments"
+        android:summary="Dropbox path attachments folder"
+        android:title="Attachments"
+        android:key="dropboxAttPath"/>
+    </PreferenceCategory>
 </PreferenceScreen>

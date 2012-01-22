@@ -153,6 +153,23 @@ public class DataService extends SuperService<DataController, App> implements
 				data.properties.put(params.get(i), param_values.get(i));
 			}
 		}
+		List<String> childrenTypes = intent
+				.getStringArrayListExtra("children_types");
+		List<String> childrenValues = intent
+				.getStringArrayListExtra("children_values");
+		Log.i(TAG, "Create children: " + childrenTypes + ", " + childrenValues);
+		if (null != childrenTypes && null != childrenValues
+				&& childrenTypes.size() == childrenValues.size()) {
+			for (int i = 0; i < childrenTypes.size(); i++) {
+				NoteNG n = new NoteNG();
+				n.type = childrenTypes.get(i);
+				n.title = childrenValues.get(i);
+				n.raw = childrenValues.get(i);
+				data.children.add(n);
+			}
+		}
+		data.attachment = intent.getStringExtra("attachment");
+
 		if (null == controller.createNewNote(note, data)) {
 			return;
 		}
@@ -160,6 +177,7 @@ public class DataService extends SuperService<DataController, App> implements
 		Intent bcastIntent = new Intent(BROADCAST_CREATED);
 		bcastIntent.putExtra("callback", intent.getIntExtra("callback", -1));
 		sendBroadcast(bcastIntent);
+		controller.notifyChangesHaveBeenMade();
 	}
 
 	private void reschedule(boolean changed, boolean success) {
@@ -205,8 +223,9 @@ public class DataService extends SuperService<DataController, App> implements
 			String message) {
 		RemoteViews views = new RemoteViews(getPackageName(),
 				R.layout.progress_dialog_status);
-		views.setProgressBar(R.id.progress_bar1, total, totalPos, false);
-		views.setProgressBar(R.id.progress_bar2, current, currentPos, false);
+		views.setProgressBar(R.id.progress_bar1, total, totalPos, total == -1);
+		views.setProgressBar(R.id.progress_bar2, current, currentPos,
+				current == -1);
 		views.setTextViewText(R.id.progress_text, message);
 		raiseNotification(R.drawable.logo_status_reload, views,
 				FOutlineViewer.class);

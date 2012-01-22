@@ -3,6 +3,7 @@ package com.matburt.mobileorg.ng.synchronizers;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import android.content.Context;
@@ -125,5 +126,28 @@ public class DropboxSynchronizer extends Synchronizer {
 	@Override
 	public String getIndexPath() {
 		return appSettings.getString("dropboxPath", "");
+	}
+
+	public String getAttachmentFolder() {
+		String _indexPath = appSettings.getString("dropboxAttPath", "");
+		if (!_indexPath.startsWith("/")) {
+			_indexPath = "/" + _indexPath;
+		}
+		if (!_indexPath.endsWith("/")) {
+			_indexPath += "/";
+		}
+		return _indexPath;
+	}
+
+	@Override
+	public boolean putAttachment(String fileName, InputStream stream, long size) {
+		try {
+			api.putFileOverwrite(getAttachmentFolder() + fileName, stream,
+					size, null);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 }

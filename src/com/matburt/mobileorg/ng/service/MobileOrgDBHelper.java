@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 public class MobileOrgDBHelper extends DBHelper {
 
 	public MobileOrgDBHelper(Context context, String path) {
-		super(context, path, 9);
+		super(context, path, 10);
 	}
 
 	@Override
@@ -54,6 +54,9 @@ public class MobileOrgDBHelper extends DBHelper {
 			break;
 		case 9:
 			db.execSQL("drop index if exists data_note_id");
+			break;
+		case 10:
+			db.execSQL("create table uploads (id integer primary key autoincrement, name text, filename text, data_id integer)");
 			break;
 		}
 	}

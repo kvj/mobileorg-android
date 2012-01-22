@@ -145,6 +145,10 @@ abstract public class ApplicationContext extends Application {
 		return -1;
 	}
 
+	public int getIntPreference(int name, int defaultID) {
+		return getIntPreference(getString(name), defaultID);
+	}
+
 	public void setIntPreference(String name, int value) {
 		getPreferences().edit().putString(name, Integer.toString(value))
 				.commit();

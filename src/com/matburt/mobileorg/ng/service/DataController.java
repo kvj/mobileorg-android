@@ -1,5 +1,10 @@
 package com.matburt.mobileorg.ng.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,6 +19,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 
 import org.kvj.bravo7.ApplicationContext;
+import org.kvj.bravo7.SuperActivity;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -305,6 +311,21 @@ public class DataController {
 		return "Configuration error";
 	}
 
+	public File getAttachmentFolder() {
+		File cache = SuperActivity.getExternalCacheFolder(appContext);
+		if (null != cache) {
+			cache = new File(cache, "attachments");
+			if (!cache.exists()) {
+				if (cache.mkdir()) {
+					return cache;
+				}
+			} else {
+				return cache;
+			}
+		}
+		return null;
+	}
+
 	public boolean cleanupDB(boolean full) {
 		if (null == db) {
 			return false;
@@ -315,6 +336,7 @@ public class DataController {
 				db.getDatabase().delete("files", null, null);
 				db.getDatabase().delete("data", null, null);
 				db.getDatabase().delete("changes", null, null);
+				db.getDatabase().delete("uploads", null, null);
 				appContext.setStringPreference("prevSyncSession", "");
 			}
 			db.getDatabase().delete("todos", null, null);
@@ -526,6 +548,70 @@ public class DataController {
 			}
 			db.getDatabase().update("data", values, "id=?",
 					new String[] { note.id.toString() });
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+
+	public List<UploadBean> getUploads() {
+		if (null == db) {
+			return new ArrayList<UploadBean>();
+		}
+		List<UploadBean> result = new ArrayList<UploadBean>();
+		try {
+			Cursor c = db.getDatabase().query("uploads",
+					new String[] { "name", "filename", "data_id" }, null, null,
+					null, null, "id");
+			if (c.moveToFirst()) {
+				do {
+					UploadBean bean = new UploadBean();
+					bean.name = c.getString(0);
+					bean.fileName = c.getString(1);
+					bean.dataID = new Integer(c.getInt(2));
+					result.add(bean);
+				} while (c.moveToNext());
+			}
+			c.close();
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new ArrayList<UploadBean>();
+	}
+
+	public boolean clearUploads() {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			db.getDatabase().delete("uploads", null, null);
+			db.getDatabase().setTransactionSuccessful();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			db.getDatabase().endTransaction();
+		}
+		return false;
+	}
+
+	public boolean addUpload(UploadBean upload) {
+		if (null == db) {
+			return false;
+		}
+		try {
+			db.getDatabase().beginTransaction();
+			ContentValues values = new ContentValues();
+			values.put("name", upload.name);
+			values.put("filename", upload.fileName);
+			values.put("data_id", upload.dataID.intValue());
+			db.getDatabase().insert("uploads", null, values);
 			db.getDatabase().setTransactionSuccessful();
 			return true;
 		} catch (Exception e) {
@@ -825,6 +911,7 @@ public class DataController {
 	public static class NewNoteData {
 		public final Map<String, String> properties = new LinkedHashMap<String, String>();
 		public final List<NoteNG> children = new ArrayList<NoteNG>();
+		public String attachment = null;
 	}
 
 	public Integer createNewNote(NoteNG note, NewNoteData newNoteData) {
@@ -856,6 +943,34 @@ public class DataController {
 			if (null == newNoteID) {
 				return null;
 			}
+			if (null != newNoteData.attachment) {
+				Log.i(TAG, "Have att: " + newNoteData.attachment);
+				File cache = getAttachmentFolder();
+				if (null != cache) {
+					Log.i(TAG, "Cache is OK: " + cache.getAbsolutePath());
+					File inFile = new File(newNoteData.attachment);
+
+					if (inFile.exists()) {
+						UploadBean upload = new UploadBean(note,
+								inFile.getName());
+						if (copyStream(new FileInputStream(inFile),
+								new FileOutputStream(new File(cache,
+										upload.fileName)))) {
+							if (addUpload(upload)) {
+								Log.i(TAG, "Att copied: " + upload.fileName);
+								newNoteData.properties.put("Attachments",
+										upload.name);
+								String newTags = note.tags;
+								if (null == newTags) {
+									newTags = ":";
+								}
+								newTags += "ATTACH:";
+								updateData(note, "tags", newTags);
+							}
+						}
+					}
+				}
+			}
 			// Create 2 notes: properties with ID and text with date created
 			NoteNG drawerNote = new NoteNG();
 			drawerNote.parentID = note.id;
@@ -877,7 +992,8 @@ public class DataController {
 				NoteNG n = newNoteData.children.get(i);
 				n.parentID = note.id;
 				n.fileID = note.fileID;
-				addData(n);
+				Integer childNoteID = addData(n);
+				Log.i(TAG, "Created child: " + childNoteID + ", " + n.type);
 			}
 			NoteNG dateNote = new NoteNG();
 			dateNote.parentID = note.id;
@@ -897,6 +1013,22 @@ public class DataController {
 			db.getDatabase().endTransaction();
 		}
 		return null;
+	}
+
+	private boolean copyStream(InputStream inStream, OutputStream outStream) {
+		try {
+			byte[] buffer = new byte[4096];
+			int bytes = -1;
+			while ((bytes = inStream.read(buffer)) > 0) {
+				outStream.write(buffer, 0, bytes);
+			}
+			inStream.close();
+			outStream.close();
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	public boolean removeData(Integer id) {

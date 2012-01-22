@@ -389,10 +389,20 @@ public class FOutlineViewer extends FragmentActivity implements
 			@Override
 			public void onProgressUpdate(ProgressInfo... values) {
 				ProgressInfo info = values[0];
-				progress1.setMax(info.progress1Total);
-				progress1.setProgress(info.progress1Pos);
-				progress2.setMax(info.progress2Total);
-				progress2.setProgress(info.progress2Pos);
+				if (info.progress1Total == -1) {
+					progress1.setIndeterminate(true);
+				} else {
+					progress1.setIndeterminate(false);
+					progress1.setMax(info.progress1Total);
+					progress1.setProgress(info.progress1Pos);
+				}
+				if (info.progress2Total == -1) {
+					progress2.setIndeterminate(true);
+				} else {
+					progress2.setIndeterminate(false);
+					progress2.setMax(info.progress2Total);
+					progress2.setProgress(info.progress2Pos);
+				}
 				progressText.setText(info.message);
 			};
 

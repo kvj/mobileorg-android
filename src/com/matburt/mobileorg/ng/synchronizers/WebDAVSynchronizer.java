@@ -2,6 +2,7 @@ package com.matburt.mobileorg.ng.synchronizers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.apache.http.HttpEntity;
@@ -169,5 +170,11 @@ public class WebDAVSynchronizer extends Synchronizer {
 	@Override
 	public String getIndexPath() {
 		return appSettings.getString("webUrl", "");
+	}
+
+	@Override
+	public boolean putAttachment(String fileName, InputStream stream, long size) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

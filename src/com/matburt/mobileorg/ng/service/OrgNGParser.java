@@ -1,6 +1,8 @@
 package com.matburt.mobileorg.ng.service;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -398,6 +400,29 @@ public class OrgNGParser {
 		try {
 			if (controller.hasChanges()) {
 				listener.progress(2, 1, 1, 0, "Sending changes...");
+				List<UploadBean> uploads = controller.getUploads();
+				File cache = controller.getAttachmentFolder();
+				if (null == cache) {
+					return "Error accessing cache folder";
+				}
+				Log.i(TAG, "Uploading atts: " + uploads.size());
+				for (int i = 0; i < uploads.size(); i++) {
+					UploadBean upload = uploads.get(i);
+					File att = new File(cache, upload.fileName);
+					// Log.i(TAG, "Att: " + upload.name + ", " + att.exists()
+					// + ", " + att.length() + ", " + upload.fileName
+					// + ", " + att.getAbsolutePath());
+					listener.progress(uploads.size(), i, -1, -1, "Uploading "
+							+ upload.name + "...");
+					if (att.exists()
+							&& !synchronizer.putAttachment(upload.name,
+									new FileInputStream(att), att.length())) {
+						return "Error uploading attachment";
+					}
+				}
+				if (!controller.clearUploads()) {
+					return "Error clearing attachments";
+				}
 				StringWriter writer = new StringWriter();
 				DataWriter dataWriter = new DataWriter(controller);
 				if (!dataWriter.writeChanges(writer)) {
@@ -416,7 +441,7 @@ public class OrgNGParser {
 					"prevSyncSession", "");
 			String indexOrg = synchronizer.getIndexFileName();
 			Log.i(TAG, "Start sync: " + indexOrg);
-			listener.progress(2, 2, 1, 0, "Getting checksums...");
+			listener.progress(2, 2, -1, -1, "Getting checksums...");
 			String newSession = synchronizer.getFileHash("checksums.dat");
 			Log.i(TAG, "Compare revisions: " + prevSession + " and "
 					+ newSession);

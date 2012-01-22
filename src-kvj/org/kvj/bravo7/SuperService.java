@@ -11,6 +11,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -114,6 +115,20 @@ public abstract class SuperService<T, A extends ApplicationContext> extends
 	public void onDestroy() {
 		hideNotification();
 		super.onDestroy();
+	}
+
+	protected PendingIntent runAtTime(Long date, int id, Bundle extra) {
+		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		if (null == date) {
+			return null;
+		}
+		Intent intent = new Intent(this, alarmBroadcastReceiverClass);
+		Log.i(TAG, "runAtTime - " + id);
+		intent.putExtras(extra);
+		PendingIntent pintent = PendingIntent.getBroadcast(this, id, intent,
+				PendingIntent.FLAG_CANCEL_CURRENT);
+		alarmManager.set(AlarmManager.RTC_WAKEUP, date, pintent);
+		return pintent;
 	}
 
 	protected PendingIntent runAtTime(PendingIntent toCancel, Long date,

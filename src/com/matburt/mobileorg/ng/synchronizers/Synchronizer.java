@@ -1,6 +1,7 @@
 package com.matburt.mobileorg.ng.synchronizers;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -96,6 +97,9 @@ abstract public class Synchronizer {
 	abstract public String getFileHash(String name) throws ReportableError;
 
 	abstract public boolean putFile(boolean append, String fileName, String data);
+
+	abstract public boolean putAttachment(String fileName, InputStream stream,
+			long size);
 
 	abstract public String getIndexPath();
 }
