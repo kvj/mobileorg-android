@@ -158,11 +158,19 @@ abstract public class ApplicationContext extends Application {
 		setStringPreference("widget_" + id, name);
 	}
 
-	public SharedPreferences getWidgetConfig(int id) {
+	public SharedPreferences getWidgetConfig(int id, String name) {
 		if (null != getStringPreference("widget_" + id, null)) {
 			return getSharedPreferences("widget_" + id, Context.MODE_PRIVATE);
 		}
+		if (null != name) {
+			setWidgetConfig(id, name);
+			return getSharedPreferences("widget_" + id, Context.MODE_PRIVATE);
+		}
 		return null;
+	}
+
+	public SharedPreferences getWidgetConfig(int id) {
+		return getWidgetConfig(id, null);
 	}
 
 	public Map<Integer, String> getWidgetConfigs(String provider) {

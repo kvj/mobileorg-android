@@ -2,4 +2,5 @@
 <resources>
     <dimen name="widget_margin">15dp</dimen>
 	<dimen name="large_land_padding">0dp</dimen>
+	<dimen name="right_icon_size">8dp</dimen>
 </resources>
