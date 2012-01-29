@@ -34,18 +34,21 @@
             android:src="@drawable/i_image"
             android:layout_marginRight="3dp"
             android:layout_width="@dimen/right_icon_size"
-            android:layout_height="@dimen/right_icon_size"/>
+            android:layout_height="@dimen/right_icon_size"
+            android:visibility="gone"/>
         <ImageView 
             android:id="@+id/outline_viewer_item_i_point" 
             android:src="@drawable/i_point"
             android:layout_marginRight="3dp"
             android:layout_width="@dimen/right_icon_size"
-            android:layout_height="@dimen/right_icon_size"/>
+            android:layout_height="@dimen/right_icon_size"
+            android:visibility="gone"/>
         <ImageView 
             android:id="@+id/outline_viewer_item_i_path" 
             android:src="@drawable/i_path"
             android:layout_marginRight="3dp"
             android:layout_width="@dimen/right_icon_size"
-            android:layout_height="@dimen/right_icon_size"/>
+            android:layout_height="@dimen/right_icon_size"
+            android:visibility="gone"/>
 	</LinearLayout>
 </LinearLayout>

@@ -25,6 +25,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils.InsertHelper;
+import android.location.Location;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -640,7 +641,74 @@ public class DataController {
 		note.raw = c.getString(13);
 		note.parentID = safeInt(c, 14);
 		note.habit = c.getString(15);
+		if (!NoteNG.TYPE_OUTLINE.equals(note.type)) {
+			note.hasMedia = false;
+			note.hasLocation = false;
+			note.hasPath = false;
+		}
 		return note;
+	}
+
+	private LinkedHashMap<String, String> readDrawer(String text) {
+		LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
+		String[] lines = text.split("\\n");
+		// Log.i(TAG, "readDrawer: " + text + ", " + lines);
+		for (int i = 0; i < lines.length; i++) {
+			String line = lines[i].trim();
+			if (i == 0 && line.startsWith(":") && line.endsWith(":")) {
+				result.put("_name", line.substring(1, line.length() - 1));
+				continue;
+			}
+			if (":END:".equals(line.trim())) {
+				break;
+			}
+			if (line.startsWith(":") && line.indexOf(' ') != -1) {
+				result.put(line.substring(1, line.indexOf(' ') - 1).trim(),
+						line.substring(line.indexOf(' ')).trim());
+			} else {
+				result.put("_" + Integer.toString(i - 1), line.trim());
+			}
+		}
+		// Log.i(TAG, "Result: " + result);
+		return result;
+	}
+
+	public void findAttachments(NoteNG note) {
+		note.hasMedia = false;
+		note.hasPath = false;
+		note.hasLocation = false;
+		if (null == db) {
+			return;
+		}
+		try {
+			Cursor c = db.getDatabase().query("data", dataFields,
+					"parent_id=? and type=?",
+					new String[] { note.id.toString(), NoteNG.TYPE_DRAWER },
+					null, null, "id");
+			if (c.moveToFirst()) {
+				do {
+					LinkedHashMap<String, String> drawer = readDrawer(c
+							.getString(13));
+					if ("PROPERTIES".equals(drawer.get("_name"))) {
+						if (null != drawer.get("Attachments")) {
+							note.hasMedia = true;
+							note.media = drawer.get("Attachments");
+						}
+						if (null != drawer.get("COORDINATES")) {
+							note.hasLocation = true;
+							Location location = new Location("Internal");
+						}
+					}
+					if ("PATH".equals(drawer.get("_name"))) {
+						note.hasLocation = false;
+						note.hasPath = true;
+					}
+				} while (c.moveToNext());
+			}
+			c.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private Integer safeInt(Cursor c, int index) {

@@ -47,6 +47,10 @@ public class NoteNG {
 	public int expanded = EXPAND_COLLAPSED;
 	public int index = 0;
 	public String subtitle = null;
+	public Boolean hasMedia = null;
+	public Boolean hasLocation = null;
+	public Boolean hasPath = null;
+	public String media = null;
 
 	public boolean isExpandable() {
 		return TYPE_AGENDA.equals(type) || TYPE_AGENDA_OUTLINE.equals(type)

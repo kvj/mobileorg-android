@@ -413,6 +413,30 @@ public class OutlineViewerAdapter implements ListAdapter {
 		title.setText(parts.leftPart, BufferType.SPANNABLE);
 		tags.setText(parts.rightPart == null ? "" : parts.rightPart,
 				BufferType.SPANNABLE);
+		if (null == note.hasMedia) {
+			controller.findAttachments(note);
+		}
+		if (Boolean.TRUE.equals(note.hasMedia)) {
+			convertView.findViewById(R.id.outline_viewer_item_i_image)
+					.setVisibility(View.VISIBLE);
+		} else {
+			convertView.findViewById(R.id.outline_viewer_item_i_image)
+					.setVisibility(View.GONE);
+		}
+		if (Boolean.TRUE.equals(note.hasLocation)) {
+			convertView.findViewById(R.id.outline_viewer_item_i_point)
+					.setVisibility(View.VISIBLE);
+		} else {
+			convertView.findViewById(R.id.outline_viewer_item_i_point)
+					.setVisibility(View.GONE);
+		}
+		if (Boolean.TRUE.equals(note.hasPath)) {
+			convertView.findViewById(R.id.outline_viewer_item_i_path)
+					.setVisibility(View.VISIBLE);
+		} else {
+			convertView.findViewById(R.id.outline_viewer_item_i_path)
+					.setVisibility(View.GONE);
+		}
 		return convertView;
 	}
 
