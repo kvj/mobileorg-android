@@ -300,4 +300,8 @@ abstract public class ApplicationContext extends Application {
 	public boolean getBooleanPreference(int name, boolean def) {
 		return getPreferences().getBoolean(getString(name), def);
 	}
+
+	public void setIntPreference(int id, int value) {
+		setIntPreference(getString(id), value);
+	}
 }
