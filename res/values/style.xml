@@ -2,7 +2,7 @@
 <resources>
     <style name="edit_text_mono" parent="@android:style/Widget.EditText">
         <item name="android:typeface">monospace</item>
-        <item name="android:textSize">14dp</item>
+        <item name="android:textSize">16dp</item>
         <item name="android:autoText">true</item>
         <item name="android:inputType">text|textAutoCorrect|textLongMessage</item>
     </style>

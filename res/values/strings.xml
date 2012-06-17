@@ -14,4 +14,9 @@
   <string name="searchHint">Search outline, text</string>
   <string name="searchDesctiption">Outline, text</string>
   <string name="canExpandAll">canExpandAll</string>
+  <string name="useWhite">useWhite</string>
+  <string name="theme">theme</string>
+  <string name="themeDefault">black</string>
+  <string name="docFontSize">docFontSize</string>
+  <string name="docFontSizeDefault">14</string>
 </resources>

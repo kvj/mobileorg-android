@@ -7,6 +7,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.InputType;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import com.matburt.mobileorg.ng.App;
 import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.DataController.TodoState;
@@ -43,6 +45,10 @@ public class DataEditOptionsPanel extends Fragment {
 		tagsText = (EditText) view.findViewById(R.id.data_panel_tags);
 		tagsText.setInputType(InputType.TYPE_CLASS_TEXT
 				| InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
+		tagsText.setTextSize(
+				TypedValue.COMPLEX_UNIT_DIP,
+				App.getInstance().getIntPreference(R.string.docFontSize,
+						R.string.docFontSizeDefault));
 		return view;
 	}
 

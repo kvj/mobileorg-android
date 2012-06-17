@@ -16,6 +16,7 @@ import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.NoteNG;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter.OutlineViewerAdapterListener;
+import com.matburt.mobileorg.ng.ui.theme.DefaultTheme;
 
 public class OutlineViewerFragment extends ListFragment {
 
@@ -41,7 +42,8 @@ public class OutlineViewerFragment extends ListFragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		adapter = new OutlineViewerAdapter(getActivity(), null);
+		adapter = new OutlineViewerAdapter(getActivity(), null,
+				DefaultTheme.loadTheme());
 		setListAdapter(adapter);
 		adapter.setListener(dataListener);
 		getListView().setOnItemLongClickListener(new OnItemLongClickListener() {
@@ -82,6 +84,8 @@ public class OutlineViewerFragment extends ListFragment {
 		});
 		canExpandAll = App.getInstance().getBooleanPreference(
 				R.string.canExpandAll, true);
+		Log.i(TAG, "BG: " + adapter.getTheme().c0Black);
+		getListView().setBackgroundColor(adapter.getTheme().c0Black);
 	}
 
 	public boolean keyListener(int keyCode, KeyEvent event) {

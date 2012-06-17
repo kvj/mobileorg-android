@@ -16,11 +16,11 @@ import android.database.DataSetObserver;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.text.SpannableStringBuilder;
-import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
 import android.text.style.UnderlineSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,38 +28,30 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 
+import com.matburt.mobileorg.ng.App;
 import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.DataController.TodoState;
 import com.matburt.mobileorg.ng.service.DataWriter;
 import com.matburt.mobileorg.ng.service.NoteNG;
 import com.matburt.mobileorg.ng.service.OrgNGParser;
-import com.matburt.mobileorg.ng.ui.theme.Default;
+import com.matburt.mobileorg.ng.ui.theme.DefaultTheme;
 
 public class OutlineViewerAdapter implements ListAdapter {
 
 	Integer id = null;
 	NoteNG clicked = null;
-	static Default theme = new Default();
-	static int[] levelColors = new int[0];
-	static Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
+	DefaultTheme theme = null;
+	int[] levelColors = new int[0];
+	Map<Integer, Integer> tagMapping = new HashMap<Integer, Integer>();
 	PlainTextFormatter textFormatter = null;
 	PlainTextFormatter sublistFormatter = null;
+	private int textSize = 14;
 
 	private static final int MAX_DATA_SIZE = 200;
 	private static final int MAX_EXPAND_ALL_DEPTH = 3;
 
 	static {
-		levelColors = new int[] { theme.ccLBlue, theme.c3Yellow, theme.ceLCyan,
-				theme.c1Red, theme.c2Green, theme.c5Purple, theme.ccLBlue,
-				theme.c2Green, theme.ccLBlue, theme.c3Yellow, theme.ceLCyan };
-		tagMapping.put(theme.c1Red, theme.c9LRed);
-		tagMapping.put(theme.c2Green, theme.caLGreen);
-		tagMapping.put(theme.c3Yellow, theme.cbLYellow);
-		tagMapping.put(theme.c4Blue, theme.ccLBlue);
-		tagMapping.put(theme.c5Purple, theme.cdLPurple);
-		tagMapping.put(theme.c6Cyan, theme.ceLCyan);
-		tagMapping.put(theme.c7White, theme.cfLWhite);
 	}
 
 	public static interface OutlineViewerAdapterListener {
@@ -72,7 +64,18 @@ public class OutlineViewerAdapter implements ListAdapter {
 	}
 
 	public OutlineViewerAdapter(Context context,
-			OutlineViewerAdapterListener listener) {
+			OutlineViewerAdapterListener listener, DefaultTheme theme) {
+		this.theme = theme;
+		levelColors = new int[] { theme.ccLBlue, theme.c3Yellow, theme.ceLCyan,
+				theme.c1Red, theme.c2Green, theme.c5Purple, theme.ccLBlue,
+				theme.c2Green, theme.ccLBlue, theme.c3Yellow, theme.ceLCyan };
+		tagMapping.put(theme.c1Red, theme.c9LRed);
+		tagMapping.put(theme.c2Green, theme.caLGreen);
+		tagMapping.put(theme.c3Yellow, theme.cbLYellow);
+		tagMapping.put(theme.c4Blue, theme.ccLBlue);
+		tagMapping.put(theme.c5Purple, theme.cdLPurple);
+		tagMapping.put(theme.c6Cyan, theme.ceLCyan);
+		tagMapping.put(theme.c7White, theme.cfLWhite);
 		wide = context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 		this.listener = listener;
 		DateTextFormatter dateTextFormatter = new DateTextFormatter();
@@ -81,6 +84,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 		textFormatter = new PlainTextFormatter(dateTextFormatter, linkFormatter);
 		sublistFormatter = new PlainTextFormatter(checkBoxFormatter,
 				dateTextFormatter, linkFormatter);
+		textSize = App.getInstance().getIntPreference(R.string.docFontSize,
+				R.string.docFontSizeDefault);
 	}
 
 	private OutlineViewerAdapterListener listener = null;
@@ -175,14 +180,7 @@ public class OutlineViewerAdapter implements ListAdapter {
 				String text, boolean selected) {
 			note.checkboxState = "X".equals(m.group(1)) ? NoteNG.CBOX_CHECKED
 					: NoteNG.CBOX_UNCHECKED;
-			// Log.i(TAG, "Ckeckbox detected[" + selected + "]: " + m.group()
-			// + ", " + m.group(1));
-			// if (!selected) {
-			// addSpan(sb, text);
-			// } else {
-			addSpan(sb, text, new BackgroundColorSpan(theme.c7White),
-					new ForegroundColorSpan(theme.cfLWhite));
-			// }
+			addSpan(sb, text, new ForegroundColorSpan(theme.cfLWhite));
 		}
 
 	}
@@ -400,6 +398,8 @@ public class OutlineViewerAdapter implements ListAdapter {
 				.findViewById(R.id.outline_viewer_item_text);
 		TextView tags = (TextView) convertView
 				.findViewById(R.id.outline_viewer_item_tags);
+		title.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
+		tags.setTextSize(TypedValue.COMPLEX_UNIT_DIP, textSize);
 		// convertView.setBackgroundColor(isselected
 		// ? theme.c2Green
 		// : isclicked
@@ -765,6 +765,10 @@ public class OutlineViewerAdapter implements ListAdapter {
 
 	public void setListener(OutlineViewerAdapterListener listener) {
 		this.listener = listener;
+	}
+
+	public DefaultTheme getTheme() {
+		return theme;
 	}
 
 }

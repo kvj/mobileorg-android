@@ -17,6 +17,7 @@ import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController.TodoState;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter.TextViewParts;
+import com.matburt.mobileorg.ng.ui.theme.DefaultTheme;
 
 public class SearchProvider extends ContentProvider {
 
@@ -72,7 +73,7 @@ public class SearchProvider extends ContentProvider {
 			List<NoteNG> result = controller.search(query, limit, todos,
 					priorities);
 			OutlineViewerAdapter adapter = new OutlineViewerAdapter(
-					getContext(), null);
+					getContext(), null, new DefaultTheme());
 			adapter.setController(-2, controller, null);
 			for (int i = 0; i < result.size(); i++) {
 				NoteNG note = result.get(i);

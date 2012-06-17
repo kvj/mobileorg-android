@@ -94,4 +94,14 @@
 	<item>80% Black</item>
 	<item>Black</item>
   </string-array>
+  <string-array name="themes">
+	<item>Black (default)</item>
+	<item>White</item>
+	<item>Monochrome</item>
+  </string-array>
+  <string-array name="themeVals">
+	<item>black</item>
+	<item>white</item>
+	<item>mono</item>
+  </string-array>
 </resources>

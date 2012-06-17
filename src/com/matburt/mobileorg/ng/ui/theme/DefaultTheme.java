@@ -1,9 +1,14 @@
 package com.matburt.mobileorg.ng.ui.theme;
 
 import android.graphics.Color;
+import android.util.Log;
 
-public class Default {
+import com.matburt.mobileorg.ng.App;
+import com.matburt.mobileorg.ng.R;
 
+public class DefaultTheme {
+
+	private static final String TAG = "Theme";
 	public int c0Black = Color.rgb(0x00, 0x00, 0x00);
 	public int c1Red = Color.rgb(0xd0, 0x00, 0x00);
 	public int c2Green = Color.rgb(0x00, 0xa0, 0x00);
@@ -20,4 +25,17 @@ public class Default {
 	public int cdLPurple = Color.rgb(0xff, 0x00, 0xff);
 	public int ceLCyan = Color.rgb(0x00, 0xff, 0xff);
 	public int cfLWhite = Color.rgb(0xff, 0xff, 0xff);
+
+	public static DefaultTheme loadTheme() {
+		String theme = App.getInstance().getStringPreference(R.string.theme,
+				R.string.themeDefault);
+		Log.i(TAG, "Use theme: " + theme);
+		if ("white".equals(theme)) {
+			return new WhiteTheme();
+		}
+		if ("mono".equals(theme)) {
+			return new MonoTheme();
+		}
+		return new DefaultTheme();
+	}
 }

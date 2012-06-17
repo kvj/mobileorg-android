@@ -18,6 +18,7 @@ import com.matburt.mobileorg.ng.service.NoteNG;
 import com.matburt.mobileorg.ng.ui.FOutlineViewer;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter.TextViewParts;
+import com.matburt.mobileorg.ng.ui.theme.DefaultTheme;
 
 public class OutlineWidget extends AppWidgetProvider {
 	private static final String TAG = "OutlineWidget";
@@ -95,7 +96,8 @@ public class OutlineWidget extends AppWidgetProvider {
 			addText(context, views, "Error!", null);
 			return;
 		}
-		OutlineViewerAdapter adapter = new OutlineViewerAdapter(context, null);
+		OutlineViewerAdapter adapter = new OutlineViewerAdapter(context, null,
+				new DefaultTheme());
 		adapter.setWide(longFormat);
 		adapter.setController(note.id, controller, new ArrayList<Integer>());
 		adapter.expandNote(adapter.getItem(0), 0, expand == -1 ? true : false,

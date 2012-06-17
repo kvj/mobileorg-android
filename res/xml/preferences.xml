@@ -62,7 +62,22 @@
             android:summary="Expand All in outline viewer (for new panes)"
             android:title="Expand All feature" 
             android:defaultValue="true"/>
-    </PreferenceCategory>
+        <ListPreference
+            android:defaultValue="@string/themeDefault"
+            android:entries="@array/themes"
+            android:entryValues="@array/themeVals"
+            android:key="@string/theme"
+            android:summary="Theme for outline list"
+            android:title="Theme" />
+        <ListPreference
+            android:defaultValue="@string/docFontSizeDefault"
+            android:entries="@array/docFontSizes"
+            android:entryValues="@array/docFontSizesVals"
+            android:key="@string/docFontSize"
+            android:summary="Text size for outline list"
+            android:title="Text size" />
+        
+        </PreferenceCategory>
 
     <PreferenceCategory android:title="Other" >
 

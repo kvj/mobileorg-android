@@ -17,6 +17,7 @@ import android.content.Intent.ShortcutIconResource;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -80,6 +81,11 @@ public class DataEditActivity extends FragmentActivity implements
 			getMenuInflater().inflate(R.menu.editor_menu, bar.asMenu());
 		}
 		edit = (EditText) findViewById(R.id.data_edit_text);
+		edit.setTextSize(
+				TypedValue.COMPLEX_UNIT_DIP,
+				App.getInstance().getIntPreference(R.string.docFontSize,
+						R.string.docFontSizeDefault));
+
 		togglePanel = (ImageButton) findViewById(R.id.data_edit_button);
 		panel = (DataEditOptionsPanel) getSupportFragmentManager()
 				.findFragmentById(R.id.data_edit_panel);

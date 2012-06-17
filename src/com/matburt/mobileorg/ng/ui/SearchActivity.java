@@ -16,6 +16,7 @@ import com.matburt.mobileorg.ng.R;
 import com.matburt.mobileorg.ng.service.DataController;
 import com.matburt.mobileorg.ng.service.DataService;
 import com.matburt.mobileorg.ng.ui.adapter.OutlineViewerAdapter;
+import com.matburt.mobileorg.ng.ui.theme.DefaultTheme;
 
 public class SearchActivity extends
 		SuperActivity<App, DataController, DataService> {
@@ -55,7 +56,7 @@ public class SearchActivity extends
 		}
 		setContentView(R.layout.search_outline);
 		listView = (ListView) findViewById(R.id.search_outline_list);
-		adapter = new OutlineViewerAdapter(this, null);
+		adapter = new OutlineViewerAdapter(this, null, new DefaultTheme());
 		listView.setAdapter(adapter);
 		listView.setOnItemClickListener(new OnItemClickListener() {
 
