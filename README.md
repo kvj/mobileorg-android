@@ -40,12 +40,12 @@ Features:
 
 Screenshots:
 
-![Main window](mobileorg-android/raw/master/src-img/ss-small/main.png) 
-![Capture window](mobileorg-android/raw/master/src-img/ss-small/capture.png) 
-![Sync progress](mobileorg-android/raw/master/src-img/ss-small/sync.png) 
-![Search](mobileorg-android/raw/master/src-img/ss-small/search.png) 
-![Widget preferences](mobileorg-android/raw/master/src-img/ss-small/widget_pref.png) 
-![Outline widget](mobileorg-android/raw/master/src-img/ss-small/widget.png) 
-![Tablet](mobileorg-android/raw/master/src-img/ss-small/tablet.png)
+![Main window](src-img/ss-small/main.png) 
+![Capture window](src-img/ss-small/capture.png) 
+![Sync progress](src-img/ss-small/sync.png) 
+![Search](src-img/ss-small/search.png) 
+![Widget preferences](src-img/ss-small/widget_pref.png) 
+![Outline widget](src-img/ss-small/widget.png) 
+![Tablet](src-img/ss-small/tablet.png)
 
 License remains same, GPLv2
